@@ -1149,7 +1149,8 @@ input::placeholder {
 .build-hero-stats-highlight-count[data-tooltip]:hover::after,
 .build-hero-stats-settings[data-tooltip]:hover::after,
 .build-hero-stats-settings [data-tooltip]:hover::after,
-.build-list-settings[data-tooltip]:hover::after {
+.build-list-settings[data-tooltip]:hover::after,
+#wbuild_help[data-tooltip]:hover::after {
   content: attr(data-tooltip);
   position: absolute;
   bottom: calc(100% + 1.1vh);
@@ -1180,6 +1181,7 @@ input::placeholder {
 .build-hero-stats-settings[data-tooltip]:hover::after,
 .build-hero-stats-settings [data-tooltip]:hover::after,
 .build-list-settings[data-tooltip]:hover::after,
+#wbuild_help[data-tooltip]:hover::after,
 .build-actions-view .build-action-item[data-tooltip]:hover::after,
 .build-hero-avatar-actions .btn-skins[data-tooltip]:hover::after,
 .build-smartcast-tooltip {
@@ -2101,6 +2103,15 @@ button.build-action-item.btn-hover.color-1 .btn-duplicate {
 
 .build-level div.highlight {
   background: rgb(57, 166, 166) !important;
+}
+
+/* Right click on a level button: only that level is shown, the other buttons dim (build.js level). */
+.build-level div {
+  transition: filter 0.25s ease;
+}
+
+.build-level div.build-level-dim {
+  filter: brightness(0.5) saturate(0.6);
 }
 
 .build-field-row.highlight,
@@ -11785,6 +11796,32 @@ body:has(#wcastle-call)::before {
   text-overflow: ellipsis;
 }
 
+/* Player status (spectator.live status): nickname color + legend */
+.spectate-legend {
+  display: flex;
+  justify-content: center;
+  gap: 3cqw;
+  margin-bottom: 1cqw;
+  font: 2.2cqw / 1 'DejaVuSans', sans-serif;
+}
+
+.spectate-legend-item::before {
+  content: '\25CF';
+  margin-right: 0.6cqw;
+}
+
+.spectate-status--battle {
+  color: rgb(140, 225, 120);
+}
+
+.spectate-status--castle {
+  color: rgb(240, 190, 80);
+}
+
+.spectate-status--offline {
+  color: rgba(200, 200, 200, 0.5);
+}
+
 .spectate-meta {
   flex: none;
   display: flex;
@@ -13100,6 +13137,9 @@ body:has(#wcastle-call)::before {
 @property --build-frame-radius { syntax: '<length>'; inherits: true; initial-value: 0px; }
 @property --build-frame-bx { syntax: '<length>'; inherits: true; initial-value: 0px; }
 @property --build-frame-by { syntax: '<length>'; inherits: true; initial-value: 0px; }
+/* Cursor point for the build field dividers mask; registered so the mask glides after the cursor. */
+@property --divider-x { syntax: '<length>'; inherits: true; initial-value: -9999px; }
+@property --divider-y { syntax: '<length>'; inherits: true; initial-value: -9999px; }
 
 @media (min-aspect-ratio: 1/1) {
   #wbuild.build-preview {
@@ -13278,8 +13318,10 @@ body:has(#wcastle-call)::before {
   }
 
   :is(#wbuild, #viewbuild) .button-build--wrapper {
-    flex: 1 0 0;
-    min-width: 8cqh;
+    /* Fixed tab width and position: the strip holds at most 7 tabs (hero + 6 builds),
+       each tab always takes 1/7 of it and they start from the left, whatever the count. */
+    flex: 0 0 calc(100% / 7);
+    min-width: 0;
     width: auto;
     height: 5cqh;
     display: flex;
@@ -13423,8 +13465,18 @@ body:has(#wcastle-call)::before {
     position: absolute;
     inset: calc(100% / 12);
     background: url('img/build/slot-divider.svg') center / 20% 20% repeat;
-    opacity: 0.55;
+    /* Shown only while a talent is dragged (build.js showFieldDividers) and only around the cursor:
+       a soft radial mask follows --divider-x/y, the layer fades in and out. */
+    --divider-radius: 30cqw;
+    -webkit-mask-image: radial-gradient(circle var(--divider-radius) at var(--divider-x) var(--divider-y), #000 0%, rgba(0, 0, 0, 0.6) 45%, transparent 100%);
+    mask-image: radial-gradient(circle var(--divider-radius) at var(--divider-x) var(--divider-y), #000 0%, rgba(0, 0, 0, 0.6) 45%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.35s ease;
     pointer-events: none;
+  }
+  :is(#wbuild, #viewbuild) .build-field.build-field--dividers::before {
+    opacity: 0.7;
+    transition: opacity 0.25s ease, --divider-x 0.12s ease-out, --divider-y 0.12s ease-out;
   }
 
   :is(#wbuild, #viewbuild) .build-level div {
@@ -13927,8 +13979,9 @@ body:has(#wcastle-call)::before {
   :is(#wbuild, #viewbuild) .build-active-bar-hint {
     top: calc(100% - 0.6cqh);
     bottom: auto;
-    left: 6%;
-    width: 88%;
+    /* same width as the 12 active slots: they fill the whole bar (100cqw / 12 each, no side margins) */
+    left: 0;
+    width: 100%;
     height: auto;
     min-height: 2.6cqh;
     padding: 0.4cqh 1cqh;
@@ -14031,14 +14084,26 @@ body:has(#wcastle-call)::before {
     top: 0;
     left: 0;
     width: 100%;
-    height: 1.4cqh;
+    /* Tall enough to grab; ::before widens the hit area sideways (not up/down: the arrows sit there). */
+    height: 7cqh;
     box-sizing: border-box;
     border-top: 0.18cqh solid #65a5a1;
     border-bottom: 0.18cqh solid #073c43;
-    background: #23777a;
+    /* grip: three embossed lines in the middle */
+    background:
+      linear-gradient(#073c43, #073c43) center calc(50% - 0.8cqh) / 55% 0.2cqh no-repeat,
+      linear-gradient(#073c43, #073c43) center / 55% 0.2cqh no-repeat,
+      linear-gradient(#073c43, #073c43) center calc(50% + 0.8cqh) / 55% 0.2cqh no-repeat,
+      #23777a;
     border-radius: 0;
     cursor: var(--cursor-pointer);
     touch-action: none;
+  }
+
+  :is(#wbuild, #viewbuild) .build-scroll-thumb::before {
+    content: '';
+    position: absolute;
+    inset: 0 -0.6cqh;
   }
 
   :is(#wbuild, #viewbuild) .build-scroll-thumb:is(:hover, :focus-visible) {
@@ -14194,6 +14259,42 @@ body:has(#wcastle-call)::before {
     right: 4.9cqh;
     width: 4.6cqh;
     height: 4.6cqh;
+  }
+  /* Settings, help and close look alike: same 5.4cqh box as the close button, the close circle
+     without the cross underneath (icons/round-button*-cropped.svg, scaled like .close-image-style),
+     equal 0.5cqh gaps. Help keeps its yellow fill. View.js puts the settings button next to #wbuild_help. */
+  :is(#wbuild, #viewbuild) :is(#wbuild_help, .build-list-settings) {
+    top: -2.7cqh;
+    width: 5.4cqh;
+    height: 5.4cqh;
+    border: 0;
+    border-radius: 50%;
+    box-shadow: none;
+    transform: none;
+    transition: filter 0.2s ease;
+    z-index: 60;
+  }
+  :is(#wbuild, #viewbuild) :is(#wbuild_help, .build-list-settings):hover {
+    transform: none;
+    filter: brightness(1.18);
+  }
+  :is(#wbuild, #viewbuild) #wbuild_help {
+    right: 4cqh;
+    background: url('icons/round-button-yellow-cropped.svg') center / 127% auto no-repeat;
+  }
+  :is(#wbuild, #viewbuild) #wbuild_help::before {
+    inset: 27%;
+  }
+  :is(#wbuild, #viewbuild) .build-list-settings {
+    right: 9.9cqh;
+    background: url('icons/settings.png') center / 64% no-repeat, url('icons/round-button-cropped.svg') center / 127% auto no-repeat;
+  }
+  /* Tooltip above the button: on the right it would cover the help and close buttons. */
+  :is(#wbuild, #viewbuild) :is(.build-list-settings, #wbuild_help)[data-tooltip]:hover::after {
+    bottom: calc(100% + 0.8cqh);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 0;
   }
   :is(#wbuild, #viewbuild) .close-button .close-image-style {
     width: 100% !important;
@@ -16523,6 +16624,67 @@ body:has(#wcastle-call)::before {
 .tadm-badge-sync {
   background: rgba(240, 162, 74, 0.22);
   color: var(--tadm-warn);
+}
+
+/* Hero mirror switch (talentAdmin.js mirrorSwitch): saves on click. */
+.tadm-mirror {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px 2px 3px;
+  border: 1px solid var(--tadm-line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--tadm-muted);
+  font: inherit;
+  font-size: 0.8em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tadm-mirror:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--tadm-text);
+}
+
+.tadm-mirror:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.tadm-mirror-knob {
+  position: relative;
+  width: 22px;
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 0.15s;
+}
+
+.tadm-mirror-knob::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.tadm-mirror-on {
+  border-color: rgba(111, 209, 139, 0.45);
+  color: var(--tadm-good);
+}
+
+.tadm-mirror-on .tadm-mirror-knob {
+  background: rgba(111, 209, 139, 0.35);
+}
+
+.tadm-mirror-on .tadm-mirror-knob::after {
+  transform: translateX(10px);
+  background: var(--tadm-good);
 }
 
 .tadm-badge.tadm-rarity-0,

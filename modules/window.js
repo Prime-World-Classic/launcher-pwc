@@ -2187,6 +2187,12 @@ export class Window {
     const root = DOM(
       { id: 'wcastle-menu', style: ['wcastle-menu--quest-bg', 'wcastle-menu--spectate'] },
       DOM({ style: 'title-modal' }, DOM({ style: 'title-modal-text' }, Lang.text('spectateTitle'))),
+      DOM(
+        { style: 'spectate-legend' },
+        ...['battle', 'castle', 'offline'].map((status) =>
+          DOM({ style: ['spectate-legend-item', `spectate-status--${status}`] }, Lang.text(Window.spectateStatusKey(status))),
+        ),
+      ),
       list,
       DOM(
         { style: 'castle-menu-item-button', domaudio: domAudioPresets.bigButton, event: ['click', () => Window.spectateLoad(list)] },
@@ -2219,7 +2225,15 @@ export class Window {
     const playerRow = (player) => {
       const hero = DOM({ style: 'spectate-hero' });
       hero.style.backgroundImage = `url(content/hero/${Number(player.hero) || 0}/1.webp)`;
-      return DOM({ style: 'spectate-player' }, hero, DOM({ style: 'spectate-nickname' }, player.nickname || `id${player.id}`));
+      // Цвет ника — где игрок сейчас: в замке (игра закрыта), не в сети
+      // (лаунчер закрыт). Игроку в бою бэкенд status не шлёт: без него — в бою.
+      const status = ['castle', 'offline'].includes(player.status) ? player.status : 'battle';
+      const nickname = DOM(
+        { style: ['spectate-nickname', `spectate-status--${status}`] },
+        player.nickname || `id${player.id}`,
+      );
+      nickname.title = Lang.text(Window.spectateStatusKey(status));
+      return DOM({ style: 'spectate-player' }, hero, nickname);
     };
     // Party members go next to each other and are joined by a square bracket
     // on the outer side of the hero icons (party: 0 - solo, 1, 2, ... - party)
@@ -2271,6 +2285,10 @@ export class Window {
       ),
       team(2),
     );
+  }
+
+  static spectateStatusKey(status) {
+    return { battle: 'spectateStatusBattle', castle: 'spectateStatusCastle', offline: 'spectateStatusOffline' }[status];
   }
 
   // MM mode id -> name: 0..5 are the castle mode buttons (gm1..gm6)

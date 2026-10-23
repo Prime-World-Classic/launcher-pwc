@@ -617,6 +617,11 @@ export class TalentAdmin {
 
     if (kind === 'heroes') {
       meta.push(Number(row.osnParam) === 1 ? 'Сила' : 'Разум', `автоатака ×${row.aaKoef}`, `модиф. ${row.modif}`);
+      // Без колонки hero.mirror (бэкенд до деплоя) переключателя нет.
+      if ('mirror' in row) {
+        badges.append(this.mirrorSwitch(row, element));
+        if (Number(row.mirror) === 1) search.push('зеркалка mirror');
+      }
       badges.append(DOM({ style: ['tadm-badge', 'tadm-badge-level'], title: 'Обликов' }, `${row.skins || 0} обл.`));
     } else {
       if (kind === 'hero') {
@@ -656,6 +661,41 @@ export class TalentAdmin {
 
     element.dataset.search = [row.id, name, this.name(kind, row.id, 'en'), ...meta, ...search, row.stats || '', row.params || '', row.conflict || ''].join(' ').toLowerCase();
     element.classList.toggle('tadm-row-selected', row.id === this.selectedId);
+  }
+
+  // Зеркалка: героя может взять по одному игроку в каждой команде тамбура.
+  // Сохраняется в БД сразу по клику, мимо черновика редактора.
+  mirrorSwitch(row, element) {
+    const on = Number(row.mirror) === 1;
+    const button = DOM(
+      {
+        tag: 'button',
+        style: ['tadm-mirror', ...(on ? ['tadm-mirror-on'] : [])],
+        domaudio: domAudioPresets.defaultButton,
+        title: on
+          ? 'Зеркалка разрешена: героя может взять по одному игроку в каждой команде. Нажмите, чтобы запретить.'
+          : 'Зеркалка запрещена: герой один на всё лобби. Нажмите, чтобы разрешить.',
+      },
+      DOM({ tag: 'span', style: 'tadm-mirror-knob' }),
+      'зеркалка',
+    );
+    button.setAttribute('role', 'switch');
+    button.setAttribute('aria-checked', String(on));
+    button.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      if (button.disabled) return;
+      button.disabled = true;
+      try {
+        const result = await App.api.request('build', KINDS.heroes.edit, { id: row.id, object: { mirror: on ? '0' : '1' } });
+        row.mirror = result && 'mirror' in result ? Number(result.mirror) : on ? 0 : 1;
+        this.fillRow('heroes', row, element);
+        App.notify(`${this.heroName(row.id)}: зеркалка ${Number(row.mirror) === 1 ? 'разрешена' : 'запрещена'}`);
+      } catch (error) {
+        button.disabled = false;
+        App.error(`Зеркалка: ${error?.message || error}`);
+      }
+    });
+    return button;
   }
 
   static parseStatValues(stats) {

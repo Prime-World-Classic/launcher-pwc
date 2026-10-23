@@ -49,6 +49,10 @@ export class Api {
 
     this.hasConnectedOnce = false;
 
+    // Запущена ли игра (MM.gameRunEvent / gameStopEvent): уходит полем game
+    // в каждом запросе — статус игрока в списке идущих матчей (Window.spectate)
+    this.gameRunning = false;
+
     // Watchdog: браузер не доносит WS-уровневые ping/pong в app-код,
     // поэтому половинка TCP (NAT-таймаут, роутер упал без RST) остаётся
     // "OPEN" вечно. Решаем двумя механизмами:
@@ -220,7 +224,25 @@ export class Api {
 
     this.hasConnectedOnce = true;
 
+    // Бэкенд мог перезапуститься посреди боя и забыть, что игра запущена
+    if (this.gameRunning) {
+      this.reportGame();
+    }
+
     App.ShowCurrentView();
+  }
+
+  setGameRunning(running) {
+    this.gameRunning = Boolean(running);
+    this.reportGame();
+  }
+
+  // Сразу сообщить бэкенду, запущена ли игра, не дожидаясь следующего запроса:
+  // тот же тихий пинг, что у keepalive (поле game идёт в каждом запросе)
+  reportGame() {
+    if (App.storage?.data?.token) {
+      this.silent(() => {}, 'user', 'nicknameCooldown', {});
+    }
   }
 
   notifyReconnecting() {
@@ -516,6 +538,8 @@ export class Api {
           version: `${App.PW_VERSION}.${App.APP_VERSION}`,
           // канал клиента: бэкенд показывает тестовому (mmtest) закрытых героев (objects/heroAccess.js)
           line: App.CURRENT_MM,
+          // запущена ли игра: статус игрока в списке идущих матчей (spectator.live)
+          game: this.gameRunning ? 1 : 0,
         }),
       );
     } else {

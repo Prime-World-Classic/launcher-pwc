@@ -301,13 +301,11 @@ export class Build {
     Build.ensureBuildSettingsDefaults();
     Build.applyBuildHighlightVariablesFromSettings();
 
-    try {
-      Build.buildSettingsButton?.parentNode?.removeChild?.(Build.buildSettingsButton);
-    } catch {}
+    // Кнопку настроек не снимаем: пока грузится другой билд или герой, она остаётся в текущем окне,
+    // а новое окно забирает её себе (View.build ставит её перед «?») — без мигания.
     try {
       Build.buildSettingsPanel?.parentNode?.removeChild?.(Build.buildSettingsPanel);
     } catch {}
-    Build.buildSettingsButton = null;
     Build.buildSettingsPanel = null;
 
     Build.talents = new Object();
@@ -596,7 +594,8 @@ export class Build {
       Build.installAltResetHandler();
       Build.installHeroNavKeyboardHandler();
     }
-    Build.buildSettingsButton = Build.createBuildSettingsButton();
+    Build.buildSettingsButton ??= Build.createBuildSettingsButton();
+    Build.buildSettingsButton.setAttribute('aria-expanded', 'false');
     Build.buildSettingsPanel = Build.createBuildSettingsPanel();
     Build.attachBuildSettingsToWbuild();
     Build.applyBuildHighlightVariablesFromSettings();
@@ -721,9 +720,12 @@ export class Build {
     list.classList.add('build-custom-scroll');
     const maxScroll = () => Math.max(0, list.scrollHeight - list.clientHeight);
     const travel = () => Math.max(0, rail.clientHeight - thumb.offsetHeight);
+    let drag = null;
     const update = () => {
       const max = maxScroll();
-      thumb.style.top = `${max ? (list.scrollTop / max) * travel() : 0}px`;
+      // Во время перетаскивания ползунок ставит pointermove — сразу под курсор, не дожидаясь
+      // прокрутки: в большой библиотеке кадр перерисовки долгий, и ползунок отставал.
+      if (!drag) thumb.style.top = `${max ? (list.scrollTop / max) * travel() : 0}px`;
       thumb.setAttribute('aria-valuemax', String(max));
       thumb.setAttribute('aria-valuenow', String(Math.round(list.scrollTop)));
       thumb.setAttribute('aria-disabled', String(max === 0));
@@ -735,19 +737,24 @@ export class Build {
       const ratio = travel() ? (clientY - rect.top - thumb.offsetHeight / 2) / travel() : 0;
       list.scrollTop = Math.max(0, Math.min(1, ratio)) * maxScroll();
     };
-    let drag = null;
     thumb.addEventListener('pointerdown', (event) => {
       if (event.button !== 0 || !maxScroll()) return;
       event.preventDefault();
       thumb.focus();
-      drag = { y: event.clientY, scroll: list.scrollTop };
+      drag = { y: event.clientY, top: parseFloat(thumb.style.top) || 0 };
       thumb.setPointerCapture(event.pointerId);
     });
     thumb.addEventListener('pointermove', (event) => {
       if (!drag || !travel()) return;
-      list.scrollTop = drag.scroll + (event.clientY - drag.y) * maxScroll() / travel();
+      const top = Math.max(0, Math.min(travel(), drag.top + event.clientY - drag.y));
+      thumb.style.top = `${top}px`;
+      list.scrollTop = (top / travel()) * maxScroll();
     });
-    const release = () => { drag = null; };
+    const release = () => {
+      if (!drag) return;
+      drag = null;
+      update();
+    };
     thumb.addEventListener('pointerup', release);
     thumb.addEventListener('pointercancel', release);
     thumb.addEventListener('lostpointercapture', release);
@@ -1818,7 +1825,10 @@ export class Build {
       const candidates = Array.from(document.querySelectorAll('#wbuild'));
       const wbuild = candidates.find((el) => el?.contains?.(Build.buildActionsView));
       if (!wbuild) return;
-      if (Build.buildSettingsButton && Build.buildSettingsButton.parentNode !== wbuild) wbuild.append(Build.buildSettingsButton);
+      // Кнопка стоит перед «?» (View.build ставит её туда сразу); без «?» — в само окно.
+      const help = wbuild.querySelector('#wbuild_help');
+      if (Build.buildSettingsButton && help && Build.buildSettingsButton.nextElementSibling !== help) help.before(Build.buildSettingsButton);
+      else if (Build.buildSettingsButton && !help && Build.buildSettingsButton.parentNode !== wbuild) wbuild.append(Build.buildSettingsButton);
       if (Build.buildSettingsPanel && Build.buildSettingsPanel.parentNode !== wbuild) wbuild.append(Build.buildSettingsPanel);
       Build.applyBuildHighlightVariablesFromSettings();
     } catch {}
@@ -1841,7 +1851,7 @@ export class Build {
         attached =
           !!wbuild &&
           wbuild.contains(Build.buildActionsView) &&
-          Build.buildSettingsButton?.parentNode === wbuild &&
+          !!Build.buildSettingsButton && wbuild.contains(Build.buildSettingsButton) &&
           Build.buildSettingsPanel?.parentNode === wbuild;
       } catch {}
 
@@ -5439,6 +5449,32 @@ export class Build {
     return classTalentId === mainTalentId;
   }
 
+  // Кнопки уровней: светлая — таланты уровня показаны в библиотеке, тёмная — скрыты.
+  // Фильтр — Build.ruleSortInventory.level, список показанных уровней (нет ключа — показаны все).
+  static levelShown(id) {
+    const shown = Build.ruleSortInventory?.level;
+    return !shown || shown.includes(String(id));
+  }
+
+  // levels — показанные уровни; null или все шесть — фильтра нет.
+  static setShownLevels(levels) {
+    Build._forceShowTalentIds = null;
+    Build._forceShowOnlySetTalentIds = null;
+    Build._forceShowOnlyTalentIds = null;
+    if (!levels || levels.length >= Build.levelView.children.length) delete Build.ruleSortInventory.level;
+    else Build.ruleSortInventory.level = levels.map(String);
+    Build.syncLevelButtons();
+    Build.sortInventory();
+  }
+
+  // Ряды поля не подсвечиваем: состояние фильтра видно по самим кнопкам.
+  static syncLevelButtons() {
+    if (!Build.levelView) return;
+    for (const button of Build.levelView.children) {
+      button.classList.toggle('build-level-dim', !Build.levelShown(button.dataset.id));
+    }
+  }
+
   static level() {
     let i = 6;
     for (const number of ['VI', 'V', 'IV', 'III', 'II', 'I']) {
@@ -5448,34 +5484,19 @@ export class Build {
 
       item.dataset.id = i;
 
-      item.dataset.active = 0;
-
       item.id = `bl${i}`;
 
-      item.addEventListener('click', (e) => {
+      // ЛКМ — показать или скрыть таланты этого уровня.
+      item.addEventListener('click', () => {
         Sound.play(SOUNDS_LIBRARY.CLICK, {
           id: 'ui-click',
           volume: Castle.GetVolume(Castle.AUDIO_SOUNDS),
         });
-        if (item.dataset.active == 1) {
-          Build.removeSortInventory('level', item.dataset.id);
-
-          Build.sortInventory();
-
-          item.dataset.active = 0;
-        } else {
-          Build.setSortInventory('level', item.dataset.id);
-
-          Build.sortInventory();
-
-          item.dataset.active = 1;
-        }
-
-        e.target.classList.toggle('highlight');
-
-        document.querySelector(`[data-level="${item.dataset['id']}"`).classList.toggle('highlight');
+        const shown = [...Build.levelView.children].map((button) => button.dataset.id).filter((id) => Build.levelShown(id));
+        Build.setShownLevels(Build.levelShown(item.dataset.id) ? shown.filter((id) => id !== item.dataset.id) : [...shown, item.dataset.id]);
       });
 
+      // ПКМ — только этот уровень: остальные кнопки темнеют. Повторный ПКМ по ней — показать все.
       item.addEventListener('contextmenu', (e) => {
         e.preventDefault();
 
@@ -5484,24 +5505,9 @@ export class Build {
           volume: Castle.GetVolume(Castle.AUDIO_SOUNDS),
         });
 
-        for (const level of ['1', '2', '3', '4', '5', '6']) {
-          Build.removeSortInventory('level', level);
-        }
-        for (let l = 0; l < 6; l++) {
-          item.parentElement.childNodes[l].dataset.active = 0;
-
-          item.parentElement.childNodes[l].classList.remove('highlight');
-          document.querySelector(`[data-level="${item.parentElement.childNodes[l].dataset['id']}"`).classList.remove('highlight');
-        }
-        Build.setSortInventory('level', item.dataset.id);
-
-        Build.sortInventory();
-
-        item.dataset.active = 1;
-
-        document.querySelectorAll('.build-level div.highlight').forEach((n) => n.click());
-        item.classList.add('highlight');
-        document.querySelector(`[data-level="${item.dataset['id']}"`).classList.add('highlight');
+        const shown = Build.ruleSortInventory?.level;
+        const solo = shown?.length === 1 && shown[0] === item.dataset.id;
+        Build.setShownLevels(solo ? null : [item.dataset.id]);
       });
 
       Build.levelView.append(item);
@@ -6258,6 +6264,26 @@ export class Build {
       }
     } catch {}
     Build._selectedSetItem = null;
+  }
+
+  // Крестики-разделители поля (main.css, .build-field::before) видны только во время переноса
+  // и только в круге у курсора: маска слоя следует за --divider-x/y.
+  static showFieldDividers(clientX, clientY) {
+    const field = Build.fieldView;
+    if (!field?.isConnected) return;
+    const rect = field.getBoundingClientRect();
+    // Слой отступает от краёв поля на полклетки (inset: 100% / 12) — точку считаем от него.
+    const inset = rect.width / 12;
+    field.style.setProperty('--divider-x', `${Math.round(clientX - rect.left - inset)}px`);
+    field.style.setProperty('--divider-y', `${Math.round(clientY - rect.top - inset)}px`);
+    if (field.classList.contains('build-field--dividers')) return;
+    // Первую точку применяем без перехода, иначе круг «приедет» с прошлого места.
+    getComputedStyle(field, '::before').getPropertyValue('--divider-x');
+    field.classList.add('build-field--dividers');
+  }
+
+  static hideFieldDividers() {
+    Build.fieldView?.classList.remove('build-field--dividers');
   }
 
   static clearEmptySlotPreviews() {
@@ -7472,12 +7498,16 @@ export class Build {
         : !rules.rarity || rules.rarity.includes(button.dataset.rarityId);
       button.dataset.active = enabled ? '1' : '0';
       button.setAttribute('aria-checked', String(enabled));
-      const replacement = !isActiveFilter && ['2', '3'].includes(button.dataset.rarityId)
-        ? `build/filter-${button.dataset.rarityId === '3' ? 'orange' : 'purple'}`
-        : null;
-      button.style.backgroundImage = `url("content/img/${replacement || button.dataset.filterImage + (enabled ? 'Show' : 'NoShow')}.png")`;
-      button.style.backgroundColor = replacement && !enabled ? '#777' : 'transparent';
-      button.style.backgroundBlendMode = replacement && !enabled ? 'luminosity' : 'normal';
+      // Редкость выключена — камень в центре того же цвета, кольцо вокруг одинаково серое у всех
+      // (build/filter-<цвет>-off.png собраны из картинок «вкл»).
+      const image = isActiveFilter
+        ? button.dataset.filterImage + (enabled ? 'Show' : 'NoShow')
+        : enabled
+          ? (['2', '3'].includes(button.dataset.rarityId) ? `build/filter-${button.dataset.filterImage}` : `${button.dataset.filterImage}Show`)
+          : `build/filter-${button.dataset.filterImage}-off`;
+      button.style.backgroundImage = `url("content/img/${image}.png")`;
+      button.style.backgroundColor = 'transparent';
+      button.style.backgroundBlendMode = 'normal';
       button.style.backgroundSize = isActiveFilter ? '92%' : 'cover';
       button.style.filter = isActiveFilter && enabled
         ? 'brightness(1.04) saturate(2.02)'
@@ -8501,6 +8531,7 @@ export class Build {
   static cancelSortInventory() {
     Build.ruleSortInventory = new Object();
     Build.syncRarityFilterVisuals();
+    Build.syncLevelButtons();
 
     for (let item of Build.inventoryView.children) {
       item.style.display = 'block';
@@ -8629,6 +8660,8 @@ export class Build {
       const applyDragPosition = () => {
         dragRaf = 0;
         element.style.translate = `${dragLeft - dragBaseLeft}px ${dragTop - dragBaseTop}px`;
+        // Крестики появляются с первым движением, а не на клике.
+        Build.showFieldDividers(dragLeft + shiftX, dragTop + shiftY);
       };
       const commitDragPosition = () => {
         if (dragRaf) cancelAnimationFrame(dragRaf);
@@ -8660,6 +8693,7 @@ export class Build {
         // До любых cloneNode: класс подсветки не должен попасть в копии.
         dropLiftedSmartcast();
         commitDragPosition();
+        Build.hideFieldDividers();
         for (const host of dragLiftHosts) host.classList.remove('build-drag-lift');
         Castle.toggleRender(Castle.RENDER_LAYER_BUILD_DRAG, true);
         Build._isDraggingTalent = false;

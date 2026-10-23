@@ -957,7 +957,7 @@ export class View {
   static castleTotalCrystal = DOM({ tag: 'div', style: ['question-icon'] }, DOM({ style: 'quest-counter' }, ''));
 
   static setCss(name = 'content/style.css') {
-    const cssVersion = '20261022-voice-ring-1';
+    const cssVersion = '20261023-build-buttons-1';
     const separator = name.includes('?') ? '&' : '?';
     let css = DOM({ tag: 'link', rel: 'stylesheet', href: `${name}${separator}v=${cssVersion}` });
 
@@ -1628,7 +1628,7 @@ export class View {
 
     // Устаревший PUpdate (нас уже кикнули / пати распалась) — нас нет в users:
     // берём актуальное состояние с сервера, а не падаем на data.users[myId].
-    const myId = App.storage.data.id;
+    const myId = App.storage?.data?.id; // в DEV-превью (?previewBuild=1) App.storage нет
     if (partyData && !partyData?.users?.[myId]) {
       data = await App.api.request(App.CURRENT_MM, 'loadParty');
     }
@@ -5485,6 +5485,8 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
         id: 'wbuild_help',
         domaudio: domAudioPresets.defaultButton,
         style: 'help-button',
+        data: { tooltip: Lang.text('help') },
+        ariaLabel: Lang.text('help'),
         event: [
           'click',
           () => {
@@ -5507,6 +5509,8 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
       ),
       DOM({ style: 'build-right' }, libraryTitle, Build.rarityView, Build.librarySearchView, Build.talentsAndSetsView, Build.inventoryView),
     );
+    // Настройки билда — слева от «?», сразу вместе с окном: таймер attach при смене билда давал мигание.
+    if (Build.buildSettingsButton) body.querySelector('#wbuild_help')?.before(Build.buildSettingsButton);
 
     if (!isWindow) {
       body.append(

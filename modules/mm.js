@@ -63,6 +63,7 @@ export class MM {
 
   static gameRunEvent() {
     MM.isInBattle = true;
+    App.api?.setGameRunning(true);
     Castle.toggleRender(Castle.RENDER_LAYER_GAME, false);
     Castle.toggleMusic(Castle.MUSIC_LAYER_GAME, false);
     document.body.style.display = 'none';
@@ -74,6 +75,7 @@ export class MM {
 
   static gameStopEvent() {
     MM.isInBattle = false;
+    App.api?.setGameRunning(false);
     VoiceGameBridge.stop();
     Castle.toggleRender(Castle.RENDER_LAYER_GAME, true);
     Castle.toggleMusic(Castle.MUSIC_LAYER_GAME, true);
@@ -801,12 +803,16 @@ export class MM {
   static refreshLobbyHeroAvailability() {
     if (!MM.lobbyHeroes) return;
     const users = Object.entries(MM.lobbyUsers || {});
+    const ownTeam = Number(MM.lobbyUsers?.[MM.lobbyUserId]?.team);
     for (const hero of MM.lobbyHeroes.querySelectorAll('.mm-lobby-middle-hero-item')) {
       const heroId = Number(hero.id.slice(4));
+      const mirror = MM.lobbyMirror?.has(heroId);
       // Чужой герой занят только после подтверждения: препик союзника — лишь пожелание,
-      // и сервер отдаёт героя тому, чья очередь раньше.
+      // и сервер отдаёт героя тому, чья очередь раньше. Зеркалку (data.mirror из MMStart)
+      // соперник не занимает: её можно взять по одному игроку в каждой команде.
       const owners = users.filter(([id, user]) => Number(user.hero) === heroId
-        && (user.select || Number(id) === Number(MM.lobbyUserId)));
+        && (user.select || Number(id) === Number(MM.lobbyUserId))
+        && !(mirror && Number(user.team) !== ownTeam));
       const owner = owners.find(([id]) => Number(id) !== Number(MM.lobbyUserId)) || owners[0];
       const banned = users.some(([, user]) => Number(user.banhero) === heroId);
       MM.setLobbyHeroAvailability(hero, owner?.[0] || 0, banned);
@@ -927,6 +933,7 @@ export class MM {
     View.castleQuestBody.classList.add('left-offset-with-shift');
 
     MM.lobbyUsers = data.users;
+    MM.lobbyMirror = new Set((data.mirror || []).map(Number));
 
     MM.targetHeroId = data.users[currentUserId].hero;
 

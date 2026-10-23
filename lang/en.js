@@ -144,6 +144,9 @@ export const en = {
     spectateOwnMatch: 'Your match',
     spectateModeTournament: 'Tournament',
     spectateOtherClientHint: 'This match runs on another client and can only be watched from the same client',
+    spectateStatusBattle: 'In battle',
+    spectateStatusCastle: 'In castle',
+    spectateStatusOffline: 'Offline',
     save: 'Save',
     soundHelp:
       'If the sound settings are lost, you can adjust the volume in the mixer: right-click on the sound icon on the Taskbar -> Volume Mixer -> Game icon -> make it quieter',

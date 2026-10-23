@@ -146,6 +146,9 @@ export const ru = {
     spectateOwnMatch: 'Ваш матч',
     spectateModeTournament: 'Турнир',
     spectateOtherClientHint: 'Матч идёт на другом клиенте — смотреть его можно только из того же клиента',
+    spectateStatusBattle: 'В бою',
+    spectateStatusCastle: 'В замке',
+    spectateStatusOffline: 'Не в сети',
     save: 'Сохранить',
     soundHelp:
       'Если сбиваются настройки звука, то можно отрегулировать в микшере громкости: ПКМ на значок звука на Панели задач -> Микшер громкости -> Значок игры -> делаете тише',
