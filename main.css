@@ -13047,6 +13047,12 @@ body:has(#wcastle-call)::before {
   visibility: visible;
 }
 
+/* Разделы прячутся через visibility, а она наследуется и анимируется вместе с transition: all
+   (.btn-hover у кнопок действий и т. п.) — без этого кнопки исчезают с задержкой 0,4 с. */
+.build-horizontal--heroes > :is(.build-left, .build-center, .build-right) *:not(.build-list, .build-list *, .build-heroes-selection, .build-heroes-selection *) {
+  transition: none;
+}
+
 .build-horizontal--heroes .build-center .build-list {
   z-index: 50;
 }
