@@ -105,6 +105,8 @@ export const en = {
     threeD: '3D',
     dayNight: 'Day/night cycle',
     buildingLights: 'Building lights at night',
+    gameRender: 'Game graphics',
+    vulkanRenderer: 'Vulkan (experimental)',
     castleBuildCategoryHeroes: 'For heroes',
     castleBuildCategoryProduction: 'Production',
     castleBuildCategoryHouse: 'Development',

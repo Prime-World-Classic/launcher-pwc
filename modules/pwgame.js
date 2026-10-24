@@ -2,6 +2,8 @@ import { App } from './app.js';
 import { Lang } from './lang.js';
 import { NativeAPI } from './nativeApi.js';
 import { ReplayUpload } from './replayUpload.js';
+import { Settings } from './settings.js';
+import { renderBackendToken } from './gameRender.js';
 
 export class PWGame {
   static PATH = '../Game/Bin/PW_Game.exe';
@@ -76,13 +78,19 @@ export class PWGame {
       // falls back to its standard ports (server_ip.h).
       if (port) {
         protocol = `${protocol}/${port}`;
-        // Language of the in-game texts (7th token, the last one). Only after
+        // Language of the in-game texts (7th token). Only after
         // the IP block and the port: the client takes it from a fixed position.
         if (Lang.target) {
           protocol = `${protocol}/${Lang.target}`;
         }
       }
     }
+    // Именованная опция запуска — последний токен, «render=vulkan» (см.
+    // gameRender.js). При значении по умолчанию ('d3d9') токен НЕ добавляется:
+    // строка протокола остаётся ровно той, что отдавалась раньше, поэтому
+    // старые клиенты не видят ничего нового. Новый клиент читает «key=value»
+    // в любой позиции после метода (PW_Client/Game.cpp).
+    protocol = `${protocol}${renderBackendToken(Settings.settings.gameRenderBackend)}`;
     return protocol;
   }
 

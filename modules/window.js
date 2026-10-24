@@ -1535,6 +1535,26 @@ export class Window {
           }),
           DOM({ tag: 'label', for: 'building-lights-toggle' }, Lang.text('buildingLights')),
         ),
+        DOM({ style: 'castle-menu-section-title' }, Lang.text('gameRender')),
+        DOM(
+          { style: 'castle-menu-item-checkbox' },
+          DOM({
+            tag: 'input',
+            domaudio: domAudioPresets.defaultSelect,
+            type: 'checkbox',
+            id: 'vulkan-render-toggle',
+            checked: Settings.settings.gameRenderBackend === 'vulkan',
+            event: [
+              'change',
+              (e) => {
+                // вкл — в протоколе запуска уходит «render=vulkan» (pwgame.js);
+                // выкл — старый пайплайн, токена в протоколе нет вовсе
+                Settings.settings.gameRenderBackend = e.target.checked ? 'vulkan' : 'd3d9';
+              },
+            ],
+          }),
+          DOM({ tag: 'label', for: 'vulkan-render-toggle' }, Lang.text('vulkanRenderer')),
+        ),
         DOM({ style: 'castle-menu-section-title' }, Lang.text('voiceHotkeys')),
         DOM(
           { style: 'castle-menu-item-checkbox' },
