@@ -341,6 +341,9 @@ export class Match3Duel {
 
     Match3Duel.container = container;
 
+    // два render подряд (вкладка, «Назад») не должны оба дописать вступление
+    const renderId = (Match3Duel.renderId = (Match3Duel.renderId || 0) + 1);
+
     container.replaceChildren();
 
     // числа эффектов для легенды — из настроек сервера
@@ -356,7 +359,7 @@ export class Match3Duel {
       // старый бэкенд — числа по умолчанию
     }
 
-    if (Match3Duel.container !== container) {
+    if (Match3Duel.container !== container || Match3Duel.renderId !== renderId) {
       return;
     }
 
@@ -376,10 +379,27 @@ export class Match3Duel {
       );
     }
 
+    // свой рейтинг — догружается отдельно, вступление не ждёт; кнопка открывает таблицу рейтинга
+    const ratingText = DOM({ tag: 'span' }),
+      ratingLine = DOM({ style: ['m3d-rating-line', 'm3d-rating-empty'] }, ratingText, DOM({ domaudio: domAudioPresets.defaultButton, style: 'm3d-rating-btn', event: ['click', () => Match3Duel.renderRating(container)] }, Lang.text('m3rTableButton')));
+
+    App.api
+      .request('match3', 'duelRating')
+      .then((data) => {
+        // вкладку могут строить до вставки окна в документ — isConnected здесь не проверяем
+        if (data?.me) {
+          ratingText.innerText = Match3Duel.ratingSummary(data.me);
+
+          ratingLine.classList.remove('m3d-rating-empty');
+        }
+      })
+      .catch(() => {});
+
     container.append(
       DOM(
         { style: 'm3d-intro' },
         DOM({ tag: 'h1' }, Lang.text('match3DuelTitle')),
+        ratingLine,
         DOM({ tag: 'p' }, Lang.text('match3DuelIntro')),
         DOM({ tag: 'p', style: 'm3d-hint' }, Match3Duel.fmt('match3ChargeHint', Match3Duel.fx().chargeMax)),
         Match3Duel.legend(),
@@ -400,6 +420,145 @@ export class Match3Duel {
     } catch (e) {
       // старый бэкенд без дуэли — остаётся вступление
     }
+  }
+
+  // --- рейтинг PvP ---
+
+  // «Ваш рейтинг: 1024 · 15-е место · 12 боёв, 7 побед · калибровка: ещё 3 боя»
+  static ratingSummary(me) {
+    const parts = [Match3Duel.fmt('m3rMine', me.rating)];
+
+    if (me.games > 0) {
+      if (me.place) parts.push(Match3Duel.fmt('m3rPlace', me.place));
+
+      parts.push(Match3Duel.fmt('m3rRecord', me.games, me.wins));
+    } else {
+      parts.push(Lang.text('m3rNoGames'));
+    }
+
+    if (me.calibration > 0 && me.games > 0) parts.push(Match3Duel.fmt('m3rCalibration', me.calibration));
+
+    return parts.join(' · ');
+  }
+
+  static signed(n) {
+    return n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0';
+  }
+
+  // Таблица рейтинга (из вступления дуэли): свой рейтинг, правила и лучшие игроки; «Назад» — к вступлению
+  static async renderRating(container) {
+    // недорисованное вступление не должно лечь поверх таблицы
+    Match3Duel.renderId = (Match3Duel.renderId || 0) + 1;
+
+    const back = () => DOM({ domaudio: domAudioPresets.bigButton, style: ['m3d-btn', 'm3d-start'], event: ['click', () => Match3Duel.render(container)] }, Lang.text('m3rBack'));
+
+    const root = DOM({ style: ['m3d-intro', 'm3r'] }, DOM({ tag: 'h1' }, Lang.text('m3rTitle')), DOM({ style: 'm3r-loading' }, DOM({ style: 'm3d-search-spinner' })), back());
+
+    container.replaceChildren(root);
+
+    let data = null;
+
+    try {
+      data = await App.api.request('match3', 'duelRating');
+    } catch (e) {
+      // старый бэкенд или сеть
+    }
+
+    // пока грузилось, переключили вкладку
+    if (root.parentNode !== container) {
+      return;
+    }
+
+    if (!data?.me) {
+      root.replaceChildren(DOM({ tag: 'h1' }, Lang.text('m3rTitle')), DOM({ tag: 'p', style: 'm3d-hint' }, Lang.text('m3rLoadError')), back());
+
+      return;
+    }
+
+    const rules = [];
+
+    if (data.newGames > 0) rules.push(Match3Duel.fmt('m3rRuleCalibration', data.newGames));
+
+    rules.push(Lang.text('m3rRuleOwner'));
+
+    if (data.pairDay > 0) rules.push(Match3Duel.fmt('m3rRulePair', data.pairDay));
+
+    const row = (item, me = false) =>
+      DOM(
+        { style: ['m3r-row', me ? 'm3r-row-me' : 'm3r-row-other'] },
+        DOM({ style: 'm3r-place' }, String(item.place || '—')),
+        DOM({ style: 'm3r-login' }, item.login || ''),
+        DOM({ style: 'm3r-rating' }, String(item.rating)),
+        DOM({ style: 'm3r-num' }, String(item.games)),
+        DOM({ style: 'm3r-num' }, String(item.wins)),
+      );
+
+    const top = data.top || [],
+      table = DOM({ style: 'm3r-table' });
+
+    if (top.length) {
+      table.append(
+        DOM(
+          { style: ['m3r-row', 'm3r-head'] },
+          DOM({ style: 'm3r-place' }, '#'),
+          DOM({ style: 'm3r-login' }, Lang.text('m3rColPlayer')),
+          DOM({ style: 'm3r-rating' }, Lang.text('m3rColRating')),
+          DOM({ style: 'm3r-num' }, Lang.text('m3rColGames')),
+          DOM({ style: 'm3r-num' }, Lang.text('m3rColWins')),
+        ),
+      );
+
+      const myId = App.storage?.data?.id;
+
+      for (const item of top) {
+        table.append(row(item, item.userId == myId));
+      }
+
+      // меня нет в списке лучших — своя строка в конце
+      if (data.me.games > 0 && !top.some((item) => item.userId == myId)) {
+        table.append(DOM({ style: ['m3r-row', 'm3r-gap'] }, '…'), row(Object.assign({ login: App.storage?.data?.login || '' }, data.me), true));
+      }
+    } else {
+      table.append(DOM({ tag: 'p', style: 'm3d-hint' }, Lang.text('m3rEmpty')));
+    }
+
+    root.replaceChildren(
+      DOM({ tag: 'h1' }, Lang.text('m3rTitle')),
+      DOM({ style: 'm3d-rating-line' }, Match3Duel.ratingSummary(data.me)),
+      DOM({ tag: 'p', style: 'm3d-hint' }, Lang.text('m3rIntro')),
+      DOM({ tag: 'p', style: 'm3d-hint' }, rules.join(' ')),
+      table,
+      back(),
+    );
+  }
+
+  // Итог боя по рейтингу для окна результата
+  static ratingResult() {
+    const s = Match3Duel.state,
+      op = s?.players?.[1 - s.me];
+
+    if (op?.bot) {
+      return DOM({ tag: 'p', style: 'm3d-hint' }, Lang.text('m3rBotNote'));
+    }
+
+    const r = s?.rating,
+      mine = r?.players?.[s.me];
+
+    if (!mine) {
+      return DOM();
+    }
+
+    if (r.unrated) {
+      const key = { owner: 'm3rUnratedOwner', pair: 'm3rUnratedPair' }[r.unrated] || 'm3rUnratedError';
+
+      return DOM({ tag: 'p', style: 'm3d-hint' }, Lang.text(key));
+    }
+
+    let text = Match3Duel.fmt('m3rResult', mine.rating, '', Match3Duel.signed(mine.delta));
+
+    if (mine.place) text += ` · ${Match3Duel.fmt('m3rPlace', mine.place)}`;
+
+    return DOM({ tag: 'p', style: ['m3d-result-rating', mine.delta >= 0 ? 'm3d-rating-up' : 'm3d-rating-down'] }, text);
   }
 
   // short — короткие подписи для строки под полем во время боя
@@ -1036,7 +1195,10 @@ export class Match3Duel {
         nodes.name.innerText = full.hero ? Match3Duel.heroName(full.heroId) : full.bot ? Lang.text('match3Bot') : full.login || '';
       }
 
-      nodes.login.innerText = full.hero ? (full.bot ? Lang.text('match3Bot') : full.login || '') : '';
+      // в PvP рядом с ником — рейтинг до боя
+      const rating = !full.bot && full.rating != null ? ` · ${full.rating}` : '';
+
+      nodes.login.innerText = full.hero ? (full.bot ? Lang.text('match3Bot') : `${full.login || ''}${rating}`) : '';
 
       nodes.manaBar.style.display = full.hero ? '' : 'none';
 
@@ -1768,6 +1930,7 @@ export class Match3Duel {
           { style: 'm3d-result-box' },
           DOM({ tag: 'h1' }, Lang.text(win ? 'match3Win' : 'match3Lose')),
           reason ? DOM({ tag: 'p' }, Lang.text(reason)) : DOM(),
+          Match3Duel.ratingResult(),
           Match3Duel.lootSummary(),
           DOM(
             { style: 'm3d-result-buttons' },
