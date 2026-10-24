@@ -577,8 +577,14 @@ export class Castle {
     }
   }
 
+  static loopSleeping = false; // цикл отрисовки уснул, пока отрисовка выключена (loop)
+
   static toggleRender(layer, value) {
     Castle.render[layer] = value === undefined ? !Castle.render[layer] : Boolean(value);
+    if (Castle.loopSleeping && !Castle.render.includes(false)) {
+      Castle.loopSleeping = false;
+      requestAnimationFrame(Castle.loop);
+    }
   }
 
   static zoom(event) {
@@ -2173,6 +2179,53 @@ export class Castle {
     return uniformLocation;
   }
 
+  // Места uniform-ов программы сцены — один раз, в объекте с постоянными полями: drawObject зовут
+  // сотни раз за кадр, поиск по имени на каждый объект заметно стоит. Заодно состояние программы:
+  // в каком кадре ставились общие uniform-ы и какие номера текстур уже записаны (значения uniform-ов
+  // хранятся в самой программе). program — { prog, progId }: после пересборки шейдеров она новая.
+  static programLocs(program) {
+    let l = program.locs;
+    if (l) return l;
+    const u = (name) => Castle.getUniformLocation(program, name);
+    l = program.locs = {
+      mViewProj: u('mViewProj'),
+      lightViewProj: u('lightViewProj'),
+      sunLight: u('sunLight'),
+      ambientLight: u('ambientLight'),
+      zNearFar: u('zNear_zFar'),
+      cursorGrid: u('cursorGridPosition'),
+      shadowDebug: u('shadowDebug'),
+      time: u('time'),
+      tintColor: u('tintColor'),
+      uvScale: u('uvScale'),
+      emissive: u('emissive'),
+      startFreq: u('startFreq'),
+      endAmp: u('endAmp'),
+      animDirVertFreq: u('animDirVertFreq'),
+      uvScroll: u('uvScroll'),
+      mWorld: u('mWorld'),
+      bones: u('bones'),
+      smDebugColor: u('smDebugColor'),
+      tex: [u('tex0'), u('tex1'), u('tex2'), u('tex3')],
+      texUnit: [-1, -1, -1, -1], // какой номер текстуры уже записан в tex0..3
+      smTexture: u('smTexture'),
+      smTextureUnit: -1,
+      frame: -1, // кадр, в котором ставились общие для всех объектов uniform-ы (камера, свет, время)
+      attribsFor: null, // список атрибутов шейдера, для которого посчитаны места attribs
+      attribs: null,
+    };
+    return l;
+  }
+
+  // Места атрибутов (getAttribLocation на каждый объект — дорогой вызов)
+  static attribLocations(program, l, attributes) {
+    if (l.attribsFor !== attributes) {
+      l.attribsFor = attributes;
+      l.attribs = attributes.map((attribute) => Castle.gl.getAttribLocation(program.prog, attribute.name));
+    }
+    return l.attribs;
+  }
+
   // Шейдеры, текстуры и меши сцены. Файлы грузятся параллельно, работа на главном потоке
   // (загрузка в GPU, разбор мешей) идёт порциями по budget, шейдеры компилируются в фоне.
   static async loadResources(scene, notUniqeShaderNames, notUniqeTexNames, budget) {
@@ -2528,16 +2581,22 @@ export class Castle {
 
   static MainLoop(sceneObjects, sceneBuildings, sceneShaders, sceneTextures) {
     Castle.updateGridTranslation();
+    Castle.loopSleeping = false;
     requestAnimationFrame(Castle.loop);
   }
 
   static loop() {
     // Пока switchScene грузит сцену другой фракции, рисуется старая: новая собирается отдельно (buildScene).
+    // Отрисовка выключена (3D-замок выключен в настройках, идёт игра, открыта мини-игра) — цикл засыпает,
+    // а не крутится вхолостую каждый кадр: пустые кадры тоже стоят браузеру работы. Будит toggleRender.
     let isStopRender = Castle.render.includes(false);
     if (isStopRender) {
-      requestAnimationFrame(Castle.loop);
+      Castle.loopSleeping = true;
       return;
     }
+
+    // общие uniform-ы (камера, свет, время) каждая программа получает один раз за кадр (setupMainCam)
+    Castle.frameId++;
 
     Castle.prevTime = Castle.currentTime;
 
@@ -2925,32 +2984,39 @@ export class Castle {
 
     Castle.UpdateBuildingBubbles();
   }
-  static setupMainCam(program) {
-    let matViewProjUniformLocation = Castle.getUniformLocation(program, 'mViewProj');
+  static frameId = 0;
 
-    Castle.gl.uniformMatrix4fv(matViewProjUniformLocation, Castle.gl.FALSE, Castle.viewProjMatr);
+  // Uniform-ы, одинаковые у всех объектов кадра: программа получает их один раз за кадр
+  // (до правки — на каждый объект, ~700 раз). В течение кадра камера, свет и время не меняются.
+  static setupMainCam(program, l) {
+    if (l.frame === Castle.frameId) return;
+    l.frame = Castle.frameId;
+    const gl = Castle.gl;
 
-    let matViewProjSMUniformLocation = Castle.getUniformLocation(program, 'lightViewProj');
+    gl.uniformMatrix4fv(l.mViewProj, false, Castle.viewProjMatr);
 
-    Castle.gl.uniformMatrix4fv(matViewProjSMUniformLocation, Castle.gl.FALSE, Castle.lightViewProjMatrix);
+    gl.uniformMatrix4fv(l.lightViewProj, false, Castle.lightViewProjMatrix);
 
-    Castle.gl.uniform4fv(Castle.getUniformLocation(program, 'sunLight'), Castle.sunLight);
+    gl.uniform4fv(l.sunLight, Castle.sunLight);
 
-    Castle.gl.uniform4fv(Castle.getUniformLocation(program, 'ambientLight'), Castle.ambientLight);
+    gl.uniform4fv(l.ambientLight, Castle.ambientLight);
 
-    let zNearFar = Castle.getUniformLocation(program, 'zNear_zFar');
+    gl.uniform4f(l.zNearFar, Castle.zNear, Castle.zFar, Castle.zNearSM, Castle.zFarSM);
 
-    Castle.gl.uniform4f(zNearFar, Castle.zNear, Castle.zFar, Castle.zNearSM, Castle.zFarSM);
+    gl.uniform2f(l.cursorGrid, -Castle.gridCursorPosX, -Castle.gridCursorPosZ);
 
-    let cursorGridPosition = Castle.getUniformLocation(program, 'cursorGridPosition');
+    gl.uniform4f(l.time, Castle.currentTime, 0, 0, 0);
 
-    Castle.gl.uniform2f(cursorGridPosition, -Castle.gridCursorPosX, -Castle.gridCursorPosZ);
+    gl.uniform4f(l.shadowDebug, Castle.shadowDebugMode, 0, 0, 0);
   }
 
-  static setupSMCam(program) {
-    let matViewProjUniformLocation = Castle.getUniformLocation(program, 'mViewProj');
+  static setupSMCam(program, l) {
+    if (l.frame === Castle.frameId) return;
+    l.frame = Castle.frameId;
 
-    Castle.gl.uniformMatrix4fv(matViewProjUniformLocation, Castle.gl.FALSE, Castle.lightViewProjMatrix);
+    Castle.gl.uniformMatrix4fv(l.mViewProj, false, Castle.lightViewProjMatrix);
+
+    Castle.gl.uniform4f(l.time, Castle.currentTime, 0, 0, 0);
   }
 
   static getBlendFunc(blendString) {
@@ -3029,6 +3095,21 @@ export class Castle {
     return dividend - Math.floor(dividend / divisor) * divisor;
   }
 
+  // Постоянные значения и рабочие массивы drawObject (снаружи не менять)
+  static ZEROS2 = new Float32Array(2);
+  static ZEROS4 = new Float32Array(4);
+  static ONES4 = new Float32Array([1, 1, 1, 1]);
+  static AXIS_X = new Float32Array([1, 0, 0]);
+  static AXIS_Y = new Float32Array([0, 1, 0]);
+  static AXIS_Z = new Float32Array([0, 0, 1]);
+  static DEFAULT_TRANSFORM = new Float32Array([1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1]);
+  static _mWorld = new Float32Array(16);
+  static _mWorld2 = new Float32Array(16);
+  static _mWorld3 = new Float32Array(16);
+  static _mRotX = new Float32Array(16);
+  static _mRotY = new Float32Array(16);
+  static _mRotZ = new Float32Array(16);
+
   static drawObject(
     program,
     textures,
@@ -3071,8 +3152,12 @@ export class Castle {
 
     let attribOffset = 0;
 
-    for (let attribute of attributes) {
-      let attribLocation = Castle.gl.getAttribLocation(program.prog, attribute.name);
+    const l = Castle.programLocs(program);
+    const attribLocations = Castle.attribLocations(program, l, attributes);
+
+    for (let a = 0; a < attributes.length; a++) {
+      const attribute = attributes[a];
+      let attribLocation = attribLocations[a];
 
       // атрибута нет в программе (например, кости, если шейдер собран без VS_SKIN) — только сдвигаем смещение
       if (attribLocation < 0) {
@@ -3101,89 +3186,66 @@ export class Castle {
     // Tell OpenGL state machine which program should be active.
     Castle.gl.useProgram(program.prog);
 
-    isSMPass ? Castle.setupSMCam(program) : Castle.setupMainCam(program);
+    isSMPass ? Castle.setupSMCam(program, l) : Castle.setupMainCam(program, l);
 
-    let tintColorValue = tintOverride ? tintOverride : tintColor ? tintColor : [1, 1, 1, 1];
+    let tintColorValue = tintOverride ? tintOverride : tintColor ? tintColor : Castle.ONES4;
     // радуга (аддитивная) видна только днём: гаснет к закату, появляется на рассвете
     if (!isSMPass && Castle.dayNightActive && /rainbow/.test(Castle.currentDrawObject?.meshName || '')) {
       const k = Castle.daylight * Castle.daylight;
       tintColorValue = [tintColorValue[0] * k, tintColorValue[1] * k, tintColorValue[2] * k, tintColorValue[3]];
     }
 
-    let tintColorLocation = Castle.getUniformLocation(program, 'tintColor');
+    const gl = Castle.gl;
 
-    Castle.gl.uniform4fv(tintColorLocation, tintColorValue);
+    gl.uniform4fv(l.tintColor, tintColorValue);
 
-    let uvScaleValue = uvScale ? uvScale : [1, 1, 1, 1];
-
-    let uvScaleLocation = Castle.getUniformLocation(program, 'uvScale');
-
-    Castle.gl.uniform4fv(uvScaleLocation, uvScaleValue);
+    gl.uniform4fv(l.uvScale, uvScale ? uvScale : Castle.ONES4);
 
     // Свечения (аддитивное смешивание: огни, кристаллы, фонари) ночью не темнеют вместе со сценой
     if (!isSMPass) {
       const glowFloor =
         blend && blend[1] === 'ONE' && Settings.settings?.buildingLights !== false ? CastleLighting.nightLevel * Castle.glowNightFloor : 0;
-      Castle.gl.uniform1f(Castle.getUniformLocation(program, 'emissive'), glowFloor);
+      gl.uniform1f(l.emissive, glowFloor);
     }
 
-    // Programmable vertex animation
-    let uStartFreqValue = startFreqValue ? startFreqValue : [0, 0, 0, 0];
-    let uEndAmpValue = endAmpValue ? endAmpValue : [0, 0, 0, 0];
-    let animDirVertFreqValue = animDir ? animDir : [0, 0, 0, 0];
-    let startFreq = Castle.getUniformLocation(program, 'startFreq');
-    Castle.gl.uniform4fv(startFreq, uStartFreqValue);
-    let endAmp = Castle.getUniformLocation(program, 'endAmp');
-    Castle.gl.uniform4fv(endAmp, uEndAmpValue);
-    let animDirVertFreq = Castle.getUniformLocation(program, 'animDirVertFreq');
-    Castle.gl.uniform4fv(animDirVertFreq, animDirVertFreqValue);
-    let time = Castle.getUniformLocation(program, 'time');
-    let timeValue = [Castle.currentTime, 0, 0, 0];
-    Castle.gl.uniform4fv(time, timeValue);
+    // Programmable vertex animation (time — общий для кадра, в setupMainCam/setupSMCam)
+    gl.uniform4fv(l.startFreq, startFreqValue ? startFreqValue : Castle.ZEROS4);
+    gl.uniform4fv(l.endAmp, endAmpValue ? endAmpValue : Castle.ZEROS4);
+    gl.uniform4fv(l.animDirVertFreq, animDir ? animDir : Castle.ZEROS4);
 
-    if (uvScroll[0] > 0) {
-      let e = 1;
-    }
+    gl.uniform2fv(l.uvScroll, uvScroll ? uvScroll : Castle.ZEROS2);
 
-    let uvScrollValue = uvScroll ? uvScroll : [0, 0];
-
-    let uvScrollLocation = Castle.getUniformLocation(program, 'uvScroll');
-
-    Castle.gl.uniform2fv(uvScrollLocation, uvScrollValue);
-
-    let worldMatrix = new Float32Array(16);
+    // матрицы — общие рабочие массивы (uniformMatrix4fv копирует значение), новые на каждый объект не нужны
+    const worldMatrix = Castle._mWorld;
     mat4.identity(worldMatrix);
 
     if (objectRotation) {
-      var objRotationMatrixX = new Float32Array(16);
-      var objRotationMatrixY = new Float32Array(16);
-      var objRotationMatrixZ = new Float32Array(16);
-      mat4.identity(objRotationMatrixX);
-      mat4.identity(objRotationMatrixY);
-      mat4.identity(objRotationMatrixZ);
+      const rotX = Castle._mRotX;
+      const rotY = Castle._mRotY;
+      const rotZ = Castle._mRotZ;
 
-      mat4.fromRotation(objRotationMatrixX, Castle.fmod(objectRotation[0] * Castle.currentTime, 360.0), [1, 0, 0]);
+      mat4.fromRotation(rotX, Castle.fmod(objectRotation[0] * Castle.currentTime, 360.0), Castle.AXIS_X);
 
-      mat4.fromRotation(objRotationMatrixY, Castle.fmod(objectRotation[1] * Castle.currentTime, 360.0), [0, 1, 0]);
+      mat4.fromRotation(rotY, Castle.fmod(objectRotation[1] * Castle.currentTime, 360.0), Castle.AXIS_Y);
 
-      mat4.fromRotation(objRotationMatrixZ, Castle.fmod(objectRotation[2] * Castle.currentTime, 360.0), [0, 0, 1]);
+      mat4.fromRotation(rotZ, Castle.fmod(objectRotation[2] * Castle.currentTime, 360.0), Castle.AXIS_Z);
 
-      mat4.mul(worldMatrix, objRotationMatrixX, worldMatrix);
-      mat4.mul(worldMatrix, objRotationMatrixY, worldMatrix);
-      mat4.mul(worldMatrix, objRotationMatrixZ, worldMatrix);
+      mat4.mul(worldMatrix, rotX, worldMatrix);
+      mat4.mul(worldMatrix, rotY, worldMatrix);
+      mat4.mul(worldMatrix, rotZ, worldMatrix);
     }
 
-    let transformMatrix = transform ? transform : new Float32Array([1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1]);
+    let transformMatrix = transform ? transform : Castle.DEFAULT_TRANSFORM;
     mat4.mul(worldMatrix, worldMatrix, transformMatrix);
 
-    var worldMatrix2 = new Float32Array(16);
+    const worldMatrix2 = Castle._mWorld2;
 
-    var worldMatrix3 = new Float32Array(16);
+    const worldMatrix3 = Castle._mWorld3;
 
     mat4.transpose(worldMatrix2, worldMatrix);
 
     if (rotation) {
-      mat4.fromRotation(worldMatrix3, rotation, [0, 1, 0]);
+      mat4.fromRotation(worldMatrix3, rotation, Castle.AXIS_Y);
 
       mat4.mul(worldMatrix2, worldMatrix3, worldMatrix2);
     }
@@ -3202,40 +3264,38 @@ export class Castle {
       worldMatrix2[14] += translation[2];
     }
 
-    let matWorldUniformLocation = Castle.getUniformLocation(program, 'mWorld');
-
-    Castle.gl.uniformMatrix4fv(matWorldUniformLocation, Castle.gl.FALSE, worldMatrix2);
+    gl.uniformMatrix4fv(l.mWorld, false, worldMatrix2);
 
     // кости скиннинга (VS_SKIN): поза объекта (castleSkin.js — мольберт, питомцы), до первой позы — поза привязки
-    let bonesLocation = Castle.getUniformLocation(program, 'bones');
-    if (bonesLocation) {
-      Castle.gl.uniform4fv(bonesLocation, Castle.currentDrawObject?.bones || Castle.bindPoseBones());
+    if (l.bones) {
+      gl.uniform4fv(l.bones, Castle.currentDrawObject?.bones || Castle.bindPoseBones());
     }
 
+    // Номер текстуры сэмплера всегда один и тот же (tex0 — 0 и т. д.), в программе он сохраняется:
+    // пишем только первый раз (как и раньше, пишется лишь для сэмплеров, у которых есть текстура).
     for (let i = 0; i < textures.length; ++i) {
       if (textures[i]) {
-        Castle.gl.activeTexture(Castle.gl.TEXTURE0 + i);
+        gl.activeTexture(gl.TEXTURE0 + i);
 
-        Castle.gl.bindTexture(Castle.gl.TEXTURE_2D, textures[i]);
+        gl.bindTexture(gl.TEXTURE_2D, textures[i]);
 
-        let attribName = 'tex' + i;
-
-        let texLocation = Castle.getUniformLocation(program, attribName);
-
-        Castle.gl.uniform1i(texLocation, i);
+        if (i >= 4) gl.uniform1i(Castle.getUniformLocation(program, 'tex' + i), i);
+        else if (l.texUnit[i] !== i) {
+          l.texUnit[i] = i;
+          gl.uniform1i(l.tex[i], i);
+        }
       }
     }
 
     if (!isSMPass) {
-      Castle.gl.activeTexture(Castle.gl.TEXTURE0 + textures.length);
+      gl.activeTexture(gl.TEXTURE0 + textures.length);
 
-      Castle.gl.bindTexture(Castle.gl.TEXTURE_2D, Castle.depthTexture);
+      gl.bindTexture(gl.TEXTURE_2D, Castle.depthTexture);
 
-      let attribNameSM = 'smTexture';
-
-      let texLocationSM = Castle.getUniformLocation(program, attribNameSM);
-
-      Castle.gl.uniform1i(texLocationSM, textures.length);
+      if (l.smTextureUnit !== textures.length) {
+        l.smTextureUnit = textures.length;
+        gl.uniform1i(l.smTexture, textures.length);
+      }
     }
 
     if (!isSMPass && isGrid) {
@@ -3268,9 +3328,9 @@ export class Castle {
 
     if (isSMPass) {
       const id = (Castle.currentDrawObject && Castle.currentDrawObject.debugId) || 0;
-      Castle.gl.uniform4f(Castle.getUniformLocation(program, 'smDebugColor'), (id & 255) / 255, ((id >> 8) & 255) / 255, 1, 1);
+      gl.uniform4f(l.smDebugColor, (id & 255) / 255, ((id >> 8) & 255) / 255, 1, 1);
     } else {
-      Castle.gl.uniform4f(Castle.getUniformLocation(program, 'shadowDebug'), Castle.shadowDebugMode, 0, 0, 0);
+      // shadowDebug — общий для кадра, в setupMainCam
       if (Castle.shadowDebugMode && Castle.smColorTexture) {
         Castle.gl.activeTexture(Castle.gl.TEXTURE0 + textures.length + 2);
         Castle.gl.bindTexture(Castle.gl.TEXTURE_2D, Castle.smColorTexture);

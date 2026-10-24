@@ -14227,6 +14227,9 @@ body:has(#wcastle-call)::before {
   :is(#wbuild, #viewbuild) .build-active-bar-item.smartcast {
     border-color: #88ff99;
     box-shadow: inset 0 0 0.4cqw rgba(136, 255, 153, 0.5), 0 0 0.7cqw rgba(136, 255, 153, 0.7);
+    /* фон слота перекрывает вращающийся conic-gradient .smartcast, рамка сплошная — вращать нечего,
+       а анимация --angle каждый кадр пересчитывает стили (до 20% главного потока, без замка — без простоя) */
+    animation: none;
   }
 
   :is(#wbuild, #viewbuild) .build-active-bar-hint {

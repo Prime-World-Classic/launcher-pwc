@@ -213,7 +213,8 @@ export class Easel {
       const sb = Easel.root && Easel.$('.easel-settings');
       if (sb) sb.hidden = !Easel._win;
       Easel._applyVolume();
-      if (Castle.render && Castle.RENDER_LAYER_EASEL !== undefined) Castle.render[Castle.RENDER_LAYER_EASEL] = !pause;
+      // через toggleRender: он будит уснувший цикл отрисовки замка
+      if (Castle.render && Castle.RENDER_LAYER_EASEL !== undefined) Castle.toggleRender(Castle.RENDER_LAYER_EASEL, !pause);
     } catch (e) {
       // вне лаунчера (тестовая страница) замка нет
     }
