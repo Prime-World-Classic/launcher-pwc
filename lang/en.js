@@ -4454,7 +4454,7 @@ export const en = {
       'Battering Ram deals <fiz>%s</fiz> damage (from Strength) to the enemies hit and slows them by <num>50%</num> for <num>2</num> sec after the drag.',
     htalent_854_name: 'Mighty Leap <mana>120</mana>  <CD>1</CD>',
     htalent_854_description:
-      'While the talent key is held (up to <num>1.5</num> sec), the hero prepares to leap: the range grows from <num>8</num> to <num>25</num> and the direction follows the cursor. The hero is immune to control effects while preparing and in flight. Then the hero leaps to the cursor (but no farther than the charged range), turning slightly after the cursor in the air, and on landing deals <fiz>%s</fiz> damage (from Strength) to all enemies within <num>4</num>, slowing them by <num>50%</num> for <num>2</num> sec.',
+      'While the talent key is held (up to <num>1.5</num> sec), the hero prepares to leap: the range grows from <num>8</num> to <num>25</num> and the direction follows the cursor. The hero is immune to control effects while preparing and in flight. Then the hero leaps to the cursor (but no farther than the charged range), turning slightly after the cursor in the air, and on landing deals <fiz>%s</fiz> damage (from Strength) to all enemies within <num>4.0</num>, slowing them by <num>50%</num> for <num>2</num> sec.',
     htalent_855_name: 'Crushing Landing',
     htalent_855_description:
       'The enemies hit by Mighty Leap lose <num>%s</num> Stamina (from Strength) for <num>6</num> sec and are tossed up. The strike radius grows to <num>4.6</num>.',
