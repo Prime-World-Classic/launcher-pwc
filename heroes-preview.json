@@ -3406,5 +3406,34 @@
         "figure": "content/img/heroes-display/66-1-art-20261021.webp"
       }
     ]
+  },
+  {
+    "id": 67,
+    "name": "Таурус",
+    "role": "VANGUARD",
+    "description": "Таурус — могучий минотавр, закованный в механическую броню. Он не знает усталости и не отступает: любую преграду он сносит рогами, а врагов втаптывает в землю.\nЗаряженный удар копытом оглушает всех вокруг, таран протаскивает врагов за собой через поле боя, а мощный прыжок бросает его в самую гущу схватки. Чем больше урона получает Таурус, тем сильнее разгорается его ярость.",
+    "descriptionEn": "Taurus is a mighty minotaur clad in mechanical armor. He never tires and never retreats: he smashes every obstacle with his horns and tramples his enemies into the ground.\nA charged hoof strike stuns everyone around him, his battering ram drags enemies across the battlefield, and a mighty leap throws him into the thick of the fight. The more damage Taurus takes, the fiercer his fury burns.",
+    "bars": {
+      "attak": {
+        "count": 6
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 5
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Таурус",
+        "portrait": "content/hero/67/1.webp",
+        "figure": "content/img/heroes-display/67-1-art-20261024.webp"
+      }
+    ]
   }
 ]

@@ -100,7 +100,7 @@ export function generateHeroSoundsNative() {
 }
 
 export function generateHeroSoundsFallback() {
-  const HERO_IDS = Array.from({ length: 66 }, (_, i) => i + 1);
+  const HERO_IDS = Array.from({ length: 67 }, (_, i) => i + 1);
   const FALLBACK_SOUNDS = ['1', '2', '3', '4'];
 
   for (const heroId of HERO_IDS) {

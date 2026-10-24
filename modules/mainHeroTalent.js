@@ -66,6 +66,8 @@ export const MAIN_HERO_TALENT_BY_HERO_ID = {
   65: 819,
   // Лагуна: «Дитя моря» (Laguna_A0)
   66: 832,
+  // Таурус: «Бурная кровь» (Taurus_A0)
+  67: 845,
 };
 
 export function getMainHeroTalentId(heroId) {

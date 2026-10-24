@@ -228,7 +228,7 @@ async function init() {
     words = (await import(`/content/lang/${lang}.js`))[lang].word;
   }
   applyStaticTexts();
-  const response = await fetch('content/heroes-preview.json?v=20261021-heroes-tab-5');
+  const response = await fetch('content/heroes-preview.json?v=20261024-taurus-1');
   if (!response.ok) throw new Error(t('heroesLoadError'));
   heroes = await response.json();
   if (!heroes.length || heroes.some((hero) => !hero.skins.length)) throw new Error(t('heroesLoadError'));

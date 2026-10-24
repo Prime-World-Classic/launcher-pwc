@@ -1788,6 +1788,7 @@ export const en = {
     hero_64_name: 'Shaman',
     hero_65_name: 'Bomber',
     hero_66_name: 'Laguna',
+    hero_67_name: 'Taurus',
 
     // Скины героев
     hero_1_skin_2_name: 'Musketeer',
@@ -4424,6 +4425,48 @@ export const en = {
     htalent_844_name: 'Still Waters',
     htalent_844_description:
       'While the dolphin prepares, enemies in the target area cannot use talents, and the area of effect is increased by <num>20%</num>.',
+    htalent_845_name: 'Raging Blood',
+    htalent_845_description:
+      'Each time the hero takes any damage from an enemy, their Health regeneration increases by <num>%s</num> (from Strength) for <num>5</num> sec. The effect stacks up to <num>10</num> times, each stack lasts on its own.',
+    htalent_846_name: 'Hoof Strike <mana>60</mana>  <CD>1</CD>',
+    htalent_846_description:
+      'While the talent key is held, the hero charges the strike (at least <num>0.5</num> and at most <num>1.3</num> sec), then stamps the ground with a hoof, dealing from <num>50%</num> up to <num>100%</num> of <fiz>%s</fiz> damage (from Strength) to all enemies around: the longer the charge, the stronger the strike. The strike radius grows while the talent charges: from <num>2.5</num> to <num>11.0</num>.<br>A fully charged strike stuns the enemies hit for <num>1.0</num> sec.',
+    htalent_847_name: 'Restrained Fury <mana>50</mana>  <CD>1</CD>',
+    htalent_847_description:
+      'Every <num>4%</num> of max Health the hero loses to damage gives a fury charge (up to <num>15</num>). When the talent is used, the hero spends all charges and for <num>8</num> sec moves <num>3%</num> faster per charge. Each gathered charge lowers the damage taken by <num>1.2%</num>. No charges gather while the haste lasts.',
+    htalent_848_name: 'Iron Hoof',
+    htalent_848_description:
+      'Hoof Strike stuns the enemies hit already when charged over <num>50%</num>, not only when fully charged.',
+    htalent_849_name: 'Fury Burst',
+    htalent_849_description:
+      'Restrained Fury also makes the hero\'s attacks <num>2%</num> stronger per spent charge.',
+    htalent_850_name: 'Obedience <mana>80</mana>  <CD>1</CD>',
+    htalent_850_description:
+      'Curses an enemy hero for <num>7</num> sec: slows them by <num>20%</num> and stops the cooldowns of their talents. The curse ends earlier if the target deals <num>%s</num> (from Strength) damage.',
+    htalent_851_name: 'Battering Ram <mana>120</mana>  <CD>1</CD>',
+    htalent_851_description:
+      'While the talent key is held (up to <num>1.5</num> sec), the hero prepares to charge: the run range grows from <num>8</num> to <num>25</num> and the direction follows the cursor. The hero is immune to control effects while preparing and running. Then the hero charges forward, hooking all enemies on the way and dragging them to the end of the run. While running, the hero turns after the cursor. On hitting an obstacle the hero stops, and the enemies pinned against it are stunned for <num>1.0</num> sec.',
+    htalent_852_name: 'Frozen Veins',
+    htalent_852_description:
+      'An enemy hero under Obedience is slowed by <num>10%</num> more for each of their class talents on cooldown (up to <num>4</num>).',
+    htalent_853_name: 'Sharp Horns',
+    htalent_853_description:
+      'Battering Ram deals <fiz>%s</fiz> damage (from Strength) to the enemies hit and slows them by <num>50%</num> for <num>2</num> sec after the drag.',
+    htalent_854_name: 'Mighty Leap <mana>120</mana>  <CD>1</CD>',
+    htalent_854_description:
+      'While the talent key is held (up to <num>1.5</num> sec), the hero prepares to leap: the range grows from <num>8</num> to <num>25</num> and the direction follows the cursor. The hero is immune to control effects while preparing and in flight. Then the hero leaps to the cursor (but no farther than the charged range), turning slightly after the cursor in the air, and on landing deals <fiz>%s</fiz> damage (from Strength) to all enemies within <num>4</num>, slowing them by <num>50%</num> for <num>2</num> sec.',
+    htalent_855_name: 'Crushing Landing',
+    htalent_855_description:
+      'The enemies hit by Mighty Leap lose <num>%s</num> Stamina (from Strength) for <num>6</num> sec and are tossed up. The strike radius grows to <num>4.6</num>.',
+    htalent_856_name: 'Titan\'s Blood',
+    htalent_856_description:
+      'Each stack of Raging Blood also increases the highest of the hero\'s Agility and Cunning by <num>%s</num> (from Strength).',
+    htalent_857_name: 'Unstoppable Hoof',
+    htalent_857_description:
+      'The max charge time of Hoof Strike is <num>0.3</num> sec shorter, the hero is immune to control effects while charging, and the talent recharges <num>12%</num> faster for each enemy hero within <num>14</num>.',
+    htalent_858_name: 'Total Submission',
+    htalent_858_description:
+      'Obedience lowers the higher of the target\'s Stamina and Will by <num>%s</num> plus <num>%s</num> for each of their class talents on cooldown (up to <num>4</num>, from Strength) and lasts <num>1</num> sec longer.',
 
     //Таланты
     talent_1_name: 'Focus',

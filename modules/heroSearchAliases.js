@@ -69,6 +69,7 @@ export const HERO_SEARCH_ALIASES = {
   64: ['sham', 'shaman', 'шаман'],
   65: ['bomb', 'bomber', 'бомбер', 'бомба', 'подрывница', 'я иду на мид', 'динамит'],
   66: ['laguna', 'лагуна', 'медуза', 'jellyfish'],
+  67: ['taurus', 'таурус', 'минотавр', 'minotaur', 'бык', 'bull'],
 };
 
 export function getHeroSearchAliases(heroId) {

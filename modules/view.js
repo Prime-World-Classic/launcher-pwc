@@ -129,7 +129,7 @@ export class View {
   static castleActiveTab = 'heroes';
   static castleOpenedBuildHeroId = 0;
   // версия страницы вкладки «Герой» и её каталога (content/heroes-preview.*)
-  static HEROES_TAB_VERSION = '20261024-heroes-cursor-2';
+  static HEROES_TAB_VERSION = '20261024-taurus-1';
   static heroesCatalogueIdsPromise = null;
   // открыта вкладка «Герой» окна билда (View.attachBuildHeroesTab)
   static buildHeroesTabActive = false;
