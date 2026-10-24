@@ -57,8 +57,8 @@ export class TalentData {
 
   // Наполняет предметы списка (build.data body / build.inventory items) данными
   // из локальных файлов. предметы null пропускаются; id без локальных данных —
-  // громко в лог (файлы должны покрывать всю таблицу).
-  static enrich(items) {
+  // громко в лог, если его данных нет и в другом источнике (optional — есть в данных игры).
+  static enrich(items, { optional = () => false } = {}) {
     if (!TalentData._loaded || !Array.isArray(items)) {
       return items;
     }
@@ -77,7 +77,7 @@ export class TalentData {
       const local = id > 0 ? TalentData.common[id] : TalentData.hero[Math.abs(id)];
 
       if (!local) {
-        console.error(`TalentData: талант ${id} отсутствует в talent_data`);
+        if (!optional(id)) console.error(`TalentData: талант ${id} отсутствует в talent_data`);
         continue;
       }
 

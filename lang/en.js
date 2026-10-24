@@ -5,6 +5,8 @@ export const en = {
     nickname: 'Nickname',
     code: 'code/Telegram bot',
     password: 'password',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
     passwordAgain: 'Repeat password',
     login: 'Login',
     authorizationTitle: 'Login',
@@ -1012,7 +1014,8 @@ export const en = {
 
     discardChanges: 'Cancel',
 
-    resetConflictedKeybindings: 'Conflicting keybindings were reset',
+    keybindUnboundFrom: 'Key {key} was removed from: {list}',
+    keybindConflict: 'This key is also assigned to another command',
     savedKeybindings: 'Keybindings saved',
     errorKeybindings: 'Error saving keybindings',
     errorKeybindingsLoad: 'Error loading keybindings',

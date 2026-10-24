@@ -6,6 +6,8 @@ export const ru = {
     nickname: 'Никнейм',
     code: 'Инвайт-код',
     password: 'Пароль',
+    showPassword: 'Показать пароль',
+    hidePassword: 'Скрыть пароль',
     passwordAgain: 'Повторите пароль',
     login: 'Войти',
     authorizationTitle: 'Вход',
@@ -1007,7 +1009,8 @@ export const ru = {
 
     discardChanges: 'Отменить',
 
-    resetConflictedKeybindings: 'Сброс конфликтующих привязок к пустому значению',
+    keybindUnboundFrom: 'Клавиша {key} снята с: {list}',
+    keybindConflict: 'Эта клавиша назначена ещё на другую команду',
     savedKeybindings: 'Клавиши сохранены',
     errorKeybindings: 'Ошибка сохранения клавиш',
     errorKeybindingsLoad: 'Ошибка загрузки клавиш',

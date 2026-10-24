@@ -1,5 +1,6 @@
 import { Lang } from './lang.js';
 import { TALENT_SETS } from './sets.list.js';
+import { BuildClientTooltip } from './buildClientTooltip.js';
 
 export class TalentSets {
   static list() {
@@ -24,6 +25,9 @@ export class TalentSets {
     if (Array.isArray(set._manualOrder) && set._manualOrder.length) {
       const mainId = set._manualOrder[0];
       const absId = Math.abs(mainId);
+      // как в игре — название набора, в который входит главный талант; иначе имя таланта
+      const clientName = BuildClientTooltip.loadedKitName(absId) || BuildClientTooltip.loadedName(absId);
+      if (clientName) return clientName;
       const nameKey = `talent_${absId}_name`;
       const name = Lang.text(nameKey);
       if (name && name !== nameKey) return name;

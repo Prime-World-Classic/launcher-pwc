@@ -1,5 +1,7 @@
 import { Lang } from './lang.js';
 import { TalentData } from './talentData.js';
+import { ClientData } from './clientData/clientData.js';
+import { TalentTooltip } from './clientData/talentTooltip.js';
 import { ParentEvent } from './parentEvent.js';
 import { View } from './view.js';
 import { App } from './app.js';
@@ -32,6 +34,11 @@ Promise.all([Lang.init(), TalentData.init()]).then(() => {
   Splash.init();
 
   NativeAPI.init();
+
+  // данные игры из pile (подсказки талантов, статы героев) — в фоне, к открытию билда готовы
+  ClientData.init()
+    .then((ready) => ready && TalentTooltip.warmUp())
+    .catch((error) => console.warn('ClientData: прогрев не удался', error));
 
   NativeAPI.update((data) => {
     // идущий поиск боя останавливаем: игра не должна запуститься, пока апдейтер пишет её файлы

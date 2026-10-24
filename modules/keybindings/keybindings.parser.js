@@ -1,4 +1,4 @@
-import { validate } from './keybindings.validator.js';
+import { validate, BindParseError } from './keybindings.validator.js';
 
 /**
  * Parse Prime World keybind cfg into file model
@@ -30,8 +30,14 @@ export function parseKeybindCfg(cfgText) {
 
     //  bind or bind_command
     if (line.startsWith('bind ') || line.startsWith('bind_command ')) {
-      const bind = parseBindLine(line);
-      if (bind) currentSection.binds.push(bind);
+      // одна испорченная строка не должна сбрасывать весь файл к клавишам по умолчанию
+      try {
+        const bind = parseBindLine(line);
+        if (bind) currentSection.binds.push(bind);
+      } catch (e) {
+        if (!(e instanceof BindParseError)) throw e;
+        console.warn('input_new.cfg: skipped line:', line, e.message);
+      }
     }
   }
 
@@ -171,26 +177,3 @@ export function tokenize(str) {
   return str.match(regex) || [];
 }
 
-/**
- * Serialize keybind file model into string
- * @param {{ sections: Array<{name: string|null, binds: any[]}> }} fileModel
- * @returns {string} Serialized keybind config
- */
-export function serializeCfg(fileModel) {
-  if (!fileModel) return '';
-  let out = 'unbindall\n';
-
-  for (const section of fileModel.sections) {
-    if (section.name) out += `bindsection ${section.name}\n`;
-
-    for (const bind of section.binds) {
-      const neg = bind.negated ? '!' : '';
-      const val = bind.value ? ` ${bind.value}` : '';
-      const keys = bind.keys && bind.keys.length ? bind.keys.map((k) => `'${k}'`).join(' + ') : "''";
-
-      out += `${bind.type} ${neg}${bind.command}${val} ${keys}\n`;
-    }
-  }
-
-  return out;
-}

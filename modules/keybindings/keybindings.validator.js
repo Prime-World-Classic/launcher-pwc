@@ -1,3 +1,5 @@
+import { UI_BINDS, SHARED_KEY_PAIRS, findBind, comboOf, displayKeys } from './keybindings.schema.js';
+
 export class BindParseError extends Error {
   constructor(message, line) {
     super(message);
@@ -74,109 +76,25 @@ function validateBindCommand(bind, line) {
   }
 }
 
-// key conflicts — только между активными слотами (cmd_action_bar_slot*)
-const SLOT_COMMAND_PREFIX = 'cmd_action_bar_slot';
+// ---------------------------------------------------------------- конфликты клавиш
 
-function createKeysBindMap(fileModel) {
-  const map = new Map();
-
-  for (const section of fileModel.sections) {
-    const sectionName = section.name ?? '__global__';
-
-    for (const bind of section.binds) {
-      if (!bind.command.startsWith(SLOT_COMMAND_PREFIX)) continue;
-      if (!bind.keys || bind.keys.length === 0) continue;
-      if (bind.keys.some((k) => !k)) continue;
-
-      const combo = [...bind.keys].sort().join('+');
-
-      if (!map.has(combo)) {
-        map.set(combo, []);
-      }
-
-      map.get(combo).push({
-        section: sectionName,
-        bind: bind,
-      });
-    }
+/**
+ * Конфликт — одна клавиша (комбинация) у двух команд окна, которые работают одновременно
+ * (одна scope из UI_BINDS): в игре нажатие сработает за обе. Заглушки «не назначено» не считаются.
+ * Возвращает [{ combo, scope, entries: [UI_BINDS…] }].
+ */
+export function findConflicts(fileModel) {
+  const groups = new Map();
+  for (const ui of UI_BINDS) {
+    const keys = displayKeys(findBind(fileModel, ui.command, ui.value));
+    if (!keys.length) continue;
+    const id = `${ui.scope}|${comboOf(keys)}`;
+    if (!groups.has(id)) groups.set(id, { combo: comboOf(keys), scope: ui.scope, entries: [] });
+    groups.get(id).entries.push(ui);
   }
-
-  return map;
+  return [...groups.values()].filter((g) => g.entries.some((a) => g.entries.some((b) => a !== b && !keysMayShare(a, b))));
 }
 
-function isLinkedGroup(entries, sectionName, linkedGroups) {
-
-  for (const group of Object.values(linkedGroups)) {
-
-    if (!group.sections.includes(sectionName)) continue;
-
-    const allMatch = entries.every(e =>
-      group.members.some(m =>
-        m.command === e.bind.command &&
-        m.negated === e.bind.negated
-      )
-    );
-
-    if (!allMatch) continue;
-
-    if (entries.length === group.members.length) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function dedupeEntries(entries) {
-  const seen = new Set();
-  return entries.filter((e) => {
-    const key = [e.section, e.bind.command, e.bind.value ?? '', e.bind.negated ? 1 : 0].join('|');
-
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function isConflict(combo, entries, linkedGroups) {
-  if (!combo) return false;
-
-  const unique = dedupeEntries(entries);
-
-  const sections = new Map();
-
-  for (const e of unique) {
-    if (!sections.has(e.section)) {
-      sections.set(e.section, []);
-    }
-    sections.get(e.section).push(e);
-  }
-
-  for (const [sectionName, sectionEntries] of sections) {
-    if (sectionEntries.length <= 1) continue;
-
-    if (!isLinkedGroup(sectionEntries, sectionName, linkedGroups)) {
-      return {
-        combo: combo,
-        section: sectionName,
-        entries: sectionEntries
-      };
-    }
-  }
-
-  return false;
-}
-
-export function findConflicts(fileModel, linkedGroups) {
-  const conflicts = [];
-  const keysMap = createKeysBindMap(fileModel);
-
-  for (const [combo, entries] of keysMap.entries()) {
-    const conflict = isConflict(combo, entries, linkedGroups);
-    if (conflict) {
-      conflicts.push(conflict);
-    }
-  }
-
-  return conflicts;
+export function keysMayShare(a, b) {
+  return SHARED_KEY_PAIRS.some(([x, y]) => (a.command === x && b.command === y) || (a.command === y && b.command === x));
 }

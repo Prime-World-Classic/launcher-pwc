@@ -26,6 +26,7 @@ export class PreloadImages {
   // Один общий IntersectionObserver на всё приложение вместо отдельного на каждый элемент.
   // Раньше каждый `new PreloadImages()` создавал свой observer — в библиотеке талантов это сотни observer'ов.
   static _observer = null;
+  static fallbacks = {}; // имя -> (element) => url | null | Promise
   static _callbacks = new WeakMap();
   static _loadedUrls = new Set();
 
@@ -84,7 +85,21 @@ export class PreloadImages {
         { once: true },
       );
       // Без этого элемент с битой картинкой навсегда оставался с opacity: 0.
-      preload.addEventListener('error', reveal, { once: true });
+      // data-fallback — запасной источник картинки (PreloadImages.fallbacks), например иконка из данных игры.
+      preload.addEventListener(
+        'error',
+        () => {
+          const fallback = PreloadImages.fallbacks[element.dataset.fallback];
+          if (!fallback) return reveal();
+          Promise.resolve(fallback(element))
+            .catch(() => null)
+            .then((fallbackUrl) => {
+              if (fallbackUrl) element.style.backgroundImage = `url("${fallbackUrl}")`;
+              reveal();
+            });
+        },
+        { once: true },
+      );
       preload.src = url;
     }
   }

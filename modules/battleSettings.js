@@ -11,7 +11,7 @@ import { Voice } from './voice.js';
 import { domAudioPresets } from './domAudioPresets.js';
 import { KeybindStore } from './keybindings/keybindings.store.js';
 import { loadKeybinds, saveKeybinds } from './keybindings/keybindings.io.js';
-import { normalizeKey } from './keybindings/keybindings.input.js';
+import { normalizeKey, attachGameKeyCapture } from './keybindings/keybindings.input.js';
 
 // ---------------------------------------------------------------- user.cfg
 
@@ -301,14 +301,30 @@ export function voiceHotkeyInput(settingKey, style = 'bs-key') {
   return input;
 }
 
+// клавиша игры (input_new.cfg): имена клавиш — как у игры, конфликт подсвечивается
 function bindKeyInput(command, value = null, onChange = null) {
-  return keyInput(
-    () => KeybindStore.getBind(command, value)?.keys,
-    (keys) => {
+  const input = DOM({ tag: 'input', style: 'bs-key', readOnly: true });
+  const refresh = () => {
+    input.value = formatKeys(KeybindStore.displayKeys(command, value));
+    const conflict = KeybindStore.isConflicted(command, value);
+    input.classList.toggle('is-conflict', conflict);
+    input.title = conflict ? Lang.text('keybindConflict') : '';
+  };
+  attachGameKeyCapture(input, {
+    onKeys: (keys) => {
       KeybindStore.setBind(command, keys, value);
+      refresh();
       onChange?.();
     },
-  );
+    onClear: () => {
+      KeybindStore.clearBind(command, value);
+      refresh();
+      onChange?.();
+    },
+  });
+  input.refresh = refresh;
+  refresh();
+  return input;
 }
 
 function header(label) {

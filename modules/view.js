@@ -5,6 +5,7 @@ import { Window } from './window.js';
 import { Rank } from './rank.js';
 import { Division } from './division.js';
 import { Build } from './build.js';
+import { avatarBackground } from './build/heroPanel.js';
 import { App } from './app.js';
 import { Voice } from './voice.js';
 import { Chat } from './chat.js';
@@ -89,6 +90,36 @@ const KEYBOARD_LAYOUT_POSITIONS = (() => {
   return positions;
 })();
 
+const PASSWORD_EYE_SVG =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 4.5 12 4.5 22.5 12 22.5 12 18.5 19.5 12 19.5 1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/><path class="password-eye-slash" d="M3.5 3.5l17 17"/></svg>';
+
+// Поле пароля с глазиком «показать/скрыть». Само поле остаётся тем же input (его читают
+// App.authorization / App.registration), обёртка только добавляет кнопку.
+function passwordField(input) {
+  const eye = document.createElement('button');
+  eye.type = 'button';
+  eye.className = 'password-eye';
+  eye.tabIndex = -1;
+  eye.innerHTML = PASSWORD_EYE_SVG;
+  const sync = () => {
+    const shown = input.type === 'text';
+    eye.classList.toggle('is-shown', shown);
+    eye.title = Lang.text(shown ? 'hidePassword' : 'showPassword');
+    eye.setAttribute('aria-label', eye.title);
+  };
+  // mousedown не уводит фокус из поля, клик переключает
+  eye.addEventListener('mousedown', (e) => e.preventDefault());
+  eye.addEventListener('click', () => {
+    const caret = input.selectionStart;
+    input.type = input.type === 'password' ? 'text' : 'password';
+    sync();
+    input.focus();
+    if (caret != null) input.setSelectionRange(caret, caret);
+  });
+  sync();
+  return DOM({ style: 'password-input' }, input, eye);
+}
+
 export class View {
   static mmQueueMap = {};
   static _actionBarCfgEnsured = false;
@@ -98,7 +129,7 @@ export class View {
   static castleActiveTab = 'heroes';
   static castleOpenedBuildHeroId = 0;
   // версия страницы вкладки «Герой» и её каталога (content/heroes-preview.*)
-  static HEROES_TAB_VERSION = '20261021-heroes-tab-5';
+  static HEROES_TAB_VERSION = '20261024-heroes-cursor-2';
   static heroesCatalogueIdsPromise = null;
   // открыта вкладка «Герой» окна билда (View.attachBuildHeroesTab)
   static buildHeroesTabActive = false;
@@ -957,7 +988,7 @@ export class View {
   static castleTotalCrystal = DOM({ tag: 'div', style: ['question-icon'] }, DOM({ style: 'quest-counter' }, ''));
 
   static setCss(name = 'content/style.css') {
-    const cssVersion = '20261023-build-buttons-2';
+    const cssVersion = '20261024-keybinds-1';
     const separator = name.includes('?') ? '&' : '?';
     let css = DOM({ tag: 'link', rel: 'stylesheet', href: `${name}${separator}v=${cssVersion}` });
 
@@ -1126,7 +1157,7 @@ export class View {
           { style: 'login-box-forma-inputs' },
           DOM({ style: ['login-box-forma-title', 'auth-window-title'] }, Lang.text('authorizationTitle')),
           login,
-          password,
+          passwordField(password),
           DOM(
             { style: 'login-box-forma-buttons' },
             DOM(
@@ -1301,8 +1332,8 @@ export class View {
           fraction,
           inviteContainer,
           login,
-          password,
-          password2,
+          passwordField(password),
+          passwordField(password2),
           DOM(
             { style: 'login-box-forma-buttons' },
             submit,
@@ -5456,89 +5487,10 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
   }
 
   static async build(heroId, targetId = 0, isWindow = false, options = {}) {
-    const body = DOM({ style: 'build-horizontal' });
     requestAnimationFrame(() => Voice.updatePanelPosition());
-
-    const initialized = await Build.init(heroId, targetId, isWindow, options);
-    if (!initialized) {
+    const body = await Build.render(heroId, targetId, isWindow, options);
+    if (!body) {
       return null;
-    }
-
-    const libraryTitle = DOM({ style: 'build-library-title' }, DOM({ tag: 'span' }, Lang.text('library')));
-    const libraryTooltip = DOM({ style: 'build-library-tooltip' },
-      DOM({ style: 'account-rating-tooltip-title' }, Lang.text('buildLibraryTooltipTitle')),
-      DOM({ style: 'account-rating-tooltip-body' }, Lang.text('buildLibraryTooltipBody')),
-    );
-    libraryTooltip.setAttribute('role', 'tooltip');
-    libraryTitle.append(libraryTooltip);
-    const setsTitle = Build.inventoryView.querySelector('.build-sets-section > .build-inventory-legend');
-    if (setsTitle) {
-      setsTitle.append(DOM({ style: ['build-library-tooltip', 'build-sets-tooltip'], role: 'tooltip' },
-        DOM({ style: 'account-rating-tooltip-title' }, Lang.text('sets')),
-        DOM({ style: 'account-rating-tooltip-body' }, Lang.text('buildSetsTooltipBody')),
-      ));
-    }
-    if (Build.statFilterHighlightCountWrapEl) Build.buildActionsView.prepend(Build.statFilterHighlightCountWrapEl);
-
-    body.append(
-      DOM({
-        id: 'wbuild_help',
-        domaudio: domAudioPresets.defaultButton,
-        style: 'help-button',
-        data: { tooltip: Lang.text('help') },
-        ariaLabel: Lang.text('help'),
-        event: [
-          'click',
-          () => {
-            HelpSplash(Lang.text('build_help_content'));
-          },
-        ],
-      }),
-      DOM({ style: 'build-left' }, Build.heroView),
-      DOM(
-        { style: 'build-center' },
-        Build.buildActionsView,
-        DOM({ style: 'build-field-with-tabs' }, Build.listView, DOM({ style: 'build-field-container' }, Build.levelView, Build.fieldView)),
-        DOM(
-          { style: 'build-active-bar-container' },
-          Build.activeBarKeybindingsView,
-          Build.activeBarView,
-          DOM({ style: 'build-smartcast-tooltip', role: 'tooltip' }),
-          DOM({ style: 'build-active-bar-hint' }, Lang.text('smartcastDescription')),
-        ),
-      ),
-      DOM({ style: 'build-right' }, libraryTitle, Build.rarityView, Build.librarySearchView, Build.talentsAndSetsView, Build.inventoryView),
-    );
-    // Настройки билда — слева от «?», сразу вместе с окном: таймер attach при смене билда давал мигание.
-    if (Build.buildSettingsButton) body.querySelector('#wbuild_help')?.before(Build.buildSettingsButton);
-
-    if (!isWindow) {
-      body.append(
-        DOM(
-          {
-            domaudio: domAudioPresets.closeButton,
-            style: ['build-list-close', 'close-button'],
-            title: Lang.text('titleClose'),
-            event: [
-              'click',
-              () => {
-                Build.CleanInvalidDescriptions();
-                if (isWindow) {
-                  View.show('castle');
-                } else {
-                  View.show('builds');
-                }
-              },
-            ],
-          },
-          DOM({
-            tag: 'img',
-            src: 'content/icons/close-cropped.svg',
-            alt: Lang.text('titleClose'),
-            style: 'close-image-style',
-          }),
-        ),
-      );
     }
 
     // вкладка «Герой» — только для героев из каталога: у новых героев (Лагуна) ещё нет артов
@@ -5673,15 +5625,20 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
     const selectedTab = buildTabs.find((tab) => tab.classList.contains('list-highlight'));
     const panel = DOM({ style: 'build-heroes-panel', hidden: true, role: 'tabpanel' });
     let frame = null;
-    const portrait = DOM({ tag: 'img', alt: '', style: 'build-heroes-portrait' });
-    const nameplate = DOM({ style: ['name', 'build-heroes-name'] });
-    const selection = DOM({ style: ['build-hero-avatar-and-name', 'build-heroes-selection'], hidden: true }, portrait, nameplate);
+    // На «Герое» остаётся аватар самого окна билда (рамка, ранг, стрелки, имя — build/heroPanel.js):
+    // вкладка меняет только содержимое под вкладками, а облик, который листают на странице, показывает на нём же.
+    const avatar = body.querySelector('.build-avatar-wrap .avatar');
+    const nameplate = body.querySelector('.build-hero-avatar-and-name > .name');
+    const showSkin = (skin, name) => {
+      if (avatar) avatarBackground(avatar, heroId, skin);
+      if (nameplate) Build.setHeroName(nameplate, name ?? Lang.heroName(heroId, skin));
+    };
+    const showSelectedSkin = () => showSkin(View.createHeroesHost(preview).selectedSkin(heroId));
     let navigating = false;
     const navigateHero = async (direction) => {
       if (navigating) return;
       navigating = true;
       const active = body.classList.contains('build-horizontal--heroes');
-      for (const button of selection.querySelectorAll('button')) button.disabled = true;
       try {
         if (options.onHeroNavigate) await options.onHeroNavigate(direction, active);
         else {
@@ -5690,16 +5647,8 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
         }
       } finally {
         navigating = false;
-        for (const button of selection.querySelectorAll('button')) button.disabled = false;
       }
     };
-    for (const [direction, label] of [['prev', Lang.text('heroesPrevHero')], ['next', Lang.text('heroesNextHero')]]) {
-      selection.append(DOM({
-        tag: 'button', type: 'button', style: ['build-heroes-nav', `build-heroes-nav--${direction}`],
-        title: label, ariaLabel: label, disabled: true,
-        event: ['click', () => navigateHero(direction === 'prev' ? -1 : 1)],
-      }));
-    }
     const heroTab = DOM({
       tag: 'button', type: 'button', style: ['build-tab-item', 'btn-hover', 'list-not-highlight', 'build-heroes-tab'],
       ariaPressed: 'false',
@@ -5714,12 +5663,7 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
     const ensureFrame = () => {
       if (frame) return;
       window.pwHeroesHost = View.createHeroesHost(preview);
-      // пока страница героя грузится, над вкладкой — текущий облик героя, а не пустое кольцо
       const currentSkin = window.pwHeroesHost.selectedSkin(heroId);
-      portrait.src = `content/hero/${heroId}/${currentSkin}.webp`;
-      portrait.alt = Lang.heroName(heroId, currentSkin);
-      Build.setHeroName(nameplate, portrait.alt);
-      for (const button of selection.querySelectorAll('button')) button.disabled = false;
       const live = View.buildHeroesFrame;
       const adopt = !!live?.isConnected && typeof panel.moveBefore === 'function';
       if (adopt) {
@@ -5747,14 +5691,13 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
         View.buildHeroesFrame = frame;
       }
       const shownFrame = frame;
+      // облик, открытый на странице, — на аватаре окна, пока стоим на «Герое»
       shownFrame.pwSyncSelection = () => {
+        if (!body.classList.contains('build-horizontal--heroes')) return;
         const doc = shownFrame.contentDocument;
-        const image = doc?.getElementById('hero-portrait');
-        const name = doc?.getElementById('hero-name');
-        if (!image?.getAttribute('src') || !name) return;
-        portrait.src = image.src;
-        portrait.alt = name.textContent;
-        Build.setHeroName(nameplate, name.textContent);
+        const skin = Number(/\/hero\/\d+\/(\d+)\.webp/.exec(doc?.getElementById('hero-portrait')?.getAttribute('src') || '')?.[1]);
+        const name = doc?.getElementById('hero-name')?.textContent;
+        if (skin > 0 && name) showSkin(skin, name);
       };
       shownFrame.pwKeydown = (event) => {
         if (event.key !== 'Escape') return;
@@ -5794,9 +5737,11 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
     const setActive = (active) => {
       // запоминаем вкладку: следующий герой (Ф/В, стрелки, клик по герою внизу) откроется тоже на «Герой»
       View.buildHeroesTabActive = active;
+      const wasActive = body.classList.contains('build-horizontal--heroes');
       body.classList.toggle('build-horizontal--heroes', active);
       panel.hidden = !active;
-      selection.hidden = !active;
+      // с «Героя» на билд — на аватаре снова выбранный облик, а не тот, что листали
+      if (wasActive && !active) showSelectedSkin();
       heroTab.classList.toggle('list-highlight', active);
       heroTab.classList.toggle('list-not-highlight', !active);
       heroTab.setAttribute('aria-pressed', String(active));
@@ -5812,6 +5757,7 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
         Build.toggleBuildSettingsPanel(false);
         Build.descriptionView.style.display = 'none';
         ensureFrame();
+        frame?.pwSyncSelection?.();
       }
     };
     heroTab.addEventListener('click', () => setActive(true));
@@ -5838,10 +5784,10 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
       }
     }, true);
     body.append(panel);
-    Build.heroView.append(selection);
-    if (options.onHeroNavigate) body.addEventListener('click', (event) => {
+    // стрелки у аватара: в превью — своя навигация, на «Герое» — смена героя с этой же вкладкой
+    body.addEventListener('click', (event) => {
       const button = event.target.closest('.build-hero-nav-btn');
-      if (!button) return;
+      if (!button || !(options.onHeroNavigate || body.classList.contains('build-horizontal--heroes'))) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       navigateHero(button.classList.contains('build-hero-nav-btn-left') ? -1 : 1);

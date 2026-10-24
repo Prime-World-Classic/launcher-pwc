@@ -6,6 +6,8 @@ export const be = {
     nickname: 'Нікнейм',
     code: 'Код/бот тэлеграм',
     password: 'Пароль',
+    showPassword: 'Паказаць пароль',
+    hidePassword: 'Схаваць пароль',
     passwordAgain: 'Паўтарыце пароль',
     login: 'Увайсці',
     authorizationTitle: 'Уваход',

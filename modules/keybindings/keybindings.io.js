@@ -1,12 +1,11 @@
 import { App } from '../app.js';
 import { Lang } from '../lang.js';
 import { DOM } from '../dom.js';
-import { normalizeFileModel } from './keybindings.schema.js';
+import { createEmptyFileModel, normalizeFileModel, repairFileModel } from './keybindings.schema.js';
 import { KeybindStore } from './keybindings.store.js';
 import { parseKeybindCfg } from './keybindings.parser.js';
 import { serializeCfg } from './keybindings.serializer.js';
 import { NativeAPI } from '../nativeApi.js';
-import { createEmptyFileModel } from './keybindings.schema.js';
 import { BindParseError } from './keybindings.validator.js';
 
 async function createDefaultConfigFile(targetPath) {
@@ -94,100 +93,55 @@ export async function findConfigFile() {
   return null;
 }
 
-export async function ensureActionBarSlotsInNativeCfg(cfgOverride = null) {
+function modelFromText(text) {
+  const model = normalizeFileModel(createEmptyFileModel(), parseKeybindCfg(text));
+  const fixes = repairFileModel(model);
+  return { model, fixes };
+}
+
+/**
+ * Чинит input_new.cfg игрока (repairFileModel): пустые и неизвестные игре клавиши, из-за
+ * которых команда «зажата» (камера уезжает сама), старые имена лаунчера, нет строк слотов.
+ * Пишет файл, только если было что чинить.
+ */
+export async function repairNativeCfg(cfgOverride = null) {
   if (!NativeAPI.status) return { changed: false };
 
   const cfg = cfgOverride || (await findConfigFile());
   if (!cfg || cfg.type !== 'native' || !cfg.path) return { changed: false };
 
-  const configPath = cfg.path;
   let data = '';
   try {
-    data = await NativeAPI.fileSystem.promises.readFile(configPath, 'utf8');
+    data = await NativeAPI.fileSystem.promises.readFile(cfg.path, 'utf8');
   } catch {
     return { changed: false };
   }
 
-  const hasCrlf = data.includes('\r\n');
-  const eol = hasCrlf ? '\r\n' : '\n';
-  const lines = data.split(/\r?\n/);
-  const present = new Set();
-  const emptySlotsToFill = [];
-  let lastFoundLineIndex = -1;
-  const defaultActionBarBindings = {
-    11: "'CTRL' + 'F11'",
-    12: "'CTRL' + 'F12'",
-    13: "'F13'",
-    14: "'F14'",
-    15: "'F15'",
-    16: "'F16'",
-    17: "'F17'",
-    18: "'F18'",
-    19: "'F19'",
-    20: "'F20'",
-    21: "'F21'",
-    22: "'F22'",
-    23: "'F23'",
-    24: "'F24'",
-  };
+  const { model, fixes } = modelFromText(data);
+  if (!fixes.length) return { changed: false };
 
-  const re = /^\s*bind\s+cmd_action_bar_slot(\d+)\b/;
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(re);
-    if (!m) continue;
-
-    const n = Number(m[1]);
-    if (!Number.isFinite(n) || n < 1 || n > 24) continue;
-
-    present.add(n);
-    lastFoundLineIndex = i;
-
-    if (n >= 11 && n <= 24) {
-      const rhsMatch = lines[i].match(/^\s*bind\s+cmd_action_bar_slot\d+\s*(.*)$/);
-      const rhs = String(rhsMatch?.[1] || '').trim();
-      if (!rhs || rhs === "''" || rhs === '""') {
-        lines[i] = `bind cmd_action_bar_slot${n} ${defaultActionBarBindings[n]}`;
-        emptySlotsToFill.push(n);
-      }
-    }
-  }
-
-  const missing = [];
-  for (let n = 1; n <= 24; n++) {
-    if (!present.has(n)) missing.push(n);
-  }
-
-  if (missing.length) {
-    const toInsert = missing.map((n) => `bind cmd_action_bar_slot${n} ${defaultActionBarBindings[n] || "''"}`);
-    if (lastFoundLineIndex >= 0) lines.splice(lastFoundLineIndex + 1, 0, ...toInsert);
-    else lines.push(...toInsert);
-  }
-
-  if (!missing.length && !emptySlotsToFill.length) return { changed: false };
-
-  let out = lines.join(eol);
-  if (!out.endsWith(eol)) out += eol;
-
-  await NativeAPI.fileSystem.promises.writeFile(configPath, out, 'utf8');
-  return { changed: true, configPath, missingAdded: missing.length, emptyFixed: emptySlotsToFill.length };
+  await NativeAPI.fileSystem.promises.writeFile(cfg.path, serializeCfg(model), 'utf8');
+  console.log('input_new.cfg repaired:', fixes);
+  return { changed: true, configPath: cfg.path, fixes };
 }
+
+// прежнее имя (view.js)
+export const ensureActionBarSlotsInNativeCfg = repairNativeCfg;
 
 export async function loadKeybindsNative(cfg) {
   const data = await NativeAPI.fileSystem.promises.readFile(cfg.path, 'utf8');
-  const parsed = parseKeybindCfg(data);
-  const schema = createEmptyFileModel();
+  const { model, fixes } = modelFromText(data);
+  if (fixes.length) {
+    await NativeAPI.fileSystem.promises.writeFile(cfg.path, serializeCfg(model), 'utf8');
+    console.log('input_new.cfg repaired:', fixes);
+  }
 
-  KeybindStore.init(normalizeFileModel(schema, parsed), cfg.type, cfg.path);
-  KeybindStore.notify();
+  KeybindStore.init(model, cfg.type, cfg.path);
 }
 
 export async function loadKeybindsBrowser(cfg) {
   const data = await fetch(cfg.path).then((r) => r.text());
-  const parsed = parseKeybindCfg(data);
-  const schema = createEmptyFileModel();
-
-  KeybindStore.init(normalizeFileModel(schema, parsed), cfg.type, cfg.path);
-  KeybindStore.notify();
+  KeybindStore.init(modelFromText(data).model, cfg.type, cfg.path);
 }
 
 export async function loadKeybinds() {
@@ -196,7 +150,6 @@ export async function loadKeybinds() {
 
   try {
     if (cfg.type === 'native') {
-      await ensureActionBarSlotsInNativeCfg(cfg);
       await loadKeybindsNative(cfg);
     } else {
       await loadKeybindsBrowser(cfg);

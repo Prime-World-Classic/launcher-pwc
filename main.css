@@ -677,6 +677,57 @@ input::placeholder {
   padding-right: 5vh;
 }
 
+/* поле пароля с глазиком «показать/скрыть» (view.js passwordField) */
+.password-input {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin: 0 4% 2vh;
+}
+
+.login-box-forma-inputs .password-input input {
+  width: 100%;
+  margin: 0;
+  padding-left: 5vh;
+  padding-right: 5vh;
+}
+
+.password-eye {
+  position: absolute;
+  right: 1.2vh;
+  top: 50%;
+  width: 3.4vh;
+  height: 3.4vh;
+  padding: 0.4vh;
+  transform: translateY(-50%);
+  border: 0;
+  background: none;
+  color: rgba(252, 229, 188, 0.62);
+  cursor: var(--cursor-pointer);
+  transition: color 0.16s ease;
+}
+
+.password-eye:hover,
+.password-eye.is-shown {
+  color: rgba(252, 229, 188, 0.96);
+}
+
+.password-eye svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* перечёркнут, пока пароль скрыт */
+.password-eye.is-shown .password-eye-slash {
+  display: none;
+}
+
 .login-box-forma-inputs input::placeholder {
   color: rgba(210, 220, 225, 0.78);
   font: inherit;
@@ -3211,6 +3262,118 @@ button.build-action-item.btn-hover.color-1 .btn-duplicate {
   font: 1.6cqh / 1 'DejaVuSans', sans-serif;
   color: rgb(107, 199, 71);
   margin-top: 1cqh;
+}
+
+/* Talent tooltip from the game data (modules/clientData): game markup, font styles, images and frame.
+   Font-style colors (.pw-tt-s-NAME), the font and the frame image are installed at runtime from the piles. */
+.build-description.build-description--client {
+  background: none;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  max-width: 46cqh;
+}
+
+.pw-tt {
+  font: 1.5cqh / 1.35 'PW Tooltip', 'DejaVuSans', sans-serif;
+  color: rgb(221, 221, 221);
+  text-align: left;
+}
+
+/* --pw-tt-frame: Tooltip_Back.dds of the game (9-slice, 12px border), set at runtime */
+.pw-tt.pw-tt-frame {
+  border: 12px solid transparent;
+  border-image: var(--pw-tt-frame) 12 fill / 12px round;
+  padding: 0.4cqh 0.8cqh;
+  background: rgba(32, 31, 30, 0.6);
+  background-clip: padding-box;
+}
+
+.build-description .pw-tt div {
+  margin-top: 0;
+}
+
+.build-description .pw-tt span[class^='pw-tt'] {
+  display: inline;
+  font: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+.build-description .pw-tt span.pw-tt-s {
+  font-size: 1em;
+}
+
+.build-description .pw-tt span.pw-tt-gap {
+  display: block;
+  height: calc(var(--pw-tt-gap, 0.5) * 1em);
+}
+
+.build-description .pw-tt span.pw-tt-space {
+  display: inline-block;
+  width: calc(var(--pw-tt-space, 1) * 0.12em);
+}
+
+.build-description .pw-tt span.pw-tt-atom {
+  white-space: nowrap;
+}
+
+.build-description .pw-tt span.pw-tt-right {
+  float: right;
+  margin-left: 1em;
+}
+
+.pw-tt .pw-tt-center {
+  text-align: center;
+}
+
+.pw-tt .pw-tt-right {
+  text-align: right;
+}
+
+.pw-tt .pw-tt-img {
+  vertical-align: middle;
+  margin: -0.1em 0.05em 0;
+}
+
+/* Set panel in the game tooltip frame: kit block, game separator, set icons, mouse hints */
+.build-description .pw-tt.pw-tt-set {
+  max-width: 46cqh;
+}
+
+.build-description .pw-tt .pw-tt-separator {
+  margin-top: 0.4em;
+}
+
+.build-description .pw-tt .build-set-desc-icons {
+  margin-top: 0.5em;
+  gap: 0.35em;
+}
+
+.build-description .pw-tt .build-set-desc-icon {
+  width: 2.6em;
+  height: 2.6em;
+  border-radius: 0.3em;
+}
+
+.build-description .pw-tt .build-set-desc-hints {
+  margin-top: 0.6em;
+  opacity: 1;
+  color: rgb(150, 150, 150);
+}
+
+.build-description .pw-tt .build-set-desc-hints div {
+  margin-top: 0.2em;
+  font-size: 0.85em;
+  line-height: 1.3;
+}
+
+.pw-tt cd {
+  color: inherit;
+}
+
+.pw-tt cd::after {
+  content: none;
 }
 
 .main-body {
@@ -13049,7 +13212,7 @@ body:has(#wcastle-call)::before {
 
 /* Разделы прячутся через visibility, а она наследуется и анимируется вместе с transition: all
    (.btn-hover у кнопок действий и т. п.) — без этого кнопки исчезают с задержкой 0,4 с. */
-.build-horizontal--heroes > :is(.build-left, .build-center, .build-right) *:not(.build-list, .build-list *, .build-heroes-selection, .build-heroes-selection *) {
+.build-horizontal--heroes > :is(.build-left, .build-center, .build-right) *:not(.build-list, .build-list *, .build-hero-avatar-and-name, .build-hero-avatar-and-name *, .build-hero-nav-controls, .build-hero-nav-controls *) {
   transition: none;
 }
 
@@ -13061,41 +13224,14 @@ body:has(#wcastle-call)::before {
   display: none;
 }
 
-:is(#wbuild, #viewbuild) .build-heroes-selection[hidden] {
-  display: none;
-}
-
 .build-horizontal--heroes > .build-left {
   z-index: 45;
 }
 
-.build-heroes-selection {
-  z-index: 50;
+/* The hero tab keeps the build window's own avatar (frame, rank, arrows, name): only the content
+   under the tabs changes, so switching tabs does not swap the avatar for a look-alike. */
+.build-horizontal--heroes :is(.build-hero-avatar-and-name, .build-hero-nav-controls) {
   visibility: visible;
-}
-
-.build-heroes-portrait {
-  display: block;
-  margin: 0 auto;
-  width: 19.4cqh;
-  height: 19.4cqh;
-  object-fit: contain;
-  background: url('hero/background.png') center / contain no-repeat;
-}
-
-.build-heroes-nav {
-  position: absolute;
-  z-index: 4;
-  top: 12cqh;
-  width: 5.8cqh;
-  height: 5.8cqh;
-  border: 0;
-  padding: 0;
-  background: transparent center / contain no-repeat;
-}
-
-.build-heroes-nav:hover:not(:disabled) {
-  filter: brightness(1.14);
 }
 
 .build-hero-name-text {
@@ -13119,16 +13255,6 @@ body:has(#wcastle-call)::before {
   .build-hero-name--overflowing:is(:hover, :focus-visible) .build-hero-name-text {
     animation: none;
   }
-}
-
-.build-heroes-nav--prev {
-  left: calc(50% - 11.9cqh);
-  background-image: url('img/goLeft.png');
-}
-
-.build-heroes-nav--next {
-  right: calc(50% - 11.9cqh);
-  background-image: url('img/goRight.png');
 }
 
 #wbuild.build-preview .build-settings-panel {
@@ -15103,6 +15229,14 @@ body:has(#wcastle-call)::before {
 .bs-key:focus {
   border-color: rgb(255, 205, 80);
   box-shadow: 0 0 0.8cqh rgba(255, 196, 64, 0.6);
+}
+
+/* клавиша назначена ещё на другую команду, которая работает одновременно */
+.bs-key.is-conflict,
+.castle-keybinding-input.is-conflict {
+  background: #5a1a12;
+  border-color: rgb(230, 90, 60);
+  box-shadow: 0 0 0.8cqh rgba(230, 80, 50, 0.7);
 }
 
 .bs-select {

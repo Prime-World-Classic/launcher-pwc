@@ -6,7 +6,7 @@ import { NativeAPI } from '../nativeApi.js';
 import { Voice } from '../voice.js';
 import { KeybindStore } from './keybindings.store.js';
 import { loadKeybinds, saveKeybinds, loadKeybindsBrowser } from './keybindings.io.js';
-import { normalizeKey } from './keybindings.input.js';
+import { normalizeKey, attachGameKeyCapture } from './keybindings.input.js';
 
 const unsubscribers = [];
 
@@ -22,24 +22,15 @@ function createKeyInput({ command, value = null }) {
   });
 
   function refresh() {
-    const bind = KeybindStore.getBind(command, value);
-    input.value = formatKeys(bind?.keys);
+    input.value = formatKeys(KeybindStore.displayKeys(command, value));
+    const conflict = KeybindStore.isConflicted(command, value);
+    input.classList.toggle('is-conflict', conflict);
+    input.title = conflict ? Lang.text('keybindConflict') : '';
   }
 
-  input.addEventListener('keydown', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (e.key === 'Escape' || e.key === 'Enter') {
-      input.blur();
-      return;
-    }
-    if (e.key === 'Backspace') {
-      KeybindStore.setBind(command, [''], value);
-      return;
-    }
-    const keys = normalizeKey(e);
-    KeybindStore.setBind(command, keys, value);
+  attachGameKeyCapture(input, {
+    onKeys: (keys) => KeybindStore.setBind(command, keys, value),
+    onClear: () => KeybindStore.clearBind(command, value),
   });
 
   unsubscribers.push(KeybindStore.subscribe(refresh));
@@ -225,7 +216,12 @@ export async function keybindings() {
       event: [
         'click',
         async () => {
-          await Settings.WriteSettings();
+          // клавиши игры сохраняются, даже если запись настроек лаунчера не удалась
+          try {
+            await Settings.WriteSettings();
+          } catch (e) {
+            console.error('Failed to save launcher settings:', e);
+          }
           NativeAPI.refreshVoiceHotkeys?.();
           const currentVoiceToggleHotkey = JSON.stringify(Array.isArray(Settings.settings?.voiceToggleHotkey) ? Settings.settings.voiceToggleHotkey : []);
           const currentVoiceDropHotkey = JSON.stringify(Array.isArray(Settings.settings?.voiceDropHotkey) ? Settings.settings.voiceDropHotkey : []);
