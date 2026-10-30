@@ -1,0 +1,3439 @@
+[
+  {
+    "id": 1,
+    "name": "Дуэлянт",
+    "role": "VANGUARD",
+    "description": "Ловкий и быстрый Дуэлянт – опасный противник, несмотря на слабую защиту. Ослепить врага дымовой гранатой, обрушить на него шквал ударов чертовски острого меча и добить противника финальным выстрелом – вот нечестная, но очень эффективная тактика Дуэлянта.\nВдобавок невероятное везение героя позволяет ему избежать части урона. А непростой клинок Дуэлянта при ударе может нанести урон всем врагам вокруг.",
+    "descriptionEn": "Agile and quick, the Duelist is a dangerous opponent despite weak defense. Blinding the enemy with a smoke grenade, unleashing a barrage of blows from his fiendishly sharp sword, and finishing the foe with a final shot – that is the dishonest but very effective tactic of the Duelist.\nIn addition, the hero's incredible luck lets him avoid part of the damage. And the Duelist's unusual blade can, on impact, deal damage to all enemies around.",
+    "bars": {
+      "attak": {
+        "count": 8
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 6
+      },
+      "talents": {
+        "count": 4
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Дуэлянт",
+        "portrait": "content/hero/1/1.webp",
+        "figure": "content/img/heroes-display/duelist-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Мушкетёр",
+        "portrait": "content/hero/1/2.webp",
+        "figure": "content/img/heroes-display/duelist-2-v2.webp"
+      },
+      {
+        "index": 3,
+        "name": "Закалённый",
+        "portrait": "content/hero/1/3.webp",
+        "figure": "content/img/heroes-display/duelist-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Плутовка",
+        "portrait": "content/hero/1/4.webp",
+        "figure": "content/img/heroes-display/duelist-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Корсар",
+        "portrait": "content/hero/1/5.webp",
+        "figure": "content/img/heroes-display/1-5-pose-20261013-v2.webp"
+      },
+      {
+        "index": 6,
+        "name": "Принц воров",
+        "portrait": "content/hero/1/6.webp",
+        "figure": "content/img/heroes-display/duelist-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Пират",
+        "portrait": "content/hero/1/7.webp",
+        "figure": "content/img/heroes-display/duelist-7-v1.webp"
+      },
+      {
+        "index": 8,
+        "name": "Заклятый",
+        "portrait": "content/hero/1/8.webp",
+        "figure": "content/img/heroes-display/duelist-8-v1.webp"
+      },
+      {
+        "index": 9,
+        "name": "Бомбардир",
+        "portrait": "content/hero/1/9.webp",
+        "figure": "content/img/heroes-display/duelist-9-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Крио",
+    "role": "FIGHTER",
+    "description": "Главное преимущество Крио – умение замораживать. Управляя метелью, героиня наносит урон целым отрядам, а осколок магического льда может медленно убивать неосторожного врага.\nНеприступность холода, окутывающая героиню, карает всякого, кто пытается напасть на Крио. И горе тем, кого она заточит в глыбу льда, ведь ледяной плен может продлиться целую вечность.",
+    "descriptionEn": "Cryo's main advantage is the ability to freeze. Controlling a blizzard, the heroine deals damage to entire squads, and a shard of magical ice can slowly kill a careless enemy.\nThe impregnability of cold that surrounds the heroine punishes anyone who tries to attack Cryo. And woe to those she imprisons in a block of ice, for icy captivity may last an eternity.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Крио",
+        "portrait": "content/hero/2/1.webp",
+        "figure": "content/img/heroes-display/cryo-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Буря",
+        "portrait": "content/hero/2/2.webp",
+        "figure": "content/img/heroes-display/cryo-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Метелица",
+        "portrait": "content/hero/2/3.webp",
+        "figure": "content/img/heroes-display/cryo-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Ледяной владыка",
+        "portrait": "content/hero/2/4.webp",
+        "figure": "content/img/heroes-display/cryo-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Обвиняшка",
+        "portrait": "content/hero/2/5.webp",
+        "figure": "content/img/heroes-display/cryo-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Вьюга",
+        "portrait": "content/hero/2/6.webp",
+        "figure": "content/img/heroes-display/cryo-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Невада",
+        "portrait": "content/hero/2/7.webp",
+        "figure": "content/img/heroes-display/cryo-7-v1.webp"
+      },
+      {
+        "index": 8,
+        "name": "Снежинка",
+        "portrait": "content/hero/2/8.webp",
+        "figure": "content/img/heroes-display/cryo-8-v1.webp"
+      },
+      {
+        "index": 9,
+        "name": "Криомант",
+        "portrait": "content/hero/2/9.webp",
+        "figure": "content/img/heroes-display/2-9-pose-20261012.webp"
+      },
+      {
+        "index": 10,
+        "name": "Хозяйка гор",
+        "portrait": "content/hero/2/10.webp",
+        "figure": "content/img/heroes-display/2-10-pose-20261012.webp"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Безликий",
+    "role": "EXECUTIONER",
+    "description": "Безликий специализируется на внезапных атаках и добивающих ударах. Он плохо держит удар и обладает слабой защитой, но с лихвой компенсирует эти недостатки внезапными перемещениями и постоянным повышением критического шанса своих ударов.\nТаланты, направленные на замедление и ослабление жертвы, узревшей истинное лицо героя, превращают Безликого в идеального убийцу.",
+    "descriptionEn": "Faceless specializes in surprise attacks and finishing blows. He has poor endurance and weak defense, but makes up for these shortcomings with sudden movements and a constant increase in the critical chance of his strikes.\nTalents that slow and weaken a victim who has glimpsed the hero's true face turn Faceless into a perfect assassin.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 8
+      },
+      "defence": {
+        "count": 2
+      },
+      "talents": {
+        "count": 9
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Безликий",
+        "portrait": "content/hero/3/1.webp",
+        "figure": "content/img/heroes-display/faceless-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Аноним",
+        "portrait": "content/hero/3/2.webp",
+        "figure": "content/img/heroes-display/3-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Токсин",
+        "portrait": "content/hero/3/3.webp",
+        "figure": "content/img/heroes-display/3-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Белая маска",
+        "portrait": "content/hero/3/4.webp",
+        "figure": "content/img/heroes-display/3-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Мститель",
+        "portrait": "content/hero/3/5.webp",
+        "figure": "content/img/heroes-display/3-5-review-20261012.webp"
+      },
+      {
+        "index": 6,
+        "name": "Дух смерти",
+        "portrait": "content/hero/3/6.webp",
+        "figure": "content/img/heroes-display/3-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Мистерия",
+        "portrait": "content/hero/3/7.webp",
+        "figure": "content/img/heroes-display/3-7-pose-20261012.webp"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Воевода",
+    "role": "VANGUARD",
+    "description": "Воевода всегда уверенно ведет своих солдат к победе, прорывая оборону соперника и смело атакуя самого опасного врага. Удары его тяжелого оружия разбрасывают врагов, заговоренные доспехи оберегают не только самого героя, но и его союзников.\nИ ничто не может сломить боевой дух солдат и героев, сражающихся под священным знаменем этого сурового воителя.",
+    "descriptionEn": "The Warlord always confidently leads his soldiers to victory, breaking through the enemy's defenses and boldly attacking the most dangerous foe. The blows of his heavy weapon scatter enemies, and his enchanted armor protects not only the hero himself but also his allies.\nAnd nothing can break the fighting spirit of soldiers and heroes who fight under the sacred banner of this stern warrior.",
+    "bars": {
+      "attak": {
+        "count": 6
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 7
+      },
+      "talents": {
+        "count": 5
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Воевода",
+        "portrait": "content/hero/4/1.webp",
+        "figure": "content/img/heroes-display/4-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Сумрачный воитель",
+        "portrait": "content/hero/4/2.webp",
+        "figure": "content/img/heroes-display/4-2-pose-20261012.webp"
+      },
+      {
+        "index": 3,
+        "name": "Предводитель",
+        "portrait": "content/hero/4/3.webp",
+        "figure": "content/img/heroes-display/4-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Козак",
+        "portrait": "content/hero/4/4.webp",
+        "figure": "content/img/heroes-display/4-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Астро",
+        "portrait": "content/hero/4/5.webp",
+        "figure": "content/img/heroes-display/4-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Богатырь",
+        "portrait": "content/hero/4/6.webp",
+        "figure": "content/img/heroes-display/4-6-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Молниеносный",
+    "role": "EXECUTIONER",
+    "description": "Применяя свои таланты, Молниеносный заряжается энергией грозы и начинает поражать целые отряды врагов цепными молниями. Против героев противника Молниеносный эффективно применяет шаровые молнии и свое усиленное электричеством оружие.\nБлагодаря силе грома герой может легко уйти от погони, испепеляя преследователей. А Гнев небес, обрушивающийся на всех вражеских героев, позволяет нанести решающий удар тем, кто чудом избежал кары Молниеносного.",
+    "descriptionEn": "Applying his talents, Lightning Master charges himself with storm energy and begins to strike whole squads of enemies with chain lightning. Against enemy heroes Lightning Master effectively uses ball lightning and his weapon enhanced with electricity.\nThanks to the power of thunder the hero can easily escape pursuit, incinerating his pursuers. And Wrath of Heaven, descending on all enemy heroes, lets him deal a decisive blow to those who by a miracle escaped Lightning Master's punishment.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 3
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Молниеносный",
+        "portrait": "content/hero/5/1.webp",
+        "figure": "content/img/heroes-display/5-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Громовержец",
+        "portrait": "content/hero/5/2.webp",
+        "figure": "content/img/heroes-display/5-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Гроза",
+        "portrait": "content/hero/5/3.webp",
+        "figure": "content/img/heroes-display/5-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Молния",
+        "portrait": "content/hero/5/4.webp",
+        "figure": "content/img/heroes-display/5-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Стальной гром",
+        "portrait": "content/hero/5/5.webp",
+        "figure": "content/img/heroes-display/5-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Чемпион",
+        "portrait": "content/hero/5/6.webp",
+        "figure": "content/img/heroes-display/5-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Буревестник",
+        "portrait": "content/hero/5/7.webp",
+        "figure": "content/img/heroes-display/5-7-pose-20261012.webp"
+      },
+      {
+        "index": 8,
+        "name": "Молниеносная",
+        "portrait": "content/hero/5/8.webp",
+        "figure": "content/img/heroes-display/5-8-v1.webp"
+      },
+      {
+        "index": 9,
+        "name": "Электра",
+        "portrait": "content/hero/5/9.webp",
+        "figure": "content/img/heroes-display/5-9-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Тень",
+    "role": "EXECUTIONER",
+    "description": "Тень владеет искусством ухода в невидимость и виртуозно управляется с волшебным веером. Героиня умеет укрывать союзников покровом невидимости, и само ее присутствие на поле боя дает команде дополнительные силы.\nНо Тень может не только помогать друзьям: бросок веера сметает врагов, а танец нескольких волшебных вееров – страшное оружие как в командном бою, так и в схватке один на один.",
+    "descriptionEn": "The Shadow commands the art of vanishing and expertly handles a magical fan. The heroine can shelter allies under a veil of invisibility, and her very presence on the battlefield gives her team extra strength.\nBut the Shadow can do more than help friends: a throw of the fan sweeps enemies away, and a dance of several magical fans is a fearsome weapon both in team fights and in one-on-one duels.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 2
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Тень",
+        "portrait": "content/hero/6/1.webp",
+        "figure": "content/img/heroes-display/6-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Каракури",
+        "portrait": "content/hero/6/2.webp",
+        "figure": "content/img/heroes-display/6-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Козырь",
+        "portrait": "content/hero/6/3.webp",
+        "figure": "content/img/heroes-display/6-3-pose-20261012.webp"
+      },
+      {
+        "index": 4,
+        "name": "Зомбяшка",
+        "portrait": "content/hero/6/4.webp",
+        "figure": "content/img/heroes-display/6-4-pose-20261012.webp"
+      },
+      {
+        "index": 5,
+        "name": "Заводная",
+        "portrait": "content/hero/6/5.webp",
+        "figure": "content/img/heroes-display/6-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Невидимка",
+        "portrait": "content/hero/6/6.webp",
+        "figure": "content/img/heroes-display/6-4-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Егерь",
+    "role": "FIGHTER",
+    "description": "Егеря всегда сопровождают верные волки, готовые разорвать любого, на кого укажет разящее копье их брата. Егерь умеет объединять своих союзников в единую стаю, где силы каждого возрастают в разы.\nВ решающий момент герой объявляет Великую Охоту, превращая своих волков и союзников в безжалостных охотников, от которых не может уйти и за которыми не способен угнаться ни один враг.",
+    "descriptionEn": "The Wolf Dancer is always accompanied by loyal wolves, ready to tear apart anyone at whom the piercing spear of their brother points. The Wolf Dancer can unite allies into a single pack, where each one's strength multiplies.\nAt the decisive moment the hero proclaims the Great Hunt, turning his wolves and allies into merciless hunters that no enemy can escape and no enemy can keep pace with.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Егерь",
+        "portrait": "content/hero/7/1.webp",
+        "figure": "content/img/heroes-display/7-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Танцующий с волками",
+        "portrait": "content/hero/7/2.webp",
+        "figure": "content/img/heroes-display/7-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Укротитель",
+        "portrait": "content/hero/7/3.webp",
+        "figure": "content/img/heroes-display/7-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Танцующий с огнём",
+        "portrait": "content/hero/7/4.webp",
+        "figure": "content/img/heroes-display/7-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Укротитель холода",
+        "portrait": "content/hero/7/5.webp",
+        "figure": "content/img/heroes-display/7-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Механизатор",
+        "portrait": "content/hero/7/6.webp",
+        "figure": "content/img/heroes-display/7-6-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "name": "Изобретатель",
+    "role": "FIGHTER",
+    "description": "Таланты Изобретателя создают на поле боя мощные боевые механизмы, но требуют уникального ресурса – деталей.\nЧасовые бомбы моментально подрывают уверенность врагов в удачном исходе столкновения. Защитные турели расстреливают врагов, рискнувших подойти на расстояние огня, а вита-генераторы позволят союзникам набраться новых сил для атаки.\nРешающим аргументом в схватке станет крупнокалиберный, разрывающий врагов в клочья пулемет.",
+    "descriptionEn": "The Inventor's talents create powerful battle mechanisms on the battlefield, but they require a unique resource: Components.\nTimed bombs instantly undermine enemies' confidence in a favorable outcome of the clash. Defense turrets gun down enemies who dare come within firing range, while vita generators let allies gather new strength for the attack.\nThe decisive argument in a clash will be a large-caliber machine gun that tears enemies to shreds.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 6
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Изобретатель",
+        "portrait": "content/hero/8/1.webp",
+        "figure": "content/img/heroes-display/8-1-review-20261012.webp"
+      },
+      {
+        "index": 2,
+        "name": "Техна",
+        "portrait": "content/hero/8/2.webp",
+        "figure": "content/img/heroes-display/8-2-pose-20261012.webp"
+      },
+      {
+        "index": 3,
+        "name": "Оружейник",
+        "portrait": "content/hero/8/3.webp",
+        "figure": "content/img/heroes-display/8-3-review-20261012.webp"
+      },
+      {
+        "index": 4,
+        "name": "Адептус",
+        "portrait": "content/hero/8/4.webp",
+        "figure": "content/img/heroes-display/8-4-review-20261012.webp"
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Художница",
+    "role": "FIGHTER",
+    "description": "Изящная Художница мастерски управляет своей волшебной кистью. Ее магические краски пробивают любую защиту, а союзники, создав с их помощью волшебный свиток, могут получить себе его копию. Цвет ее красок лечит друзей и наносит урон врагам, меняя их скорость движения.\nНарисованные Художницей звери придут ей на помощь, набрасываясь на врагов, а в трудные моменты кисть мастера приумножит силы героини, позволяя чаще рисовать и делая ее рисунки массовыми.",
+    "descriptionEn": "The graceful Artiste masterfully wields her magical brush. Her magical paints pierce any defense, and allies, creating a magic scroll with them, can obtain its copy. The color of her paints heals friends and damages enemies, altering their movement speed.\nThe animals painted by the Artiste will come to her aid, pouncing on enemies, and in difficult moments the master's brush multiplies the heroine's strength, allowing her to paint more often and making her drawings mass-scale.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 6
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Художница",
+        "portrait": "content/hero/9/1.webp",
+        "figure": "content/img/heroes-display/9-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Графит",
+        "portrait": "content/hero/9/2.webp",
+        "figure": "content/img/heroes-display/9-2-pose-20261012.webp"
+      },
+      {
+        "index": 3,
+        "name": "Готье",
+        "portrait": "content/hero/9/3.webp",
+        "figure": "content/img/heroes-display/9-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Тинта",
+        "portrait": "content/hero/9/4.webp",
+        "figure": "content/img/heroes-display/9-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Акварель",
+        "portrait": "content/hero/9/5.webp",
+        "figure": "content/img/heroes-display/9-5-pose-20261013-v2.webp"
+      },
+      {
+        "index": 6,
+        "name": "Акрил Лавин",
+        "portrait": "content/hero/9/6.webp",
+        "figure": "content/img/heroes-display/9-6-review-20261012.webp"
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "name": "Горец",
+    "role": "PROTECTOR",
+    "description": "Горец знаменит своим презрением к боли и смерти. Он мастерски владеет своим мечом, превращаясь в стальной вихрь, уничтожающий отряды вражеских солдат и обезоруживающий героев противника.\nКаждый удар Горца ускоряет его атаки, каждая смерть врага восполняет его силы. И даже если герой падет, его бессмертный дух возродит этого непобедимого воина.",
+    "descriptionEn": "The Highlander is renowned for his contempt for pain and death. He masterfully wields his sword, turning into a steel whirlwind that destroys squads of enemy soldiers and disarms enemy heroes.\nEvery blow of the Highlander speeds up his attacks, and every enemy death restores his strength. And even if the hero falls, his immortal spirit will revive this invincible warrior.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 3
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 3
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Горец",
+        "portrait": "content/hero/10/1.webp",
+        "figure": "content/img/heroes-display/10-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Мастер войны",
+        "portrait": "content/hero/10/2.webp",
+        "figure": "content/img/heroes-display/10-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Тёмный владыка",
+        "portrait": "content/hero/10/3.webp",
+        "figure": "content/img/heroes-display/10-3-pose-20261012.webp"
+      },
+      {
+        "index": 4,
+        "name": "Воительница",
+        "portrait": "content/hero/10/4.webp",
+        "figure": "content/img/heroes-display/10-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Смертоносный",
+        "portrait": "content/hero/10/5.webp",
+        "figure": "content/img/heroes-display/10-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Ветеран",
+        "portrait": "content/hero/10/6.webp",
+        "figure": "content/img/heroes-display/10-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Бессмертный",
+        "portrait": "content/hero/10/7.webp",
+        "figure": "content/img/heroes-display/10-7-v1.webp"
+      },
+      {
+        "index": 8,
+        "name": "Фурия",
+        "portrait": "content/hero/10/8.webp",
+        "figure": "content/img/heroes-display/10-8-v1.webp"
+      },
+      {
+        "index": 9,
+        "name": "Высокогорный",
+        "portrait": "content/hero/10/9.webp",
+        "figure": "content/img/heroes-display/10-9-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "name": "Комбат",
+    "role": "VANGUARD",
+    "description": "Комбат – опасный боец ближнего боя, так как серия его атак всегда завершается мощным ударом. Этот герой смело набрасывается на самого опасного противника, нанося сокрушительный удар ногой.\nЕго точные удары подбрасывают и оглушают врагов, а если их слишком много, Комбат превращается в неудержимый смерч, уничтожающий все на своем пути.",
+    "descriptionEn": "Brawler is a dangerous melee fighter, since his series of attacks always ends with a powerful blow. This hero bravely charges at the most dangerous opponent, dealing a crushing kick.\nHis precise strikes knock enemies up and stun them, and if there are too many, Brawler turns into an unstoppable whirlwind that destroys everything in its path.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 8
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 6
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Комбат",
+        "portrait": "content/hero/11/1.webp",
+        "figure": "content/img/heroes-display/11-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Берет",
+        "portrait": "content/hero/11/2.webp",
+        "figure": "content/img/heroes-display/11-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Куница",
+        "portrait": "content/hero/11/3.webp",
+        "figure": "content/img/heroes-display/11-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Хук",
+        "portrait": "content/hero/11/4.webp",
+        "figure": "content/img/heroes-display/11-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Боец дракона",
+        "portrait": "content/hero/11/5.webp",
+        "figure": "content/img/heroes-display/11-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Стальной кулак",
+        "portrait": "content/hero/11/6.webp",
+        "figure": "content/img/heroes-display/11-6-pose-20261013-v3.webp"
+      },
+      {
+        "index": 7,
+        "name": "Десант",
+        "portrait": "content/hero/11/7.webp",
+        "figure": "content/img/heroes-display/11-7-review-20261012.webp"
+      },
+      {
+        "index": 8,
+        "name": "Разрушитель",
+        "portrait": "content/hero/11/8.webp",
+        "figure": "content/img/heroes-display/11-8-v1.webp"
+      },
+      {
+        "index": 9,
+        "name": "Мейдзин",
+        "portrait": "content/hero/11/9.webp",
+        "figure": "content/img/heroes-display/11-5-v1.webp"
+      },
+      {
+        "index": 10,
+        "name": "Мэм",
+        "portrait": "content/hero/11/10.webp",
+        "figure": "content/img/heroes-display/11-10-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "name": "Огненная лиса",
+    "role": "VANGUARD",
+    "description": "Несмотря на слабую защиту Огненная лиса – грозный соперник. Ее огненные таланты поджигают врагов, и потоки пламени охватывают целые отряды солдат противника. Хитрая и ловкая как настоящая лисица, героиня легко уходит от преследователей, становясь невидимой в случае угрозы.\nХотя ее тактика обычно заключается в расстреливании врагов сгустками пламени с дистанции, героиня умеет на короткое время превращаться в почти неуязвимого демона огня, уничтожающего все вокруг.",
+    "descriptionEn": "Despite her weak defense, Fire Fox is a formidable opponent. Her fire talents set enemies ablaze, and streams of flame engulf whole enemy squads. Cunning and agile like a true fox, the heroine easily escapes pursuers, becoming invisible when threatened.\nAlthough her tactic usually consists of shooting enemies with fireballs from a distance, the heroine can for a short time transform into an almost invulnerable fire demon, destroying everything around.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 6
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Огненная лиса",
+        "portrait": "content/hero/12/1.webp",
+        "figure": "content/img/heroes-display/12-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Пламенная",
+        "portrait": "content/hero/12/2.webp",
+        "figure": "content/img/heroes-display/12-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Мастер огня",
+        "portrait": "content/hero/12/3.webp",
+        "figure": "content/img/heroes-display/12-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Повелительница драконов",
+        "portrait": "content/hero/12/4.webp",
+        "figure": "content/img/heroes-display/12-4-review-20261012.webp"
+      },
+      {
+        "index": 5,
+        "name": "Искра",
+        "portrait": "content/hero/12/5.webp",
+        "figure": "content/img/heroes-display/12-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Рыжий хвост",
+        "portrait": "content/hero/12/6.webp",
+        "figure": "content/img/heroes-display/12-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Вертихвостка",
+        "portrait": "content/hero/12/7.webp",
+        "figure": "content/img/heroes-display/12-7-v1.webp"
+      },
+      {
+        "index": 8,
+        "name": "Огнелис",
+        "portrait": "content/hero/12/8.webp",
+        "figure": "content/img/heroes-display/12-8-review-20261012.webp"
+      },
+      {
+        "index": 9,
+        "name": "Пепел",
+        "portrait": "content/hero/12/9.webp",
+        "figure": "content/img/heroes-display/12-9-v1.webp"
+      },
+      {
+        "index": 10,
+        "name": "Безжалостная",
+        "portrait": "content/hero/12/10.webp",
+        "figure": "content/img/heroes-display/12-10-pose-20261012.webp"
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "name": "Целительница",
+    "role": "SUPPORT",
+    "description": "Эта героиня не уничтожает врагов – все ее таланты направлены на исцеление соратников и увеличение их силы и защиты.\nГероиня может лечить нескольких союзников сразу, что помогает отрядам солдат штурмовать укрепления врага. А в решающих боях Целительница – это настоящий триумф жизни, спасающий героев своей команды от неминуемой гибели.",
+    "descriptionEn": "This heroine does not destroy enemies. All her talents are aimed at healing allies and increasing their strength and protection.\nThe heroine can heal several allies at once, helping squads of soldiers storm enemy fortifications. And in decisive battles the Healer is a true triumph of life, saving her team's heroes from certain death.",
+    "bars": {
+      "attak": {
+        "count": 2
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 7
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Целительница",
+        "portrait": "content/hero/13/1.webp",
+        "figure": "content/img/heroes-display/13-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Лекарь",
+        "portrait": "content/hero/13/2.webp",
+        "figure": "content/img/heroes-display/13-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Сестрица",
+        "portrait": "content/hero/13/3.webp",
+        "figure": "content/img/heroes-display/13-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Жрица",
+        "portrait": "content/hero/13/4.webp",
+        "figure": "content/img/heroes-display/13-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Знахарка",
+        "portrait": "content/hero/13/5.webp",
+        "figure": "content/img/heroes-display/13-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Капеллан",
+        "portrait": "content/hero/13/6.webp",
+        "figure": "content/img/heroes-display/13-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Травница",
+        "portrait": "content/hero/13/7.webp",
+        "figure": "content/img/heroes-display/13-7-v1.webp"
+      },
+      {
+        "index": 8,
+        "name": "Врач",
+        "portrait": "content/hero/13/8.webp",
+        "figure": "content/img/heroes-display/13-8-v1.webp"
+      },
+      {
+        "index": 9,
+        "name": "Снегурочка",
+        "portrait": "content/hero/13/9.webp",
+        "figure": "content/img/heroes-display/13-9-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "name": "Царица ночи",
+    "role": "VANGUARD",
+    "description": "Главное оружие Царицы Ночи – ее «второе я» в облике сопровождающей героиню величественной кошки. Пока та жива, ничто не может причинить вред Царице Ночи, без промаха поражающей врагов своим метательным диском.\nКлассовые таланты героини позволяют ей лечить своего верного друга и улучшать его охотничьи инстинкты. Но настоящей хищницей становится сама Царица Ночи, когда она объединяется со своим спутником и яростно атакует врага.",
+    "descriptionEn": "The Night Queen's main weapon is her “second self” in the form of the majestic cat accompanying the heroine. While it lives, nothing can harm the Night Queen, who hits enemies without a miss with her throwing disc.\nThe heroine's class talents let her heal her loyal friend and sharpen its hunting instincts. But the true predator becomes the Night Queen herself when she joins with her companion and furiously attacks the enemy.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 7
+      },
+      "defence": {
+        "count": 7
+      },
+      "talents": {
+        "count": 3
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Царица ночи",
+        "portrait": "content/hero/14/1.webp",
+        "figure": "content/img/heroes-display/14-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Гайка",
+        "portrait": "content/hero/14/2.webp",
+        "figure": "content/img/heroes-display/14-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Бестия",
+        "portrait": "content/hero/14/3.webp",
+        "figure": "content/img/heroes-display/14-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Дикая наездница",
+        "portrait": "content/hero/14/4.webp",
+        "figure": "content/img/heroes-display/14-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Чёрная пантера",
+        "portrait": "content/hero/14/5.webp",
+        "figure": "content/img/heroes-display/14-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Мимоза",
+        "portrait": "content/hero/14/6.webp",
+        "figure": "content/img/heroes-display/14-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Мартовская кошка",
+        "portrait": "content/hero/14/7.webp",
+        "figure": "content/img/heroes-display/14-7-pose-20261012.webp"
+      },
+      {
+        "index": 8,
+        "name": "Царица севера",
+        "portrait": "content/hero/14/8.webp",
+        "figure": "content/img/heroes-display/14-8-v1.webp"
+      },
+      {
+        "index": 9,
+        "name": "Мурлыка",
+        "portrait": "content/hero/14/9.webp",
+        "figure": "content/img/heroes-display/14-9-v1.webp"
+      },
+      {
+        "index": 10,
+        "name": "Клео",
+        "portrait": "content/hero/14/10.webp",
+        "figure": "content/img/heroes-display/14-10-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "name": "Человек-гора",
+    "role": "PROTECTOR",
+    "description": "Шаг Человека-горы сотрясает землю, не позволяя никому сбежать от его мощных ударов, подбрасывающих противников в воздух. Окруженный врагами, герой может спрятаться в неприступную скалу, став полностью неуязвимым и восстанавливая свои силы.\nЧеловек-гора способен внезапным тараном влететь в ряды врагов, разбрасывая всех налево и направо. Поэтому место Человека-горы – в самом центре битвы, где он принимает на себя основной удар противника, защищая более слабых соратников.",
+    "descriptionEn": "The Quarrier's step shakes the earth, not letting anyone escape his powerful blows, which toss enemies into the air. Surrounded by foes, the hero can hide in an impregnable rock, becoming fully invulnerable and restoring his strength.\nThe Quarrier can burst into the enemy ranks with a sudden battering ram, scattering everyone left and right. That is why the Quarrier's place is at the very center of battle, where he takes the enemy's main blow, protecting weaker comrades.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 10
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Человек-гора",
+        "portrait": "content/hero/15/1.webp",
+        "figure": "content/img/heroes-display/15-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Пароглыб",
+        "portrait": "content/hero/15/2.webp",
+        "figure": "content/img/heroes-display/15-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Рокот",
+        "portrait": "content/hero/15/3.webp",
+        "figure": "content/img/heroes-display/15-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Окра",
+        "portrait": "content/hero/15/4.webp",
+        "figure": "content/img/heroes-display/15-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Вулкан",
+        "portrait": "content/hero/15/5.webp",
+        "figure": "content/img/heroes-display/15-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Триумфатор",
+        "portrait": "content/hero/15/6.webp",
+        "figure": "content/img/heroes-display/15-6-pose-20261012.webp"
+      },
+      {
+        "index": 7,
+        "name": "Дева-молот",
+        "portrait": "content/hero/15/7.webp",
+        "figure": "content/img/heroes-display/15-7-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "name": "Чистильщик",
+    "role": "EXECUTIONER",
+    "description": "Уничтожая врагов, Чистильщик быстро восстанавливает свои классовые таланты, с помощью которых он может становиться невидимым, легко уходить от погони и снова незаметно подкрадываться к противнику.\nВыбрав жертву, герой вешает на нее особую метку, позволяющую Чистильщику быстро прикончить ее. А если цель все-таки осталась жива, коварный бросок не даст ей уйти от молниеносной атаки, завершающейся решающим ударом.",
+    "descriptionEn": "By destroying enemies, the Assassin quickly restores his class talents, with which he can become invisible, easily escape pursuit and stealthily sneak up on an opponent once more.\nHaving chosen a victim, the hero marks them with a special sign that allows the Assassin to finish them off quickly. And if the target still survives, a treacherous throw will not let them escape the lightning-fast attack that ends with a decisive blow.",
+    "bars": {
+      "attak": {
+        "count": 2
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Чистильщик",
+        "portrait": "content/hero/16/1.webp",
+        "figure": "content/img/heroes-display/16-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Душегуб",
+        "portrait": "content/hero/16/2.webp",
+        "figure": "content/img/heroes-display/16-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Отчаянная",
+        "portrait": "content/hero/16/3.webp",
+        "figure": "content/img/heroes-display/16-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Дерзкая",
+        "portrait": "content/hero/16/4.webp",
+        "figure": "content/img/heroes-display/16-4-art-20261014.webp"
+      },
+      {
+        "index": 5,
+        "name": "Преследователь",
+        "portrait": "content/hero/16/5.webp",
+        "figure": "content/img/heroes-display/16-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Полурослик",
+        "portrait": "content/hero/16/6.webp",
+        "figure": "content/img/heroes-display/16-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Ассасин",
+        "portrait": "content/hero/16/7.webp",
+        "figure": "content/img/heroes-display/16-7-v1.webp"
+      },
+      {
+        "index": 8,
+        "name": "Усохший",
+        "portrait": "content/hero/16/8.webp",
+        "figure": "content/img/heroes-display/16-8-art-20261014.webp"
+      },
+      {
+        "index": 9,
+        "name": "Рефери",
+        "portrait": "content/hero/16/9.webp",
+        "figure": "content/img/heroes-display/16-9-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "name": "Дева",
+    "role": "PROTECTOR",
+    "description": "Восседающая на единороге Дева – прекрасное дополнение к любой команде. Ее магия способна наносить урон всем врагам вокруг и лечить союзников. Одно присутствие героини укрепляет волю ее друзей и приводит в смятение противников.\nВ трудные для команды моменты она обездвижит врагов, призвав родную землю. Благодаря своему скакуну героиня может воспарить над полем боя, чтобы вовремя оказаться там, где ее поддержка нужнее всего.",
+    "descriptionEn": "The Maiden, mounted on a unicorn, is a wonderful addition to any team. Her magic can deal damage to all enemies around and heal allies. The mere presence of the heroine strengthens the will of her friends and throws opponents into confusion.\nIn difficult moments for the team she immobilizes enemies by summoning the home soil. Thanks to her steed the heroine can soar above the battlefield to arrive in time where her support is needed most.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 7
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Дева",
+        "portrait": "content/hero/17/1.webp",
+        "figure": "content/img/heroes-display/17-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Снежевина",
+        "portrait": "content/hero/17/2.webp",
+        "figure": "content/img/heroes-display/17-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Нимфа",
+        "portrait": "content/hero/17/3.webp",
+        "figure": "content/img/heroes-display/17-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Гитана",
+        "portrait": "content/hero/17/4.webp",
+        "figure": "content/img/heroes-display/17-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Пастушка",
+        "portrait": "content/hero/17/5.webp",
+        "figure": "content/img/heroes-display/17-5-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "name": "Стрелок",
+    "role": "FIGHTER",
+    "description": "Точный выстрел и зазубренные наконечники, оставляющие кровоточащие порезы, – основное оружие Стрелка. Его зачарованные стрелы летят невероятно далеко, нанося противникам смертельные раны.\nВолшебный горн призывает увереннее атаковать врага, а пыл охоты наделяет поистине звериной скоростью и ловкостью. Лук Cтрелка тоже не прост: натянутый до предела, он выпускает стрелу, сокрушающую все на своем пути.",
+    "descriptionEn": "Precise Shot and jagged arrowheads that leave bleeding cuts are the Hunter's main weapons. His enchanted arrows fly incredibly far, inflicting mortal wounds on opponents.\nA magical horn urges more confident attacks on the enemy, and the fervor of the hunt grants truly beastly speed and agility. The Hunter's bow is no simple weapon either: drawn to the limit, it looses an arrow that crushes everything in its path.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Стрелок",
+        "portrait": "content/hero/18/1.webp",
+        "figure": "content/img/heroes-display/18-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Вождь",
+        "portrait": "content/hero/18/2.webp",
+        "figure": "content/img/heroes-display/18-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Стрелец",
+        "portrait": "content/hero/18/3.webp",
+        "figure": "content/img/heroes-display/18-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Гренадер",
+        "portrait": "content/hero/18/4.webp",
+        "figure": "content/img/heroes-display/18-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Ловчий",
+        "portrait": "content/hero/18/5.webp",
+        "figure": "content/img/heroes-display/18-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Снег-Пострел",
+        "portrait": "content/hero/18/6.webp",
+        "figure": "content/img/heroes-display/18-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Охотник",
+        "portrait": "content/hero/18/7.webp",
+        "figure": "content/img/heroes-display/18-7-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "name": "Жнец душ",
+    "role": "SUPPORT",
+    "description": "Само присутствие Жнеца душ на поле боя заставляет погибших возвращаться в бой под его руководством. Щит призраков защитит любого по воле Жнеца, а призрачная плеть позволяет забирать жизненные силы противника и передавать их союзнику.\nСтрашными ударами косы он может собрать армию призраков, а став призраком смерти, он обрушит их гнев на последних из сопротивляющихся.",
+    "descriptionEn": "The very presence of the Soul Reaper on the battlefield makes the fallen rise back into battle under his command. The Shield of Ghosts protects anyone he chooses, while the Ghostly Lash lets him drain the enemy's life force and pass it on to an ally.\nWith devastating strikes of his scythe he can gather an army of ghosts, and as a Death Specter he unleashes their wrath on the last of those who resist.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 8
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Жнец душ",
+        "portrait": "content/hero/19/1.webp",
+        "figure": "content/img/heroes-display/19-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Призрак смерти",
+        "portrait": "content/hero/19/2.webp",
+        "figure": "content/img/heroes-display/19-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Душелов",
+        "portrait": "content/hero/19/3.webp",
+        "figure": "content/img/heroes-display/19-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Анубис",
+        "portrait": "content/hero/19/4.webp",
+        "figure": "content/img/heroes-display/19-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Огненный рок",
+        "portrait": "content/hero/19/5.webp",
+        "figure": "content/img/heroes-display/19-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Повелительница душ",
+        "portrait": "content/hero/19/6.webp",
+        "figure": "content/img/heroes-display/19-6-art-20261013.webp"
+      },
+      {
+        "index": 7,
+        "name": "Кощей",
+        "portrait": "content/hero/19/7.webp",
+        "figure": "content/img/heroes-display/19-7-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "name": "Крысолов",
+    "role": "SUPPORT",
+    "description": "Основная стратегия Крысолова – одновременно контролировать как можно больше противников. Он способен превращать солдат противника в своих вечных слуг и заставлять героев врага следовать за собой.\nПослушные воле героя крысы позволяют ему атаковать врагов с безопасного расстояния, а также – воровать у недругов прайм. Единственный недостаток Крысолова – он довольно слаб в ближнем бою.",
+    "descriptionEn": "The Pied Piper's main strategy is to control as many enemies as possible at once. He can turn enemy soldiers into his eternal servants and make enemy heroes follow him.\nRats obedient to the hero's will let him attack enemies from a safe distance, and also steal Prime from his foes. The Pied Piper's only weakness is that he is quite weak in melee combat.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Крысолов",
+        "portrait": "content/hero/20/1.webp",
+        "figure": "content/img/heroes-display/20-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Кукловод",
+        "portrait": "content/hero/20/2.webp",
+        "figure": "content/img/heroes-display/20-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Повелитель крыс",
+        "portrait": "content/hero/20/3.webp",
+        "figure": "content/img/heroes-display/20-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Мастер черепах",
+        "portrait": "content/hero/20/4.webp",
+        "figure": "content/img/heroes-display/20-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Укротительница грызунов",
+        "portrait": "content/hero/20/5.webp",
+        "figure": "content/img/heroes-display/20-5-art-20261014-v4.webp"
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "name": "Лучница",
+    "role": "FIGHTER",
+    "description": "Стрелы Лучницы обладают убийственной мощью, одновременно нанося физический и магический урон. Особо крупных или хорошо защищенных броней врагов героиня с прицельной точностью поражает в наиболее уязвимые места.\nХрупкая с виду Лучница – грозный соперник: неожиданно меняя позицию, она обрушивает шквал стрел на неприятеля и добивает слабого врага решающим выстрелом.",
+    "descriptionEn": "Amazon's arrows possess deadly power, dealing physical and magical damage at once. The heroine precisely strikes especially large or heavily armored enemies in their most vulnerable spots.\nThe Amazon may look fragile, but she is a formidable opponent: changing position unexpectedly, she rains a volley of arrows on the enemy and finishes off a weakened foe with a decisive shot.",
+    "bars": {
+      "attak": {
+        "count": 9
+      },
+      "complexity": {
+        "count": 3
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 3
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Лучница",
+        "portrait": "content/hero/21/1.webp",
+        "figure": "content/img/heroes-display/21-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Мятежница",
+        "portrait": "content/hero/21/2.webp",
+        "figure": "content/img/heroes-display/21-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Сияющая",
+        "portrait": "content/hero/21/3.webp",
+        "figure": "content/img/heroes-display/21-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Сумрачная странница",
+        "portrait": "content/hero/21/4.webp",
+        "figure": "content/img/heroes-display/21-4-art-20261013.webp"
+      },
+      {
+        "index": 5,
+        "name": "Хлопушка",
+        "portrait": "content/hero/21/5.webp",
+        "figure": "content/img/heroes-display/21-5-art-20261013.webp"
+      },
+      {
+        "index": 6,
+        "name": "Лучник",
+        "portrait": "content/hero/21/6.webp",
+        "figure": "content/img/heroes-display/21-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Стрела",
+        "portrait": "content/hero/21/7.webp",
+        "figure": "content/img/heroes-display/21-7-v1.webp"
+      },
+      {
+        "index": 8,
+        "name": "Нападающая",
+        "portrait": "content/hero/21/8.webp",
+        "figure": "content/img/heroes-display/21-3-v1.webp"
+      },
+      {
+        "index": 9,
+        "name": "Амазонка",
+        "portrait": "content/hero/21/9.webp",
+        "figure": "content/img/heroes-display/21-2-v1.webp"
+      },
+      {
+        "index": 10,
+        "name": "Разящий",
+        "portrait": "content/hero/21/10.webp",
+        "figure": "content/img/heroes-display/21-10-v1.webp"
+      },
+      {
+        "index": 11,
+        "name": "Разбойница",
+        "portrait": "content/hero/21/11.webp",
+        "figure": "content/img/heroes-display/21-11-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "name": "Клык",
+    "role": "VANGUARD",
+    "description": "Клык – одинокий хищник, сторонящийся союзников. Благодаря своему звериному чутью он легко настигает раненых и слабых врагов.\nНо не этим так страшен Клык: обезумевшие от его страшного воя жертвы теряют рассудок и превращаются в диких зверей.",
+    "descriptionEn": "Claw is a lone predator who shuns allies. Thanks to his beastly instinct he easily catches wounded and weak enemies.\nBut it is not this that makes Claw so terrifying: victims driven mad by his dreadful howl lose their reason and turn into wild beasts.",
+    "bars": {
+      "attak": {
+        "count": 8
+      },
+      "complexity": {
+        "count": 3
+      },
+      "defence": {
+        "count": 7
+      },
+      "talents": {
+        "count": 3
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Клык",
+        "portrait": "content/hero/22/1.webp",
+        "figure": "content/img/heroes-display/22-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Златогрив",
+        "portrait": "content/hero/22/2.webp",
+        "figure": "content/img/heroes-display/22-2-art-20261014.webp"
+      },
+      {
+        "index": 3,
+        "name": "Задира",
+        "portrait": "content/hero/22/3.webp",
+        "figure": "content/img/heroes-display/22-3-art-20261013.webp"
+      },
+      {
+        "index": 4,
+        "name": "Медведище",
+        "portrait": "content/hero/22/4.webp",
+        "figure": "content/img/heroes-display/22-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Коготь",
+        "portrait": "content/hero/22/5.webp",
+        "figure": "content/img/heroes-display/22-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Зайчище",
+        "portrait": "content/hero/22/6.webp",
+        "figure": "content/img/heroes-display/22-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Уук",
+        "portrait": "content/hero/22/7.webp",
+        "figure": "content/img/heroes-display/22-7-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "name": "Жабий наездник",
+    "role": "VANGUARD",
+    "description": "Жабий наездник во всем полагается на своего вечно голодного скакуна. Жаба ловит вкусных врагов своим длинным языком, поедает их и растет, становясь все больше и голоднее. Жаба любит прыгать, и чем больше она вырастает, тем лучше давит врагов.\nА если кто-то захочет обидеть лучшего друга Жабьего наездника, бросок боевого топора сразу остановит наглеца.",
+    "descriptionEn": "The Frog Whisperer relies entirely on his ever-hungry mount. The toad catches tasty enemies with her long tongue, devours them and grows bigger and hungrier. The toad loves to jump, and the bigger she grows, the better she crushes enemies.\nAnd if anyone wants to hurt the Frog Whisperer's best friend, a throw of a battle axe will stop the offender at once.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 6
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Жабий наездник",
+        "portrait": "content/hero/23/1.webp",
+        "figure": "content/img/heroes-display/23-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Дюймовочка",
+        "portrait": "content/hero/23/2.webp",
+        "figure": "content/img/heroes-display/23-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Жабогном",
+        "portrait": "content/hero/23/3.webp",
+        "figure": "content/img/heroes-display/23-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Болотный царь",
+        "portrait": "content/hero/23/4.webp",
+        "figure": "content/img/heroes-display/23-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Кроха",
+        "portrait": "content/hero/23/5.webp",
+        "figure": "content/img/heroes-display/23-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Головастик",
+        "portrait": "content/hero/23/6.webp",
+        "figure": "content/img/heroes-display/23-6-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "name": "Ведун",
+    "role": "FIGHTER",
+    "description": "Атаки Ведуна не открывают его местоположение, что делает героя прекрасным мастером засад. Его колдовские Злодрева – это смертельные ловушки для вражеских героев, опрометчиво решивших преследовать Ведуна. Также героя защищает заговоренная Живая шкура, которую он никогда не снимает.\nГлавный секрет успеха Ведуна заключается в последовательном использовании его талантов, складывающихся в смертоносную комбинацию.",
+    "descriptionEn": "The Woodsman's attacks do not reveal his location, making the hero an excellent master of ambushes. His enchanted Evilwood are deadly traps for enemy heroes who recklessly pursue the Woodsman. The hero is also protected by an enchanted Living Hide, which he never takes off.\nThe Woodsman's main secret to success is the consistent use of his talents, which combine into a deadly combination.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Ведун",
+        "portrait": "content/hero/24/1.webp",
+        "figure": "content/img/heroes-display/24-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Студенец",
+        "portrait": "content/hero/24/2.webp",
+        "figure": "content/img/heroes-display/24-2-art-20261014.webp"
+      },
+      {
+        "index": 3,
+        "name": "Ведунья",
+        "portrait": "content/hero/24/3.webp",
+        "figure": "content/img/heroes-display/24-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Лесовик",
+        "portrait": "content/hero/24/4.webp",
+        "figure": "content/img/heroes-display/24-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Ябаба",
+        "portrait": "content/hero/24/5.webp",
+        "figure": "content/img/heroes-display/24-5-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "name": "Чарозмей",
+    "role": "EXECUTIONER",
+    "description": "Чарозмей – физически слабое существо, однако благодаря Эфирному щиту он переносит получаемый урон на свою энергию. Его смертоносная магия опутывает вражеских героев сетью чар, ослабляет их волю и просто убивает тех, чей дух слабее. Герой очень сильно зависит от количества своей энергии, но, переходя в эфирную форму, быстро восполняет ее, соприкасаясь с живыми существами.\nБаланс между атакой и защитой, умение вовремя избегать смерти – залог победы Чарозмея.",
+    "descriptionEn": "The Dragonfly is physically weak, yet thanks to the Ethereal Shield he transfers incoming damage onto his Energy. His deadly magic ensnares enemy heroes in a web of enchantments, weakens their Will, and simply kills those whose spirit is weaker. The hero depends heavily on his amount of Energy, but when shifting into ethereal form he quickly restores it by touching living creatures.\nA balance between attack and defense, and the ability to avoid death in time, are the keys to the Dragonfly's victory.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Чарозмей",
+        "portrait": "content/hero/25/1.webp",
+        "figure": "content/img/heroes-display/25-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Чарозмейка",
+        "portrait": "content/hero/25/2.webp",
+        "figure": "content/img/heroes-display/25-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Магозавр",
+        "portrait": "content/hero/25/3.webp",
+        "figure": "content/img/heroes-display/25-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Змеевица",
+        "portrait": "content/hero/25/4.webp",
+        "figure": "content/img/heroes-display/25-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Чаромаг",
+        "portrait": "content/hero/25/5.webp",
+        "figure": "content/img/heroes-display/25-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Мехазмей",
+        "portrait": "content/hero/25/6.webp",
+        "figure": "content/img/heroes-display/25-6-art-20261014-v5.webp"
+      },
+      {
+        "index": 7,
+        "name": "Жарозмей",
+        "portrait": "content/hero/25/7.webp",
+        "figure": "content/img/heroes-display/25-7-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "name": "Бард",
+    "role": "FIGHTER",
+    "description": "Бард черпает свою силу во вдохновении, вовремя исполняя нужный мотив. Ее музыка подавляет врагов и не позволяет им использовать таланты. Играя на своей скрипке, героиня может увеличивать силы союзников и защищать их от атак противников.\nБард не спешит в центр боя, но способна одним финальным аккордом поставить точку в любом сражении.",
+    "descriptionEn": "The Muse draws her power from inspiration, playing just the right melody at the right moment. Her music suppresses enemies and keeps them from using talents. Playing her violin, the heroine can increase allies' power and shield them from enemy attacks.\nThe Muse does not rush into the thick of battle, but can put the final full stop to any fight with a single chord.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Бард",
+        "portrait": "content/hero/26/1.webp",
+        "figure": "content/img/heroes-display/26-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Калавери",
+        "portrait": "content/hero/26/2.webp",
+        "figure": "content/img/heroes-display/26-2-art-20261013.webp"
+      },
+      {
+        "index": 3,
+        "name": "Муза",
+        "portrait": "content/hero/26/3.webp",
+        "figure": "content/img/heroes-display/26-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Гейша",
+        "portrait": "content/hero/26/4.webp",
+        "figure": "content/img/heroes-display/26-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Барабанщица",
+        "portrait": "content/hero/26/5.webp",
+        "figure": "content/img/heroes-display/26-5-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "name": "Мастер клинков",
+    "role": "PROTECTOR",
+    "description": "Непревзойденная гибкость Мастера клинков позволяет ему одним броском ворваться в самую гущу боя и легко уворачиваться от большинства атак врагов.\nЭтот многорукий воин способен атаковать сразу нескольких врагов вокруг своими зачарованными клинками. Парализующий яд снижает боеспособность противников, а гипнотические таланты Мастера клинков отвлекают на него внимание недругов, оберегая слабо защищенных союзников.",
+    "descriptionEn": "The unmatched agility of the Blade Master lets him dive into the thick of battle in a single leap and easily dodge most enemy attacks.\nThis many-armed warrior can strike several enemies around him at once with his enchanted blades. Paralyzing poison weakens the foes' fighting ability, while the Blade Master's hypnotic talents draw enemy attention onto him, protecting weaker allies.",
+    "bars": {
+      "attak": {
+        "count": 6
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 5
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Мастер клинков",
+        "portrait": "content/hero/27/1.webp",
+        "figure": "content/img/heroes-display/27-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Кобр",
+        "portrait": "content/hero/27/2.webp",
+        "figure": "content/img/heroes-display/27-2-art-20261013.webp"
+      },
+      {
+        "index": 3,
+        "name": "Нага",
+        "portrait": "content/hero/27/3.webp",
+        "figure": "content/img/heroes-display/27-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Нагайна",
+        "portrait": "content/hero/27/4.webp",
+        "figure": "content/img/heroes-display/27-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Раминь",
+        "portrait": "content/hero/27/5.webp",
+        "figure": "content/img/heroes-display/27-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Киборг",
+        "portrait": "content/hero/27/6.webp",
+        "figure": "content/img/heroes-display/27-6-art-20261013.webp"
+      },
+      {
+        "index": 7,
+        "name": "Мастер клинков",
+        "portrait": "content/hero/27/7.webp",
+        "figure": "content/img/heroes-display/27-1-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "name": "Заклинатель",
+    "role": "FIGHTER",
+    "description": "Таланты Заклинателя наносят огромный урон, но требуют времени для сотворения. Особо опасных противников он на некоторое время превращает в кур. А взрывающиеся огненные шары, непроходимый энергетический барьер и призванный демон успевают уничтожить врагов до того, как они вернут себе прежний облик.",
+    "descriptionEn": "The Mage's talents deal enormous damage but require time to cast. He turns particularly dangerous opponents into chickens for a while. And exploding fireballs, an impassable energy barrier and a summoned demon manage to destroy enemies before they regain their former form.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 9
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 9
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Заклинатель",
+        "portrait": "content/hero/28/1.webp",
+        "figure": "content/img/heroes-display/28-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Джинн",
+        "portrait": "content/hero/28/2.webp",
+        "figure": "content/img/heroes-display/28-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Маг Мороз",
+        "portrait": "content/hero/28/3.webp",
+        "figure": "content/img/heroes-display/28-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Чёрная чародейка",
+        "portrait": "content/hero/28/4.webp",
+        "figure": "content/img/heroes-display/28-4-art-20261014.webp"
+      },
+      {
+        "index": 5,
+        "name": "Праймолог",
+        "portrait": "content/hero/28/5.webp",
+        "figure": "content/img/heroes-display/28-5-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Огненная жрица",
+        "portrait": "content/hero/28/7.webp",
+        "figure": "content/img/heroes-display/28-7-v1.webp"
+      },
+      {
+        "index": 8,
+        "name": "Чародей",
+        "portrait": "content/hero/28/8.webp",
+        "figure": "content/img/heroes-display/28-8-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "name": "Фикси",
+    "role": "SUPPORT",
+    "description": "Фикси – прекрасный герой поддержки: выпуская на поле боя своих фей, она атакует врагов и защищает союзников, а в решающий момент может обрушить ярость своих маленьких помощников, нанеся существенный урон всем противникам вокруг.\nУникальная способность единения с героями позволяет ей стать на время неуязвимой. Этим маневром Фикси может не только избежать опасности в трудную минуту, но и увеличить боеспособность союзного героя или помешать сражаться недругу.",
+    "descriptionEn": "Fixie is an excellent support hero: by releasing her fairies onto the battlefield, she attacks enemies and protects allies, and at the decisive moment can unleash the fury of her little helpers, dealing significant damage to all foes around.\nHer unique ability to unite with heroes lets her become invulnerable for a time. With this maneuver, Fixie can not only escape danger in a difficult moment, but also increase the fighting strength of an allied hero or keep an enemy from fighting.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 8
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Фикси",
+        "portrait": "content/hero/29/1.webp",
+        "figure": "content/img/heroes-display/29-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Бабочка",
+        "portrait": "content/hero/29/2.webp",
+        "figure": "content/img/heroes-display/29-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Пикси",
+        "portrait": "content/hero/29/3.webp",
+        "figure": "content/img/heroes-display/29-3-art-20261014.webp"
+      },
+      {
+        "index": 4,
+        "name": "Королева фей",
+        "portrait": "content/hero/29/4.webp",
+        "figure": "content/img/heroes-display/29-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Испытательница",
+        "portrait": "content/hero/29/5.webp",
+        "figure": "content/img/heroes-display/29-5-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "name": "Ведьмак",
+    "role": "PROTECTOR",
+    "description": "Ведьмак – самый надежный телохранитель. Он неизменно приходит на помощь и самоотверженно защищает союзника, получая вместо него урон. Этот герой решительно атакует врагов, вынуждая их сражаться с ним.\nКаждый удар недруга делает Ведьмака только бесстрашнее и сильнее. Поэтому Ведьмак никогда не отступает, пока его карающий меч не свершит возмездие.",
+    "descriptionEn": "The Wanderer is the most reliable bodyguard. He always comes to the rescue and selflessly protects an ally, taking damage in their place. This hero resolutely attacks enemies, forcing them to fight him.\nEvery blow from a foe makes the Wanderer only braver and stronger. That is why the Wanderer never retreats until his avenging sword has delivered retribution.",
+    "bars": {
+      "attak": {
+        "count": 3
+      },
+      "complexity": {
+        "count": 3
+      },
+      "defence": {
+        "count": 9
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Ведьмак",
+        "portrait": "content/hero/30/1.webp",
+        "figure": "content/img/heroes-display/30-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Следопыт",
+        "portrait": "content/hero/30/2.webp",
+        "figure": "content/img/heroes-display/30-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Кречет",
+        "portrait": "content/hero/30/3.webp",
+        "figure": "content/img/heroes-display/30-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Светоносный",
+        "portrait": "content/hero/30/4.webp",
+        "figure": "content/img/heroes-display/30-4-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "name": "Доктрина",
+    "role": "EXECUTIONER",
+    "description": "Нанося врагам урон едкими веществами и замедляя их порционным клеем, Доктрина дистиллирует из вражеских героев ингредиенты и фракции прайма, необходимые для создания клонов при помощи начертательной алхимии.\nВерно нарисовав алхимический круг, она окажется в нужное время в нужном месте и обрушит всю мощь алхимии на головы врагов.",
+    "descriptionEn": "By dealing damage to enemies with caustic substances and slowing them with portioned glue, Doctrine distills the ingredients and fractions of prime from enemy heroes that are needed to create clones through drawing alchemy.\nHaving correctly drawn an alchemical circle, she will appear at the right time and place and unleash the full power of alchemy on the heads of her enemies.",
+    "bars": {
+      "attak": {
+        "count": 6
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Доктрина",
+        "portrait": "content/hero/31/1.webp",
+        "figure": "content/img/heroes-display/31-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Аспирантка",
+        "portrait": "content/hero/31/2.webp",
+        "figure": "content/img/heroes-display/31-2-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "name": "Демонолог",
+    "role": "EXECUTIONER",
+    "description": "Пойманные Демонологом архонты всегда готовы встретить противника своего владыки в бою. Ментальный кнут, пагубный для противников, только усиливает его слуг, разжигая в них внутреннее пламя, а ловушка позволяет обездвижить особо надоедливого героя.\nОкружив себя архонтами, Демонолог не только cможет быстрее передвигаться и лучше держать удар, но и будет готов в любую минуту спустить их на врага одной разрушительной атакой.",
+    "descriptionEn": "Archons captured by the Demonologist are always ready to meet his lord's foe in battle. The Mental Whip, deadly to enemies, only strengthens his servants, kindling an inner flame within them, while the trap lets him immobilize a particularly annoying hero.\nSurrounded by archons, the Demonologist can not only move faster and withstand blows better, but will also be ready at any moment to unleash them on the foe with a single devastating attack.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 6
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Демонолог",
+        "portrait": "content/hero/32/1.webp",
+        "figure": "content/img/heroes-display/32-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Одержимая",
+        "portrait": "content/hero/32/2.webp",
+        "figure": "content/img/heroes-display/32-2-art-20261013.webp"
+      },
+      {
+        "index": 3,
+        "name": "Демон",
+        "portrait": "content/hero/32/3.webp",
+        "figure": "content/img/heroes-display/32-3-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "name": "Вампир",
+    "role": "VANGUARD",
+    "description": "Вампиром движет неутолимая жажда, заставляя его постоянно балансировать жизненной силой – своей и противника. Сумеречные слуги помогают герою скрыться и принимают удар на себя, в то время как сам он способен на расстоянии поражать врагов росчерками клинка.\nВслед за неожиданным подарком – розой – Вампир настигнет любого и устроит трапезу, доволен которой останется только он.",
+    "descriptionEn": "The Vampire is driven by an unquenchable thirst, forcing him to constantly balance life force – his own and his enemy's. Twilight servants help the hero hide and take the blow upon themselves, while he himself can strike enemies from a distance with slashes of his blade.\nAfter the unexpected gift – a rose – the Vampire will catch anyone and make them a feast, from which only he will remain satisfied.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 8
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Вампир",
+        "portrait": "content/hero/33/1.webp",
+        "figure": "content/img/heroes-display/33-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Рипмав",
+        "portrait": "content/hero/33/2.webp",
+        "figure": "content/img/heroes-display/33-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Акшар",
+        "portrait": "content/hero/33/3.webp",
+        "figure": "content/img/heroes-display/33-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Носферату",
+        "portrait": "content/hero/33/4.webp",
+        "figure": "content/img/heroes-display/33-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Князь тьмы",
+        "portrait": "content/hero/33/5.webp",
+        "figure": "content/img/heroes-display/33-5-art-20261013.webp"
+      },
+      {
+        "index": 6,
+        "name": "Вампиресса",
+        "portrait": "content/hero/33/6.webp",
+        "figure": "content/img/heroes-display/33-6-art-20261013.webp"
+      },
+      {
+        "index": 7,
+        "name": "Трансильванец",
+        "portrait": "content/hero/33/7.webp",
+        "figure": "content/img/heroes-display/33-7-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "name": "Ведьма",
+    "role": "FIGHTER",
+    "description": "Отличительными особенностями Ведьмы являются фамильяр, гуляющий сам по себе, и возможность усиливать атаки, затрачивая свою энергию.\nМобильность герою обеспечивает метла, способная форсажем ввести врагов в панику и предотвратить попытки контроля. Но ничто не сравнится с ее основным оружием – проклятьем, повышающим наносимый врагам урон.",
+    "descriptionEn": "Moira's distinguishing features are a familiar that roams on its own, and the ability to boost attacks by spending her Energy.\nMobility is provided to the hero by a broom, which with a dash can throw enemies into panic and prevent attempts at control. But nothing compares with her main weapon – a curse that increases the damage dealt to enemies.",
+    "bars": {
+      "attak": {
+        "count": 9
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 5
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Ведьма",
+        "portrait": "content/hero/34/1.webp",
+        "figure": "content/img/heroes-display/34-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Мойра",
+        "portrait": "content/hero/34/2.webp",
+        "figure": "content/img/heroes-display/34-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Ламия",
+        "portrait": "content/hero/34/3.webp",
+        "figure": "content/img/heroes-display/34-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Гонщик",
+        "portrait": "content/hero/34/4.webp",
+        "figure": "content/img/heroes-display/34-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Чертовка",
+        "portrait": "content/hero/34/5.webp",
+        "figure": "content/img/heroes-display/34-5-v1.webp"
+      },
+      {
+        "index": 6,
+        "name": "Рокер",
+        "portrait": "content/hero/34/6.webp",
+        "figure": "content/img/heroes-display/34-6-v1.webp"
+      },
+      {
+        "index": 7,
+        "name": "Леденец",
+        "portrait": "content/hero/34/7.webp",
+        "figure": "content/img/heroes-display/34-7-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "name": "Да'Ка",
+    "role": "PROTECTOR",
+    "description": "Да'Ка – надежный защитник, способный ворваться в гущу врагов и разметать своим щитом их ряды, подставив хрупких противников под удар дружественных бойцов.\nПока его молитвы затягивают раны союзников, граната – подарок Изобретателя – позволяет безнаказанно атаковать противников на расстоянии, а накопленная вера замедляет или ослепляет пораженных талантами Да'Ки врагов.",
+    "descriptionEn": "Da'ka is a steadfast defender, able to charge into the thick of the enemy and scatter their ranks with his shield, exposing fragile foes to the blows of allied fighters.\nWhile his prayers mend allies' wounds, the grenade, a gift from the Inventor, lets him attack foes at range with impunity, and accumulated faith slows or blinds enemies struck by Da'ka's talents.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 6
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Да'Ка",
+        "portrait": "content/hero/35/1.webp",
+        "figure": "content/img/heroes-display/35-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Полузащитник",
+        "portrait": "content/hero/35/2.webp",
+        "figure": "content/img/heroes-display/35-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Драгомир",
+        "portrait": "content/hero/35/3.webp",
+        "figure": "content/img/heroes-display/35-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Архей",
+        "portrait": "content/hero/35/4.webp",
+        "figure": "content/img/heroes-display/35-4-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 36,
+    "name": "Ха'Ка",
+    "role": "PROTECTOR",
+    "description": "Ха'Ка – надежный защитник, способный ворваться в гущу врагов и разметать своим щитом их ряды, подставив хрупких противников под удар дружественных бойцов.\nПока его молитвы затягивают раны союзников, впитавшаяся магия адорнийцев позволяет ему поджигать противников вокруг себя, а накопленная вера замедляет или ослепляет пораженных талантами Ха'Ки врагов.",
+    "descriptionEn": "Ha'ka is a steadfast defender, able to charge into the thick of the enemy and scatter their ranks with his shield, exposing fragile foes to the blows of allied fighters.\nWhile his prayers mend allies' wounds, the Adornian magic he has absorbed lets him set nearby foes on fire, and accumulated faith slows or blinds enemies struck by Ha'ka's talents.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 6
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Ха'Ка",
+        "portrait": "content/hero/36/1.webp",
+        "figure": "content/img/heroes-display/36-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Дорей",
+        "portrait": "content/hero/36/2.webp",
+        "figure": "content/img/heroes-display/35-4-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Хартвиг",
+        "portrait": "content/hero/36/3.webp",
+        "figure": "content/img/heroes-display/35-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Полузащитник",
+        "portrait": "content/hero/36/4.webp",
+        "figure": "content/img/heroes-display/35-2-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "name": "Геноморф",
+    "role": "EXECUTIONER",
+    "description": "Геноморф - настолько опасное и непредсказуемое порождение прайма, что даже убитые им неприятели взрываются, нанося урон окружающим.\nИзлюбленная тактика нападения героя – подкоп – и надежная броня, смягчающая вражеские удары, позволяют Геноморфу быстро и безболезненно добираться до врагов, после чего он, комбинируя стремительные атаки с сокрушительными ударами токсичного хвоста, сметает любого противника с поля боя.",
+    "descriptionEn": "Nox is such a dangerous and unpredictable creation of prime that even the enemies it kills explode, dealing damage to those around.\nThe hero's favorite attack tactic is the burrow, and his sturdy armor softening enemy blows let Nox reach enemies quickly and painlessly. Then, combining swift attacks with crushing blows from his toxic tail, he sweeps any opponent off the battlefield.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Геноморф",
+        "portrait": "content/hero/37/1.webp",
+        "figure": "content/img/heroes-display/37-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Химера",
+        "portrait": "content/hero/37/2.webp",
+        "figure": "content/img/heroes-display/37-2-v1.webp"
+      },
+      {
+        "index": 3,
+        "name": "Щелк",
+        "portrait": "content/hero/37/3.webp",
+        "figure": "content/img/heroes-display/37-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Клац",
+        "portrait": "content/hero/37/4.webp",
+        "figure": "content/img/heroes-display/37-4-v1.webp"
+      },
+      {
+        "index": 5,
+        "name": "Магма",
+        "portrait": "content/hero/37/5.webp",
+        "figure": "content/img/heroes-display/37-5-art-20261014-v3.webp"
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "name": "Заступница",
+    "role": "SUPPORT",
+    "description": "Заступница всегда готова прилететь союзникам на помощь, она единственная из героев, кого не остановит ни расстояние, ни даже собственная гибель! Само её присутствие восстанавливает Энергию союзникам, Ангельский свет излечивает их, а Светоч духа - усиливает в бою.\nВрагам же лучше не стоять на пути замедляющего их Ангельского света, и уж тем более не попадать под удар Копья возмездия, которое Заступница с готовностью отправит в любую точку карты в помощь союзнику.",
+    "descriptionEn": "The Guardian is always ready to fly to the aid of her allies. She is the only hero whom neither distance nor even her own death can stop! Her very presence restores Energy to allies, Angelic Light heals them, and Spirit Beacon strengthens them in battle.\nEnemies would do well not to stand in the path of the slowing Angelic Light, and certainly not to fall under the Spear of Retribution, which the Guardian will gladly send to any point on the map to aid an ally.",
+    "bars": {
+      "attak": {
+        "count": 3
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Заступница",
+        "portrait": "content/hero/38/1.webp",
+        "figure": "content/img/heroes-display/38-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Драконица",
+        "portrait": "content/hero/38/2.webp",
+        "figure": "content/img/heroes-display/38-2-art-20261014.webp"
+      },
+      {
+        "index": 3,
+        "name": "Хранительница",
+        "portrait": "content/hero/38/3.webp",
+        "figure": "content/img/heroes-display/38-3-v1.webp"
+      },
+      {
+        "index": 4,
+        "name": "Тёмный ангел",
+        "portrait": "content/hero/38/4.webp",
+        "figure": "content/img/heroes-display/38-4-v1.webp"
+      }
+    ]
+  },
+  {
+    "id": 39,
+    "name": "Фриз",
+    "role": "VANGUARD",
+    "description": "От Фриза не приходится ждать теплого приема, - герой способен морозным натиском догнать свою жертву, тут же поймать её в кольцо игл и сходу обработать усиленными льдистыми ударами!\nА если жертва считает, что стоит достаточно далеко от порождения льда, то мощный кулак, вырастающий из-под земли, без сомнения исправит это и подкинет врага прямо к морозному лицу смерти!",
+    "descriptionEn": "Don't expect a warm welcome from Freeze. The hero can catch up with his prey with a frosty onslaught, trap it in a ring of needles and instantly deal with it using reinforced icy blows!\nAnd if the victim thinks it stands far enough from the ice, a mighty fist rising from beneath the ground will surely correct that and fling the foe right into death's frosty face!",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 6
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Фриз",
+        "portrait": "content/hero/39/1.webp",
+        "figure": "content/img/heroes-display/39-1-v1.webp"
+      },
+      {
+        "index": 2,
+        "name": "Антифриз",
+        "portrait": "content/hero/39/2.webp",
+        "figure": "content/img/heroes-display/39-2-art-20261013.webp"
+      },
+      {
+        "index": 4,
+        "name": "Снежный человек",
+        "portrait": "content/hero/39/4.webp",
+        "figure": "content/img/heroes-display/39-4-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 40,
+    "name": "Головорез",
+    "role": "FIGHTER",
+    "description": "Головорез без устали уничтожает врагов, используя для этого раскаленные пистолеты, повышающие силу и скорость атак героя, а также собственную Ярость, усиливающую его способности и исцеляющую тело.\nМетка Охотника не даст врагу уйти без потерь Здоровья, а Инстинкт выживания героя позволит ему самому отпрыгнуть от опасностей, калеча оставшихся позади преследователей.",
+    "descriptionEn": "The Desperado relentlessly destroys enemies with scorching pistols that boost the hero's Attack speed and Strength, as well as his own Fury, which strengthens his abilities and heals his body.\nThe Hunter's Mark keeps an enemy from escaping without losing Health, while the hero's Survival Instinct lets him leap clear of danger and maims the pursuers left behind.",
+    "bars": {
+      "attak": {
+        "count": 9
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 3
+      }
+    },
+    "skins": [
+      {
+        "index": 2,
+        "name": "Офицер",
+        "portrait": "content/hero/40/2.webp",
+        "figure": "content/img/heroes-display/40-2-art-20261014.webp"
+      },
+      {
+        "index": 3,
+        "name": "Лиходей",
+        "portrait": "content/hero/40/3.webp",
+        "figure": "content/img/heroes-display/40-3-art-20261013.webp"
+      },
+      {
+        "index": 4,
+        "name": "Охотник за головами",
+        "portrait": "content/hero/40/4.webp",
+        "figure": "content/img/heroes-display/40-4-art-20261014.webp"
+      },
+      {
+        "index": 5,
+        "name": "Головорез",
+        "portrait": "content/hero/40/5.webp",
+        "figure": "content/img/heroes-display/40-5-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 41,
+    "name": "Ту'Реху",
+    "role": "VANGUARD",
+    "description": "Ту'Реху – проклятый воин, платящий своим Здоровьем за способность отнимать его у врага. Дорваться до противника, повергнуть наземь рукой из прайма и яростно наносить один за одним беспощадные удары разрушительной силы – вот его цель.\nЧем ближе герой к смерти, тем более он защищён и опасен, а триумфальное буйство не позволит перешагнуть черту, не забрав с собой врага.",
+    "descriptionEn": "Tu'Rehu is a cursed warrior who pays with his Health for the ability to steal it from his enemy. His goal is to reach the foe, hurl him to the ground with a hand of Prime, and furiously deal one merciless blow after another of destructive force.\nThe closer the hero comes to death, the more protected and dangerous he becomes, and his triumphant frenzy will not let him cross the line without taking the enemy with him.",
+    "bars": {
+      "attak": {
+        "count": 8
+      },
+      "complexity": {
+        "count": 8
+      },
+      "defence": {
+        "count": 6
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Ту'Реху",
+        "portrait": "content/hero/41/1.webp",
+        "figure": "content/img/heroes-display/41-1-art-20261014.webp"
+      },
+      {
+        "index": 3,
+        "name": "Та'Яха",
+        "portrait": "content/hero/41/3.webp",
+        "figure": "content/img/heroes-display/41-3-art-20261015-v2.webp"
+      },
+      {
+        "index": 4,
+        "name": "Хи'Ник",
+        "portrait": "content/hero/41/4.webp",
+        "figure": "content/img/heroes-display/41-4-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 42,
+    "name": "Мими",
+    "role": "PROTECTOR",
+    "description": "Пусть враги не обманываются милым обликом Мими: этот чудный зверек не только умело поддерживает союзников и парирует вражеские выпады, оглушая и понижая Стойкость противников.\nНакопив достаточно Ярости, Мими высвобождает свою вторую сущность, принимая форму ужасного зверя, приводящего врагов в панику и способного сразить их мощной атакой!",
+    "descriptionEn": "Let no enemy be fooled by Mimi's charming look: this lovely creature not only skillfully supports allies and parries enemy thrusts, but also stuns enemies and lowers their Stamina.\nOnce Mimi has accumulated enough Fury, she unleashes her second essence, taking the form of a terrible beast that panics enemies and can smite them with a powerful attack!",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 7
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Мими",
+        "portrait": "content/hero/42/1.webp",
+        "figure": "content/img/heroes-display/42-1-art-20261013.webp"
+      },
+      {
+        "index": 2,
+        "name": "Гринчи",
+        "portrait": "content/hero/42/2.webp",
+        "figure": "content/img/heroes-display/42-2-art-20261014-v2.webp"
+      }
+    ]
+  },
+  {
+    "id": 43,
+    "name": "Путник",
+    "role": "FIGHTER",
+    "description": "Путник и его верный Медведь – настоящие стражи рубежей. В арсенале Героя помимо его снайперской винтовки – цепкие капканы-ловушки. Грозный четверолапый фронтовой товарищ Путника может не только преследовать врага, нанося тому яростные удары, но и терпеливо караулить противников в засаде. А Снайперская метка, отмечающая врага, не позволит тому уйти от возмездия: ультимативный Прицельный выстрел винтовки Путника достанет его везде, где бы он ни находился!",
+    "descriptionEn": "Sputnik and his faithful Bear are true guardians of the frontiers. In the hero's arsenal, besides his sniper rifle, are clinging trap-snares. The formidable four-legged frontline comrade of Sputnik can not only chase the enemy, dealing fierce blows, but also patiently lie in wait for foes in ambush. And the Sniper Mark, marking an enemy, will not let him escape retribution: Sputnik's ultimate Aimed Shot will reach him wherever he is!",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 7
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Путник",
+        "portrait": "content/hero/43/1.webp",
+        "figure": "content/img/heroes-display/43-1-art-20261013.webp"
+      },
+      {
+        "index": 2,
+        "name": "Патриот",
+        "portrait": "content/hero/43/2.webp",
+        "figure": "content/img/heroes-display/43-2-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 44,
+    "name": "Луна",
+    "role": "EXECUTIONER",
+    "description": "Луна черпает силы из энергии космоса, концентрируя ее в своем обруче. С его помощью она может обрушить на врагов шквал заряженных космической энергией частиц или погрузить противников в Стазис, полностью обездвижив.\nЕе поддержка также незаменима для команды: Звездные врата помогают быстро перемещаться и придают союзникам дополнительные силы.\nА открыв разум космосу,  Луна способна перейти в форму Безмятежности, становясь неуязвимой.",
+    "descriptionEn": "Luna draws strength from the energy of the cosmos, concentrating it in her hoop. With it she can unleash a barrage of cosmically charged particles on her foes, or plunge opponents into Stasis, fully immobilizing them.\nHer support is also invaluable for the team: Stargates help allies move quickly and grant them extra strength.\nAnd having opened her mind to the cosmos, Luna can shift into the form of Serenity, becoming invulnerable.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 7
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Луна",
+        "portrait": "content/hero/44/1.webp",
+        "figure": "content/img/heroes-display/44-1-art-20261015-v2.webp"
+      },
+      {
+        "index": 2,
+        "name": "Фара",
+        "portrait": "content/hero/44/2.webp",
+        "figure": "content/img/heroes-display/44-2-art-20261014-v3.webp"
+      }
+    ]
+  },
+  {
+    "id": 45,
+    "name": "Хулиганка",
+    "role": "VANGUARD",
+    "description": "Озорная Хулиганка легко входит в кураж и может везде настигнуть своих врагов ловкими скачками. Весёлый мячик и смешной зонтик в её руках превращаются в опасное оружие, способное ошеломить противника и вывести его из строя. \nХулиганка обожает хорошую драку — и при использовании своих способностей лупит врагов ещё задорнее! А бутылочка её любимого молочного коктейля помогает ей восстанавливать силы во время боя.",
+    "descriptionEn": "The playful Tearaway easily gets carried away and can catch her enemies anywhere with agile leaps. The cheerful ball and funny umbrella in her hands turn into dangerous weapons that can stun an opponent and knock him out of action.\nTearaway adores a good brawl – and when using her abilities she thrashes enemies even more gleefully! And a bottle of her favorite milkshake helps her restore strength during battle.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 6
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Хулиганка",
+        "portrait": "content/hero/45/1.webp",
+        "figure": "content/img/heroes-display/45-1-art-20261014.webp"
+      },
+      {
+        "index": 2,
+        "name": "Неформалка",
+        "portrait": "content/hero/45/2.webp",
+        "figure": "content/img/heroes-display/45-2-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 46,
+    "name": "Берсерк",
+    "role": "PROTECTOR",
+    "description": "Мощный Берсерк готов рубить всех врагов на своем пути. Один его вид внушает страх противникам рядом. Своими топорами на цепях Герой может достать любого врага на средней дистанции, быстро забраться в гущу сражения или закрутить свирепый ураган вокруг себя. Ни одному противнику не уйти от гнева Берсерка - его стальные цепи настигнут врагов и привяжут к Герою.",
+    "descriptionEn": "The mighty Berserker is ready to hack down every enemy in his path. The very sight of him strikes fear into the opponents nearby. With his chain axes the Hero can reach any enemy at medium range, quickly charge into the thick of battle, or whirl a ferocious storm around himself. No enemy can escape the Berserker's wrath: his steel chains will catch the foes and bind them to the Hero.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 6
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Берсерк",
+        "portrait": "content/hero/46/1.webp",
+        "figure": "content/img/heroes-display/46-1-art-20261014.webp"
+      },
+      {
+        "index": 2,
+        "name": "Ультраберсерк",
+        "portrait": "content/hero/46/2.webp",
+        "figure": "content/img/heroes-display/46-2-art-20261014.webp"
+      },
+      {
+        "index": 3,
+        "name": "Вестник рока",
+        "portrait": "content/hero/46/3.webp",
+        "figure": "content/img/heroes-display/46-3-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 47,
+    "name": "Аггель",
+    "role": "FIGHTER",
+    "description": "Грациозная и властная Аггель пришла, чтобы уничтожить все живое. Она перемещается на обожженых крыльях по карте, не давая шансов врагам убежать от ее синего пламени. Противники, попавшие под атаки Аггель, получают огненное проклятие и вносят хаос в свой стан.",
+    "descriptionEn": "Graceful and imperious, Aggel has come to destroy all living things. She moves across the map on scorched wings, giving enemies no chance to escape her blue flame. Opponents caught under Aggel's attacks receive a fiery curse and sow chaos in their ranks.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Аггель",
+        "portrait": "content/hero/47/1.webp",
+        "figure": "content/img/heroes-display/47-1-art-20261014-v3.webp"
+      },
+      {
+        "index": 2,
+        "name": "Энигма",
+        "portrait": "content/hero/47/2.webp",
+        "figure": "content/img/heroes-display/47-2-art-20261014.webp"
+      },
+      {
+        "index": 3,
+        "name": "Хладнокрылая",
+        "portrait": "content/hero/47/3.webp",
+        "figure": "content/img/heroes-display/47-3-art-20261015-v4.webp"
+      }
+    ]
+  },
+  {
+    "id": 48,
+    "name": "Асур",
+    "role": "VANGUARD",
+    "description": "От смертоносных клинков Асура еще никому не удавалось уйти. Меняя боевые стойки, он быстро переходит от стремительного нападения к усиленной обороне, увеличивая скорость передвижения и шанс уклонения от атак. Стойки героя становятся по-настоящему мощными, когда Асур выпускает наружу свою демоническую силу.",
+    "descriptionEn": "No one has ever escaped Hellblade's deadly blades. Changing his combat stances, he swiftly shifts from rapid assault to reinforced defense, increasing his movement speed and dodge chance. The hero's stances become truly formidable when Hellblade unleashes his demonic power.",
+    "bars": {
+      "attak": {
+        "count": 8
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 6
+      },
+      "talents": {
+        "count": 4
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Асур",
+        "portrait": "content/hero/48/1.webp",
+        "figure": "content/img/heroes-display/48-1-art-20261014.webp"
+      },
+      {
+        "index": 2,
+        "name": "Каратель",
+        "portrait": "content/hero/48/2.webp",
+        "figure": "content/img/heroes-display/48-2-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 49,
+    "name": "Дуболом",
+    "role": "VANGUARD",
+    "description": "Могучий Дуболом незаменим в команде  - сила древа поднимает дух союзникам. А стоит врагам запутаться в дремучих терниях, как герой ускоряется и со свистом ветра настигает свою цель, в два счета расправляясь с ней.\nИ даже не думайте злить Дуболома - лучшие из лучших будут повержены, когда он устроит могучую встряску.",
+    "descriptionEn": "The mighty Oaksmasher is indispensable in a team: the strength of the tree lifts allies' spirits. And once enemies get tangled in the dense thorns, the hero speeds up and, swift as the wind, catches his target, dispatching it in no time.\nAnd don't even think of angering Oaksmasher, for even the very best will be felled when he unleashes his mighty shake-up.",
+    "bars": {
+      "attak": {
+        "count": 6
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 5
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Дуболом",
+        "portrait": "content/hero/49/1.webp",
+        "figure": "content/img/heroes-display/49-1-art-20261014.webp"
+      },
+      {
+        "index": 2,
+        "name": "Костолом",
+        "portrait": "content/hero/49/2.webp",
+        "figure": "content/img/heroes-display/49-2-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "name": "Чумной доктор",
+    "role": "FIGHTER",
+    "description": "Чумной доктор пришел отравить все живое в Прае, насылая миазмы и заражая противников чумными бубонами. Отравленные враги в панике убегают и рискуют умереть от сердечного приступа. Когда доктор в сражении - ослабленный иммунитет врагам гарантирован.",
+    "descriptionEn": "The Plague Doctor came to poison all living things in Prae, releasing miasma and infecting enemies with plague buboes. Poisoned foes flee in panic and risk dying of heart attacks. When the doctor is in battle, weakened immunity for the enemy is guaranteed.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Чумной доктор",
+        "portrait": "content/hero/50/1.webp",
+        "figure": "content/img/heroes-display/50-1-art-20261013.webp"
+      },
+      {
+        "index": 2,
+        "name": "Мор",
+        "portrait": "content/hero/50/2.webp",
+        "figure": "content/img/heroes-display/50-2-art-20261013.webp"
+      },
+      {
+        "index": 3,
+        "name": "Проказник",
+        "portrait": "content/hero/50/3.webp",
+        "figure": "content/img/heroes-display/50-3-art-20261014.webp"
+      },
+      {
+        "index": 4,
+        "name": "Инквизитор",
+        "portrait": "content/hero/50/4.webp",
+        "figure": "content/img/heroes-display/50-4-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 51,
+    "name": "Катана",
+    "role": "VANGUARD",
+    "description": "Ведомая кодексом чести, Катана сеет хаос и разрушение на поле боя. Здесь ничто не сможет сдержать ее губительный огонь и помешать рассекать врагов мощными ударами.  \nОдним прыжком она врывается в гущу сражения и, приняв форму огненного призрака, становится неуязвима. \nБерегитесь, путь ее клинка не оставляет противникам ни единого шанса на победу.",
+    "descriptionEn": "Guided by a code of honor, Katana sows chaos and destruction on the battlefield. Nothing can hold back her deadly fire or stop her from cleaving enemies with powerful strikes.\nWith one leap she charges into the thick of battle and, taking the form of a fiery ghost, becomes invulnerable.\nBeware: the path of her blade leaves enemies not a single chance of victory.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 6
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Катана",
+        "portrait": "content/hero/51/1.webp",
+        "figure": "content/img/heroes-display/51-1-art-20261014.webp"
+      },
+      {
+        "index": 2,
+        "name": "Рапира",
+        "portrait": "content/hero/51/2.webp",
+        "figure": "content/img/heroes-display/51-2-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 52,
+    "name": "Авиатор",
+    "role": "FIGHTER",
+    "description": "Храбрый Авиатор - непревзойденный боец, праймолет которого под завязку набит смертельным вооружением. Ракеты настигают зазевавшегося врага, скорострельный пулемет несет смерть, а огромная бомба лишает врагов последнего шанса на спасение.\nПраймолет - хрупкая, но быстрая машина, мощные двигатели которой позволяют уйти от врага или прилететь на помощь союзнику.",
+    "descriptionEn": "The brave Aviator is an unmatched fighter whose primeplane is crammed with deadly weaponry. Rockets catch the unwary enemy, a rapid-fire machine gun spreads death, and a huge bomb robs the foes of their last chance at salvation.\nThe primeplane is a fragile but fast machine, whose powerful engines let it escape from an enemy or fly to help an ally.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Авиатор",
+        "portrait": "content/hero/52/1.webp",
+        "figure": "content/img/heroes-display/52-1-art-20261013.webp"
+      },
+      {
+        "index": 2,
+        "name": "Дед Пилот",
+        "portrait": "content/hero/52/2.webp",
+        "figure": "content/img/heroes-display/52-2-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "name": "Фанатик",
+    "role": "SUPPORT",
+    "description": "Фанатик коварен и непредсказуем, а его умения значительно осложняют бой врагам. Верность клятве позволяет герою с лихвой восстанавливать здоровье после повреждений и даже возвращать священным возмездием урон обидчику.\n\nСлавится он не только поддержкой: град ритуальных ударов и мгновенная смена позиции делают Фанатика весьма опасным в сражении один на один.",
+    "descriptionEn": "The Zealot is cunning and unpredictable, and his abilities greatly complicate battles for his enemies. Loyalty to his oath allows the hero to fully restore health after damage and even return the damage to the attacker with sacred retribution.\nHe is renowned not only for support: a hail of ritual strikes and instant repositioning make the Zealot very dangerous in one-on-one combat.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 8
+      },
+      "defence": {
+        "count": 6
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Фанатик",
+        "portrait": "content/hero/53/1.webp",
+        "figure": "content/img/heroes-display/53-1-art-20261014.webp"
+      },
+      {
+        "index": 2,
+        "name": "Еретик",
+        "portrait": "content/hero/53/2.webp",
+        "figure": "content/img/heroes-display/53-2-hands-20261028.webp?v=2"
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "name": "Павший владыка",
+    "role": "PROTECTOR",
+    "description": "Владыка – жестокий и талантливый стратег, не привыкший отсиживаться в тылу. Под его командованием солдаты уверенно шли на смерть ради общей победы, а теперь их мечи вновь призваны нести службу.\nБоевым построением герой обращает атаки противников против них самих и волной клинков перемещается по полю брани, переворачивая своими тактическими решениями даже самое безысходное положение.",
+    "descriptionEn": "The Fallen Lord is a cruel and talented strategist, unaccustomed to hiding in the rear. Under his command, soldiers marched confidently to their deaths for the common victory, and now their swords are called to serve once more.\nWith battle formations, the hero turns enemy attacks against their own users and moves across the battlefield in a wave of blades, turning even the most hopeless situation around with his tactical decisions.",
+    "bars": {
+      "attak": {
+        "count": 6
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 3
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Павший владыка",
+        "portrait": "content/hero/54/1.webp",
+        "figure": "content/img/heroes-display/54-1-hand-short-20261029.webp"
+      },
+      {
+        "index": 2,
+        "name": "Обсидиан",
+        "portrait": "content/hero/54/2.webp",
+        "figure": "content/img/heroes-display/54-2-art-20261014-v4.webp"
+      }
+    ]
+  },
+  {
+    "id": 55,
+    "name": "Дриада",
+    "role": "FIGHTER",
+    "description": "Устами Дриады говорит природа. В бою героиня использует силы леса, чтобы ослепить врагов и поразить спорами, делая их уязвимее к своим атакам. Призванный дух помогает обнаружить скрытых врагов и получить тактическое преимущество. Застигнутая врасплох героиня обращается в дерево и становится неуязвимой для вражеских атак, а в разгар боя сама природа ополчается против врагов Дриады, проращивая споры, обездвиживая и нанося урон всем вокруг.",
+    "descriptionEn": "Nature speaks through the Dryad. In battle, the heroine wields the forces of the forest to blind enemies and strike them with spores, making them more vulnerable to her attacks. A summoned spirit helps uncover hidden foes and gain a tactical advantage. Caught by surprise, the heroine turns into a tree and becomes invulnerable to enemy attacks, and in the heat of battle nature itself rises against the Dryad's foes, sprouting spores, immobilizing them and dealing damage to everyone around.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Дриада",
+        "portrait": "content/hero/55/1.webp",
+        "figure": "content/img/heroes-display/55-1-art-20261013.webp"
+      },
+      {
+        "index": 2,
+        "name": "Беладонна",
+        "portrait": "content/hero/55/2.webp",
+        "figure": "content/img/heroes-display/55-2-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 56,
+    "name": "Странник",
+    "role": "FIGHTER",
+    "description": "Странник – настоящий мастер оружия. Он молниеносно  врывается в гущу боя с мечом и умело управляется с арбалетом, представляя опасность для врага на любых дистанциях. Герой отточил свое мастерство настолько, что может находить слабые места противника, а также укрываться от глаз, используя маскировку. \nВ разгар сражения Странник может переломить ход боя, обезоружив всех врагов поблизости мастерским приемом.",
+    "descriptionEn": "The Wanderer is a true master of weapons. He rushes into the thick of battle with a sword in a lightning-quick move and skillfully handles a crossbow, posing a danger to enemies at any range. The hero has honed his mastery so far that he can find an enemy's weak spots, and also hide from eyes using camouflage.\nIn the height of battle the Wanderer can turn the tide, disarming all nearby enemies with a masterful technique.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 3
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Странник",
+        "portrait": "content/hero/56/1.webp",
+        "figure": "content/img/heroes-display/56-1-art-20261014.webp"
+      },
+      {
+        "index": 2,
+        "name": "Отступник",
+        "portrait": "content/hero/56/2.webp",
+        "figure": "content/img/heroes-display/56-2-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 57,
+    "name": "Канонир",
+    "role": "FIGHTER",
+    "description": "Не каждый совладает со взрывным характером Канонира. Дробовик героя стреляет редко, но метко, а пара доводов остановиться найдется у него для любого противника. Канонира можно застать врасплох, но, дав залп шрапнели в упор и отпрыгнув от врагов, он подпалит им брови.\nГерой опасен не только вблизи: навесная стрельба из мортиры представляет серьезную угрозу с воздуха, поражая случайных врагов на большом расстоянии от героя.",
+    "descriptionEn": "Not everyone can withstand the Gunner's explosive temper. The hero's shotgun fires rarely but accurately, and he always has a convincing argument to make any opponent stop. The Gunner can be caught off guard, but after firing a point-blank volley of shrapnel and leaping away from enemies, he singes their eyebrows.\nThe hero is dangerous not only up close: his arcing mortar fire poses a serious threat from above, striking random enemies at long range.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 5
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Канонир",
+        "portrait": "content/hero/57/1.webp",
+        "figure": "content/img/heroes-display/57-1-art-20261013.webp"
+      },
+      {
+        "index": 2,
+        "name": "Фейерверк",
+        "portrait": "content/hero/57/2.webp",
+        "figure": "content/img/heroes-display/57-2-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 58,
+    "name": "Хроника",
+    "role": "VANGUARD",
+    "description": "Время всегда на стороне Хроники, но беспощадно к ее врагам. Героиня возвращается в прошлое сама, чтобы исправить ошибки, и возвращает врагов, отрезав им путь к бегству. Бич времени настигает каждого врага, ошеломленного атаками Хроники и ее союзников, а если оглушают саму героиню, эгида времени помогает ей держать удар.\nВ Прайм-тайм время замедляется для всех, кроме Хроники. Решения, которые она принимает в этот момент, зачастую определяют исход боя.",
+    "descriptionEn": "Time always favors Chronicle but is merciless to her foes. The heroine returns to the past herself to correct mistakes, pulling enemies back and cutting off their escape. The Scourge of Time catches every enemy stunned by Chronicle's attacks and her allies, and if the heroine herself is stunned, the Aegis of Time helps her withstand the blow.\nIn Prime Time, time slows for everyone except Chronicle. The decisions she makes at that moment often determine the outcome of the battle.",
+    "bars": {
+      "attak": {
+        "count": 4
+      },
+      "complexity": {
+        "count": 7
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 8
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Хроника",
+        "portrait": "content/hero/58/1.webp",
+        "figure": "content/img/heroes-display/58-1-art-20261013.webp"
+      },
+      {
+        "index": 2,
+        "name": "Греза",
+        "portrait": "content/hero/58/2.webp",
+        "figure": "content/img/heroes-display/58-2-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 59,
+    "name": "Медовар",
+    "role": "PROTECTOR",
+    "description": "Пряный мед Медовара никого не оставит равнодушным - он увеличивает максимальное здоровье союзников, а также ослабляет врагов. Герой легко перемещается по полю боя и расплескивает горячий мед, замедляя и обжигая своих врагов. А если противники Медовара не будут осторожны, то захмелеют настолько, что не смогут держать в руках оружие.",
+    "descriptionEn": "Brewer's Spiced Mead leaves no one indifferent: it raises allies' maximum Health and weakens enemies. The hero moves easily across the battlefield, splashing scalding mead that slows and scorches his foes. And if Brewer's opponents are not careful, they will get so drunk they cannot hold their weapons.",
+    "bars": {
+      "attak": {
+        "count": 3
+      },
+      "complexity": {
+        "count": 3
+      },
+      "defence": {
+        "count": 7
+      },
+      "talents": {
+        "count": 5
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Медовар",
+        "portrait": "content/hero/59/1.webp",
+        "figure": "content/img/heroes-display/59-1-art-20261014.webp"
+      },
+      {
+        "index": 2,
+        "name": "Снегирь",
+        "portrait": "content/hero/59/2.webp",
+        "figure": "content/img/heroes-display/59-2-art-20261014.webp"
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "name": "Кара",
+    "role": "FIGHTER",
+    "description": "Кара - воплощение мести на поле боя. Героиня использует свою Злобу, чтобы получить преимущества в сражении и игнорировать часть получаемого урона. Яростным броском копья она пронзает противников на огромной дистанции, а неутолимая жажда мести позволяет ей обернуть силу врагов против них самих. \nВ час расплаты Кара увеличивает возможности Злобы, и подрывает силы противников, не позволяя им сделать ни шагу назад.",
+    "descriptionEn": "Kara is the embodiment of vengeance on the battlefield. The heroine uses her Malice to gain advantages in battle and ignore part of the damage she receives. With a fierce throw of her spear she pierces enemies at enormous range, while her unquenchable thirst for vengeance lets her turn the enemies' strength against themselves.\nIn the hour of reckoning Kara increases the power of her Malice and saps the enemies' strength, not letting them take a single step back.",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 5
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Кара",
+        "portrait": "content/hero/60/1.webp",
+        "figure": "content/img/heroes-display/60-1-art-20261013.webp"
+      },
+      {
+        "index": 2,
+        "name": "Голограмма",
+        "portrait": "content/hero/60/2.webp",
+        "figure": "content/img/heroes-display/60-2-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 61,
+    "name": "Вендиго",
+    "role": "EXECUTIONER",
+    "description": "Голод терзаемого проклятием Вендиго невозможно утолить. \nВрагу, угодившему в его костяную западню, несдобровать, ведь герой окажется рядом в мгновение ока. Если добыче повезет вырваться из ловушки, герой настигнет ее по кровавому следу. Загнав врага, Вендиго ненадолго утолит свой голод, а силы его будут возрастать с каждой новой жертвой.\nМогущество героя настолько велико, что даже ночь подчиняется ему, заставляя врагов в ужасе вглядываться в темноту и вздрагивать от каждого шороха.",
+    "descriptionEn": "The hunger of the Wendigo, tormented by a curse, can never be sated.\nAn enemy caught in his bone trap will not fare well, for the hero will be beside him in the blink of an eye. If the prey manages to escape the trap, the hero will track it by its bloody trail. Having run the foe down, the Wendigo will briefly satisfy his hunger, and his strength will grow with each new victim.\nThe hero's might is so great that even the night obeys him, forcing enemies to peer into the darkness in terror and flinch at every rustle.",
+    "bars": {
+      "attak": {
+        "count": 8
+      },
+      "complexity": {
+        "count": 3
+      },
+      "defence": {
+        "count": 7
+      },
+      "talents": {
+        "count": 3
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Вендиго",
+        "portrait": "content/hero/61/1.webp",
+        "figure": "content/img/heroes-display/61-1-art-20261013.webp"
+      },
+      {
+        "index": 2,
+        "name": "Индиго",
+        "portrait": "content/hero/61/2.webp",
+        "figure": "content/img/heroes-custom/indigo.jpg"
+      }
+    ]
+  },
+  {
+    "id": 62,
+    "name": "Трикстер",
+    "role": "FIGHTER",
+    "description": "Ловкость рук и никакого мошенничества! Противникам придется нелегко — игры разума позволяют Трикстеру буквально быть в двух местах одновременно. \nВрагов ждет крайне гор-р-рячий прием — Герой готов продемонстрировать дикий огонь всем желающим! Престиж помогает самому Трикстеру с легкостью избегать особо жарких моментов, а призываемая волна огня не оставит врагам ни единого шанса!",
+    "descriptionEn": "Sleight of hand and no cheating! Opponents will have a hard time – games of the mind let Trickster literally be in two places at once.\nEnemies are in for a very ho-o-ot welcome – the Hero is ready to demonstrate wild fire to anyone who wants it! Prestige helps Trickster easily avoid especially hot moments, and the summoned wave of fire will leave the enemies not a single chance!",
+    "bars": {
+      "attak": {
+        "count": 8
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 3
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Трикстер",
+        "portrait": "content/hero/62/1.webp",
+        "figure": "content/img/heroes-display/62-1-art-20261013.webp"
+      },
+      {
+        "index": 2,
+        "name": "Чернокнижник",
+        "portrait": "content/hero/62/2.webp",
+        "figure": "content/img/heroes-display/62-2-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 63,
+    "name": "Банши",
+    "role": "VANGUARD",
+    "description": "Банши называют предвестницей скорой смерти. Попавший в пелену теней противник быстро станет всего лишь ветхой материей, и ужасающий крик героини прервет его жизненный путь. Умение переходить в бесплотную форму позволит Банши игнорировать препятствия и быстро скрываться от тех, кто рискнет ее преследовать.\nЕсли же противники сумеют настигнуть героиню, то сумеречный всплеск поглотит их жизненные силы, оставив после смерти лишь пустые оболочки.",
+    "descriptionEn": "The Banshee is called the harbinger of imminent death. An opponent caught in the veil of shadows will quickly become nothing but brittle matter, and the heroine's dreadful shriek will cut short their life's path. The ability to shift into an incorporeal form lets the Banshee ignore obstacles and quickly escape anyone who dares to pursue her.\nIf opponents manage to catch up with the heroine, the twilight surge will consume their life forces, leaving behind only empty shells after death.",
+    "bars": {
+      "attak": {
+        "count": 5
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Банши",
+        "portrait": "content/hero/63/1.webp",
+        "figure": "content/img/heroes-display/63-1-art-20261014.webp"
+      },
+      {
+        "index": 2,
+        "name": "Проклятая Графиня",
+        "portrait": "content/hero/63/2.webp",
+        "figure": "content/img/heroes-display/63-2-art-20261013.webp"
+      }
+    ]
+  },
+  {
+    "id": 64,
+    "name": "Шаман",
+    "role": "FIGHTER",
+    "description": "Шаман долго выживал в праймзоне изучая магию смерти. При виде его тотема, полного душ усопших, даже самый отважный воин испытывает загробный холод. В момент опасности мгновенно прячется от врагов, следит за ними с помощью коварных плющей и внезапно атакует, наполнившись первобытной яростью.\nКроме этого герой приносит пользу союзникам - рядом с Шаманом они чувствуют себя в безопасности, а их раны сами исцеляются.",
+    "descriptionEn": "The Shaman survived long in the Prime Zone, studying the magic of death. At the sight of his totem, full of the souls of the departed, even the bravest warrior feels a chill of the afterlife. In moments of danger he instantly hides from enemies, watches them with the help of treacherous vines, and suddenly attacks, filled with primal fury.\nBesides this, the hero benefits allies – beside the Shaman they feel safe, and their wounds heal on their own.",
+    "bars": {
+      "attak": {
+        "count": 6
+      },
+      "complexity": {
+        "count": 4
+      },
+      "defence": {
+        "count": 5
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Шаман",
+        "portrait": "content/hero/64/1.webp",
+        "figure": "content/img/heroes-display/64-1-art-20261014-v4.webp"
+      },
+      {
+        "index": 2,
+        "name": "Факир",
+        "portrait": "content/hero/64/2.webp",
+        "figure": "content/img/heroes-custom/fakir.jpg"
+      }
+    ]
+  },
+  {
+    "id": 65,
+    "name": "Подрывница",
+    "role": "FIGHTER",
+    "description": "За работой опытного пиротехника можно наблюдать вечно. Навесные бомбы, петарды и даже специальная ракета-ищейка – чего только не держит в своем патронташе Подрывница! Не зная устали, она может разливать канистры огнеопасного напалма, подготавливая сцену для фейерверка кассетных мин.\nИ чем больше противников окажется вокруг, тем жарче будет зрелище!",
+    "descriptionEn": "Watching an experienced pyrotechnician at work is never dull. Hanging bombs, firecrackers and even a special homing rocket: there is no end to what Bomber carries in her bandolier! Tirelessly, she pours canisters of flammable napalm, preparing the stage for a fireworks display of cluster mines.\nAnd the more enemies around, the hotter the spectacle!",
+    "bars": {
+      "attak": {
+        "count": 7
+      },
+      "complexity": {
+        "count": 3
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 5
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Подрывница",
+        "portrait": "content/hero/65/1.webp",
+        "figure": "content/img/heroes-display/65-1-art-20261014.webp"
+      },
+      {
+        "index": 2,
+        "name": "Детоняша",
+        "portrait": "content/hero/65/2.webp",
+        "figure": "content/img/heroes-display/65-2-review-20261012.webp"
+      },
+      {
+        "index": 3,
+        "name": "Плазма",
+        "portrait": "content/hero/65/3.webp",
+        "figure": "content/img/heroes-custom/plasma.png"
+      }
+    ]
+  },
+  {
+    "id": 66,
+    "name": "Лагуна",
+    "role": "FIGHTER",
+    "description": "Повелительница морских глубин Лагуна приводит на поле боя обитателей океана. Стая медуз оставляет за собой обжигающий след, а выпрыгнувший из воды дельфин подбрасывает врагов в воздух.\nЦелебные рыбки берегут союзников в самой гуще схватки, а на зов Лагуны приплывает огромный кит, сметая и оглушая всех на своём пути.",
+    "descriptionEn": "Mistress of the ocean depths, Laguna brings the creatures of the sea to the battlefield. Her swarm of jellyfish leaves a scorching trail behind, and a dolphin leaping out of the water tosses enemies into the air.\nHealing fish protect her allies in the thick of battle, and at Laguna's call a giant whale swims in, sweeping away and stunning everyone in its path.",
+    "bars": {
+      "attak": {
+        "count": 8
+      },
+      "complexity": {
+        "count": 6
+      },
+      "defence": {
+        "count": 4
+      },
+      "talents": {
+        "count": 4
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Лагуна",
+        "portrait": "content/hero/66/1.webp",
+        "figure": "content/img/heroes-display/66-1-art-20261021.webp"
+      }
+    ]
+  },
+  {
+    "id": 67,
+    "name": "Таурус",
+    "role": "VANGUARD",
+    "description": "Таурус — могучий минотавр, закованный в механическую броню. Он не знает усталости и не отступает: любую преграду он сносит рогами, а врагов втаптывает в землю.\nЗаряженный удар копытом оглушает всех вокруг, таран протаскивает врагов за собой через поле боя, а мощный прыжок бросает его в самую гущу схватки. Чем больше урона получает Таурус, тем сильнее разгорается его ярость.",
+    "descriptionEn": "Taurus is a mighty minotaur clad in mechanical armor. He never tires and never retreats: he smashes every obstacle with his horns and tramples his enemies into the ground.\nA charged hoof strike stuns everyone around him, his battering ram drags enemies across the battlefield, and a mighty leap throws him into the thick of the fight. The more damage Taurus takes, the fiercer his fury burns.",
+    "bars": {
+      "attak": {
+        "count": 6
+      },
+      "complexity": {
+        "count": 9
+      },
+      "defence": {
+        "count": 8
+      },
+      "talents": {
+        "count": 7
+      }
+    },
+    "skins": [
+      {
+        "index": 1,
+        "name": "Таурус",
+        "portrait": "content/hero/67/1.webp",
+        "figure": "content/img/heroes-display/67-1-art-20261024.webp"
+      }
+    ]
+  }
+]

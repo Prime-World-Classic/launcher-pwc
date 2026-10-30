@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- страница лежит в content/, а все пути в каталоге и стилях считаются от корня лаунчера -->
+    <base href="../" />
+    <title>Prime World Classic</title>
+    <link rel="stylesheet" href="content/heroes-preview.css?v=20261024-heroes-cursor-2" />
+    <script type="module" src="content/modules/heroesPreview.js?v=20261029-castle-details-2"></script>
+  </head>
+  <body>
+    <main class="heroes-screen">
+      <header class="heroes-heading">
+        <div class="hero-selection">
+          <img id="hero-portrait" alt="" width="100" height="100" />
+          <div class="hero-name-strip">
+            <h1 id="hero-name" class="hero-nameplate"></h1>
+            <button id="hero-prev" class="round-arrow arrow-left" data-label="heroesPrevHero"></button>
+            <button id="hero-next" class="round-arrow arrow-right" data-label="heroesNextHero"></button>
+          </div>
+        </div>
+      </header>
+      <section class="heroes-panel" aria-labelledby="hero-name">
+        <div class="hero-information">
+          <aside class="hero-badges">
+            <div class="hero-badge"><img id="hero-rank" class="hero-rank" src="content/ranks/1.webp" alt="" /><span data-text="heroesRating"></span></div>
+            <!-- рекорда на сервере пока нет: значок ранга по текущему рейтингу -->
+            <div class="hero-badge"><img id="hero-record" class="hero-rank" src="content/ranks/1.webp" alt="" /><span data-text="heroesRecord"></span></div>
+            <div class="hero-badge"><img class="hero-rank" src="content/ranks/1.webp" alt="" /><span data-text="heroesLevel"></span></div>
+          </aside>
+          <div class="hero-details">
+            <div class="hero-class-heading">
+              <img class="hero-class-icon" alt="" tabindex="0" aria-describedby="hero-role-tooltip" />
+              <h2 id="hero-role" tabindex="0" aria-describedby="hero-role-tooltip"></h2>
+              <img class="hero-class-icon mirrored" alt="" tabindex="0" aria-describedby="hero-role-tooltip" />
+              <div id="hero-role-tooltip" class="hero-role-tooltip" role="tooltip"><strong id="hero-role-tooltip-title"></strong><p id="hero-role-tooltip-body"></p></div>
+            </div>
+            <div id="hero-bars" class="hero-bars"></div>
+            <h2 data-text="heroesDescription"></h2>
+            <div id="hero-description" role="region" aria-live="polite" tabindex="0"></div>
+          </div>
+        </div>
+        <figure class="hero-figure">
+          <figcaption id="skin-name" class="hero-nameplate"></figcaption>
+          <div class="hero-artwork">
+            <div class="hero-art-viewport"><img id="hero-figure" alt="" /></div>
+            <button id="skin-prev" class="round-arrow arrow-left skin-prev" data-label="heroesPrevSkin"></button>
+            <button id="skin-next" class="round-arrow arrow-right skin-next" data-label="heroesNextSkin"></button>
+          </div>
+          <button id="skin-select" class="hero-select-button"></button>
+          <span id="skin-count"></span>
+        </figure>
+      </section>
+      <section class="hero-roster">
+        <input id="hero-search" type="search" />
+        <div id="hero-roster"></div>
+      </section>
+      <p id="heroes-error" role="alert" hidden></p>
+    </main>
+  </body>
+</html>

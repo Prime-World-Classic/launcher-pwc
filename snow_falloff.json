@@ -1,0 +1,22 @@
+[
+  {
+    "mesh": "snow_9_01.bin",
+    "indexCount": 765,
+    "shader": "shader_pos_color_uv_falloff_snow",
+    "texture": "waterfall01",
+    "blend": ["ONE_MINUS_SRC_ALPHA", "ONE"],
+    "uvScale": [1.0, 1.0, 4.0, 16.0],
+    "transform": [25.10964, -4.0, -22.43118, 1425.92554, 0.0, 12.53167, 0.0, 157.4, 20.30888, -4.0, 38.22029, 1366.54523, 0, 0, 0, 1],
+    "uvScroll": [0.0, 0.2]
+  },
+  {
+    "mesh": "snow_9_02.bin",
+    "indexCount": 765,
+    "shader": "shader_pos_color_uv_falloff_snow",
+    "texture": "waterfall01",
+    "blend": ["ONE_MINUS_SRC_ALPHA", "ONE"],
+    "uvScale": [1.0, 1.0, 2.0, 8.0],
+    "transform": [15.10964, -2.0, -12.43118, 1425.92554, 0.0, 1.53167, 0.0, 377.4, 10.30888, -2.0, 18.22029, 1366.54523, 0, 0, 0, 1],
+    "uvScroll": [0.0, 0.2]
+  }
+]

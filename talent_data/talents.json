@@ -1,0 +1,7526 @@
+{
+  "1": {
+    "txtNum": "",
+    "stats": {
+      "hp": "54",
+      "mp": "45"
+    },
+    "statsRefine": {
+      "hp": "4.8",
+      "mp": "4"
+    }
+  },
+  "2": {
+    "txtNum": "",
+    "stats": {
+      "razum": "1.4",
+      "mp": "60"
+    },
+    "statsRefine": {
+      "razum": "0.1",
+      "mp": "4"
+    }
+  },
+  "3": {
+    "txtNum": "",
+    "stats": {
+      "hp": "60",
+      "sila": "1.4"
+    },
+    "statsRefine": {
+      "hp": "3.6",
+      "sila": "0.1"
+    }
+  },
+  "4": {
+    "txtNum": "",
+    "stats": {
+      "mp": "100"
+    },
+    "statsRefine": {
+      "mp": "8"
+    }
+  },
+  "5": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "1.7",
+      "volia": "1.7"
+    },
+    "statsRefine": {
+      "stoikost": "0.1",
+      "volia": "0.1"
+    }
+  },
+  "6": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "7"
+    },
+    "statsRefine": {
+      "stoikost": "0.6"
+    }
+  },
+  "7": {
+    "txtNum": "",
+    "stats": {
+      "hp": "42",
+      "mp": "35",
+      "sila": "1.1"
+    },
+    "statsRefine": {
+      "hp": "3.6",
+      "mp": "3",
+      "sila": "0.1"
+    }
+  },
+  "8": {
+    "txtNum": "",
+    "stats": {
+      "volia": "7"
+    },
+    "statsRefine": {
+      "volia": "0.6"
+    }
+  },
+  "9": {
+    "txtNum": "175,15,health",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "10": {
+    "txtNum": "6,0,health",
+    "stats": {
+      "hp": "48"
+    },
+    "statsRefine": {
+      "hp": "7.2"
+    }
+  },
+  "11": {
+    "txtNum": "",
+    "stats": {
+      "hp": "48",
+      "regenhp": "1.1"
+    },
+    "statsRefine": {
+      "hp": "2.4",
+      "regenhp": "0.1"
+    }
+  },
+  "12": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "2.8"
+    },
+    "statsRefine": {
+      "regenmp": "0.2"
+    }
+  },
+  "13": {
+    "txtNum": "",
+    "stats": {
+      "hp": "102"
+    },
+    "statsRefine": {
+      "hp": "8.4"
+    }
+  },
+  "14": {
+    "txtNum": "",
+    "stats": {
+      "hp": "48",
+      "regenhp": "1"
+    },
+    "statsRefine": {
+      "hp": "8.4",
+      "regenhp": "0"
+    }
+  },
+  "15": {
+    "txtNum": "10,0.75,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "16": {
+    "txtNum": "2.6,0.2,regenhp",
+    "stats": {
+      "regenhp": "2.6"
+    },
+    "statsRefine": {
+      "regenhp": "0.2"
+    }
+  },
+  "17": {
+    "txtNum": "0.6,0.8,stoikost;0.6,0.8,volia",
+    "stats": {
+      "stoikost": "0.6",
+      "volia": "0.6"
+    },
+    "statsRefine": {
+      "stoikost": "0.8",
+      "volia": "0.8"
+    }
+  },
+  "18": {
+    "txtNum": "",
+    "stats": {
+      "hp": "60",
+      "sila": "1.6",
+      "razum": "1.6"
+    },
+    "statsRefine": {
+      "hp": "4.8",
+      "sila": "0.1",
+      "razum": "0.1"
+    }
+  },
+  "19": {
+    "txtNum": "",
+    "stats": {
+      "krajahp": "15.5"
+    },
+    "statsRefine": {
+      "krajahp": "2.2"
+    }
+  },
+  "20": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "5.2"
+    },
+    "statsRefine": {
+      "provorstvo": "0.4"
+    }
+  },
+  "21": {
+    "txtNum": "175,10,energy",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "22": {
+    "txtNum": "",
+    "stats": {
+      "hp": "72"
+    },
+    "statsRefine": {
+      "hp": "16.8"
+    }
+  },
+  "23": {
+    "txtNum": "9,0,halfsv",
+    "stats": {
+      "regenhp": "1.1"
+    },
+    "statsRefine": {
+      "regenhp": "0.3"
+    }
+  },
+  "24": {
+    "txtNum": "2,0,speed",
+    "stats": {
+      "hp": "120"
+    },
+    "statsRefine": {
+      "hp": "12"
+    }
+  },
+  "25": {
+    "txtNum": "",
+    "stats": {
+      "hp": "84",
+      "mp": "70"
+    },
+    "statsRefine": {
+      "hp": "6",
+      "mp": "5"
+    }
+  },
+  "26": {
+    "txtNum": "",
+    "stats": {
+      "sila": "4.3",
+      "krajahp": "5"
+    },
+    "statsRefine": {
+      "sila": "0.3",
+      "krajahp": "0.4"
+    }
+  },
+  "27": {
+    "txtNum": "",
+    "stats": {
+      "razum": "4.7",
+      "mp": "75"
+    },
+    "statsRefine": {
+      "razum": "0.4",
+      "mp": "6"
+    }
+  },
+  "28": {
+    "txtNum": "40,5,dophp;200,25,hp",
+    "stats": {
+      "hp": "60"
+    },
+    "statsRefine": {
+      "hp": "6"
+    }
+  },
+  "29": {
+    "txtNum": "60,5,endam",
+    "stats": {
+      "sr": "7"
+    },
+    "statsRefine": {
+      "sr": "0"
+    }
+  },
+  "30": {
+    "txtNum": "",
+    "stats": {
+      "sila": "5",
+      "mp": "65"
+    },
+    "statsRefine": {
+      "sila": "0.45",
+      "mp": "5"
+    }
+  },
+  "31": {
+    "txtNum": "",
+    "stats": {
+      "sila": "4",
+      "hitrost": "5"
+    },
+    "statsRefine": {
+      "sila": "0.3",
+      "hitrost": "0.45"
+    }
+  },
+  "32": {
+    "txtNum": "120,22.5,dopdam",
+    "stats": {
+      "ph": "2"
+    },
+    "statsRefine": {
+      "ph": "1"
+    }
+  },
+  "33": {
+    "txtNum": "6,0,speed",
+    "stats": {
+      "hitrost": "2.5"
+    },
+    "statsRefine": {
+      "hitrost": "0.7"
+    }
+  },
+  "34": {
+    "txtNum": "",
+    "stats": {
+      "krajahp": "15.6"
+    },
+    "statsRefine": {
+      "krajahp": "1.1"
+    }
+  },
+  "35": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13"
+    },
+    "statsRefine": {
+      "hitrost": "1"
+    }
+  },
+  "36": {
+    "txtNum": "nobuff,16,66,num,sv_max",
+    "stats": {
+      "health": "129"
+    },
+    "statsRefine": {
+      "health": "11"
+    }
+  },
+  "37": {
+    "txtNum": "300,12,dopdam",
+    "stats": {
+      "razum": "4"
+    },
+    "statsRefine": {
+      "razum": "0.5"
+    }
+  },
+  "38": {
+    "txtNum": "30,2.5,energy",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "39": {
+    "txtNum": "5,0.4,antidef",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "40": {
+    "txtNum": "3,0.3,sila;4,0.3,volia",
+    "stats": {
+      "sila": "3",
+      "volia": "4"
+    },
+    "statsRefine": {
+      "sila": "0.3",
+      "volia": "0.3"
+    }
+  },
+  "41": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13"
+    },
+    "statsRefine": {
+      "provorstvo": "1"
+    }
+  },
+  "42": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "6",
+      "krajahp": "12"
+    },
+    "statsRefine": {
+      "provorstvo": "0.5",
+      "krajahp": "0.9"
+    }
+  },
+  "43": {
+    "txtNum": "",
+    "stats": {
+      "razum": "14"
+    },
+    "statsRefine": {
+      "razum": "2"
+    }
+  },
+  "44": {
+    "txtNum": "all,30,130,num,razum",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "45": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "4",
+      "sila": "5",
+      "razum": "5"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "sila": "0.5",
+      "razum": "0.5"
+    }
+  },
+  "46": {
+    "txtNum": "",
+    "stats": {
+      "sila": "14"
+    },
+    "statsRefine": {
+      "sila": "2"
+    }
+  },
+  "47": {
+    "txtNum": "",
+    "stats": {
+      "mp": "300",
+      "regenmp": "4.8"
+    },
+    "statsRefine": {
+      "mp": "20",
+      "regenmp": "0.45"
+    }
+  },
+  "48": {
+    "txtNum": "",
+    "stats": {
+      "hp": "810"
+    },
+    "statsRefine": {
+      "hp": "60"
+    }
+  },
+  "49": {
+    "txtNum": "",
+    "stats": {
+      "hp": "120"
+    },
+    "statsRefine": {
+      "hp": "30"
+    }
+  },
+  "50": {
+    "txtNum": "",
+    "stats": {
+      "hp": "48"
+    },
+    "statsRefine": {
+      "hp": "9.6"
+    }
+  },
+  "51": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "9",
+      "hp": "120"
+    },
+    "statsRefine": {
+      "stoikost": "0.75",
+      "hp": "9"
+    }
+  },
+  "52": {
+    "txtNum": "",
+    "stats": {
+      "volia": "9",
+      "hp": "120"
+    },
+    "statsRefine": {
+      "volia": "0.75",
+      "hp": "9"
+    }
+  },
+  "53": {
+    "txtNum": "",
+    "stats": {
+      "razum": "4",
+      "hitrost": "5"
+    },
+    "statsRefine": {
+      "razum": "0.3",
+      "hitrost": "0.45"
+    }
+  },
+  "54": {
+    "txtNum": "",
+    "stats": {
+      "sila": "4",
+      "provorstvo": "5"
+    },
+    "statsRefine": {
+      "sila": "0.3",
+      "provorstvo": "0.45"
+    }
+  },
+  "55": {
+    "txtNum": "",
+    "stats": {
+      "razum": "4",
+      "provorstvo": "5"
+    },
+    "statsRefine": {
+      "razum": "0.3",
+      "provorstvo": "0.45"
+    }
+  },
+  "56": {
+    "txtNum": "",
+    "stats": {
+      "sila": "5",
+      "mp": "125"
+    },
+    "statsRefine": {
+      "sila": "0.4",
+      "mp": "10"
+    }
+  },
+  "57": {
+    "txtNum": "",
+    "stats": {
+      "razum": "5",
+      "mp": "125"
+    },
+    "statsRefine": {
+      "razum": "0.4",
+      "mp": "10"
+    }
+  },
+  "58": {
+    "txtNum": "",
+    "stats": {
+      "mp": "135",
+      "regenmp": "2.5"
+    },
+    "statsRefine": {
+      "mp": "9.5",
+      "regenmp": "0.2"
+    }
+  },
+  "59": {
+    "txtNum": "6,0,silastak",
+    "stats": {
+      "sila": "7"
+    },
+    "statsRefine": {
+      "sila": "0.6"
+    }
+  },
+  "60": {
+    "txtNum": "6,0,razumstak",
+    "stats": {
+      "razum": "7"
+    },
+    "statsRefine": {
+      "razum": "0.6"
+    }
+  },
+  "61": {
+    "txtNum": "95,0,hp",
+    "stats": {
+      "hp": "108"
+    },
+    "statsRefine": {
+      "hp": "12"
+    }
+  },
+  "62": {
+    "txtNum": "",
+    "stats": {
+      "hp": "156"
+    },
+    "statsRefine": {
+      "hp": "12"
+    }
+  },
+  "63": {
+    "txtNum": "0.4,1.2,regenhp",
+    "stats": {
+      "regenhp": "0.4"
+    },
+    "statsRefine": {
+      "regenhp": "1.1"
+    }
+  },
+  "64": {
+    "txtNum": "140,0,hpstak",
+    "stats": {
+      "hp": "192"
+    },
+    "statsRefine": {
+      "hp": "20.4"
+    }
+  },
+  "65": {
+    "txtNum": "225,0,mpstak",
+    "stats": {
+      "mp": "105"
+    },
+    "statsRefine": {
+      "mp": "17"
+    }
+  },
+  "66": {
+    "txtNum": "10,0,stoikost",
+    "stats": {
+      "stoikost": "9"
+    },
+    "statsRefine": {
+      "stoikost": "0.9"
+    }
+  },
+  "67": {
+    "txtNum": "10,0,volia",
+    "stats": {
+      "volia": "9"
+    },
+    "statsRefine": {
+      "volia": "0.9"
+    }
+  },
+  "68": {
+    "txtNum": "",
+    "stats": {
+      "volia": "3.6"
+    },
+    "statsRefine": {
+      "volia": "1"
+    }
+  },
+  "69": {
+    "txtNum": "",
+    "stats": {
+      "hp": "156"
+    },
+    "statsRefine": {
+      "hp": "12"
+    }
+  },
+  "70": {
+    "txtNum": "",
+    "stats": {
+      "razum": "4.5",
+      "hp": "84"
+    },
+    "statsRefine": {
+      "razum": "0.4",
+      "hp": "4.8"
+    }
+  },
+  "71": {
+    "txtNum": "",
+    "stats": {
+      "sila": "4.5",
+      "hp": "84"
+    },
+    "statsRefine": {
+      "sila": "0.4",
+      "hp": "4.8"
+    }
+  },
+  "72": {
+    "txtNum": "0.2,0.6,regenmp",
+    "stats": {
+      "regenmp": "0.2"
+    },
+    "statsRefine": {
+      "regenmp": "0.6"
+    }
+  },
+  "73": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7"
+    },
+    "statsRefine": {
+      "sr": "0"
+    }
+  },
+  "74": {
+    "txtNum": "",
+    "stats": {
+      "sila": "4.8",
+      "krajahp": "7.5"
+    },
+    "statsRefine": {
+      "sila": "0.4",
+      "krajahp": "0.5"
+    }
+  },
+  "75": {
+    "txtNum": "",
+    "stats": {
+      "razum": "4.8",
+      "krajahp": "7.5"
+    },
+    "statsRefine": {
+      "razum": "0.4",
+      "krajahp": "0.5"
+    }
+  },
+  "76": {
+    "txtNum": "",
+    "stats": {
+      "mp": "280"
+    },
+    "statsRefine": {
+      "mp": "19"
+    }
+  },
+  "77": {
+    "txtNum": "",
+    "stats": {
+      "hp": "276"
+    },
+    "statsRefine": {
+      "hp": "22.8"
+    }
+  },
+  "78": {
+    "txtNum": "",
+    "stats": {
+      "sila": "9"
+    },
+    "statsRefine": {
+      "sila": "0.7"
+    }
+  },
+  "79": {
+    "txtNum": "",
+    "stats": {
+      "razum": "9"
+    },
+    "statsRefine": {
+      "razum": "0.7"
+    }
+  },
+  "80": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "9"
+    },
+    "statsRefine": {
+      "provorstvo": "0.7"
+    }
+  },
+  "81": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "9"
+    },
+    "statsRefine": {
+      "hitrost": "0.7"
+    }
+  },
+  "82": {
+    "txtNum": "6,0,speed",
+    "stats": {
+      "volia": "2.5"
+    },
+    "statsRefine": {
+      "volia": "0.7"
+    }
+  },
+  "83": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "2",
+      "hp": "114",
+      "mp": "95"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "hp": "13.2",
+      "mp": "11"
+    }
+  },
+  "84": {
+    "txtNum": "",
+    "stats": {
+      "volia": "9.5",
+      "regenhp": "2.2"
+    },
+    "statsRefine": {
+      "volia": "0.7",
+      "regenhp": "0.2"
+    }
+  },
+  "85": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "9.5",
+      "regenhp": "2.2"
+    },
+    "statsRefine": {
+      "stoikost": "0.7",
+      "regenhp": "0.2"
+    }
+  },
+  "86": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "7.5",
+      "hp": "180"
+    },
+    "statsRefine": {
+      "provorstvo": "0.5",
+      "hp": "14.4"
+    }
+  },
+  "87": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "7.5",
+      "hp": "180"
+    },
+    "statsRefine": {
+      "hitrost": "0.5",
+      "hp": "14.4"
+    }
+  },
+  "88": {
+    "txtNum": "",
+    "stats": {
+      "razum": "4.5",
+      "volia": "4.5",
+      "hp": "120"
+    },
+    "statsRefine": {
+      "razum": "0.5",
+      "volia": "0.5",
+      "hp": "0"
+    }
+  },
+  "89": {
+    "txtNum": "",
+    "stats": {
+      "sila": "4.5",
+      "stoikost": "4.5",
+      "hp": "120"
+    },
+    "statsRefine": {
+      "sila": "0.5",
+      "stoikost": "0.5",
+      "hp": "0"
+    }
+  },
+  "90": {
+    "txtNum": "",
+    "stats": {
+      "mp": "250",
+      "regenmp": "2.7"
+    },
+    "statsRefine": {
+      "mp": "12",
+      "regenmp": "0.3"
+    }
+  },
+  "91": {
+    "txtNum": "25,7,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "92": {
+    "txtNum": "",
+    "stats": {
+      "razum": "6.5",
+      "sila": "6.5",
+      "mp": "50"
+    },
+    "statsRefine": {
+      "razum": "0.4",
+      "sila": "0.4",
+      "mp": "13"
+    }
+  },
+  "93": {
+    "txtNum": "",
+    "stats": {
+      "volia": "9.7",
+      "stoikost": "9.7",
+      "hp": "144"
+    },
+    "statsRefine": {
+      "volia": "0.8",
+      "stoikost": "0.8",
+      "hp": "10.8"
+    }
+  },
+  "94": {
+    "txtNum": "",
+    "stats": {
+      "sila": "10",
+      "hp": "276"
+    },
+    "statsRefine": {
+      "sila": "0.8",
+      "hp": "19.2"
+    }
+  },
+  "95": {
+    "txtNum": "",
+    "stats": {
+      "razum": "10",
+      "hp": "276"
+    },
+    "statsRefine": {
+      "razum": "0.8",
+      "hp": "19.2"
+    }
+  },
+  "96": {
+    "txtNum": "",
+    "stats": {
+      "sila": "10",
+      "mp": "270"
+    },
+    "statsRefine": {
+      "sila": "0.8",
+      "mp": "19"
+    }
+  },
+  "97": {
+    "txtNum": "",
+    "stats": {
+      "razum": "10",
+      "mp": "270"
+    },
+    "statsRefine": {
+      "razum": "0.8",
+      "mp": "19"
+    }
+  },
+  "98": {
+    "txtNum": "",
+    "stats": {
+      "mp": "45",
+      "regenmp": "1.1"
+    },
+    "statsRefine": {
+      "mp": "2.5",
+      "regenmp": "0.1"
+    }
+  },
+  "99": {
+    "txtNum": "",
+    "stats": {
+      "hp": "60",
+      "mp": "50"
+    },
+    "statsRefine": {
+      "hp": "4.2",
+      "mp": "3.5"
+    }
+  },
+  "100": {
+    "txtNum": "",
+    "stats": {
+      "regenhp": "2.8"
+    },
+    "statsRefine": {
+      "regenhp": "0.2"
+    }
+  },
+  "101": {
+    "txtNum": "20,1.5,health",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "102": {
+    "txtNum": "140,15,defdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "103": {
+    "txtNum": "20,1.5,energy;365,25,energy",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "104": {
+    "txtNum": "",
+    "stats": {
+      "razum": "4.2",
+      "stoikost": "3"
+    },
+    "statsRefine": {
+      "razum": "0.4",
+      "stoikost": "0.2"
+    }
+  },
+  "105": {
+    "txtNum": "",
+    "stats": {
+      "sila": "4.2",
+      "stoikost": "3"
+    },
+    "statsRefine": {
+      "sila": "0.4",
+      "stoikost": "0.2"
+    }
+  },
+  "106": {
+    "txtNum": "",
+    "stats": {
+      "razum": "4.2",
+      "volia": "3"
+    },
+    "statsRefine": {
+      "razum": "0.4",
+      "volia": "0.2"
+    }
+  },
+  "107": {
+    "txtNum": "",
+    "stats": {
+      "sila": "4.2",
+      "volia": "3"
+    },
+    "statsRefine": {
+      "sila": "0.4",
+      "volia": "0.2"
+    }
+  },
+  "108": {
+    "txtNum": "2.6,0.2,regenmp",
+    "stats": {
+      "regenmp": "2.6"
+    },
+    "statsRefine": {
+      "regenmp": "0.2"
+    }
+  },
+  "109": {
+    "txtNum": "",
+    "stats": {
+      "razum": "7"
+    },
+    "statsRefine": {
+      "razum": "0.6"
+    }
+  },
+  "110": {
+    "txtNum": "",
+    "stats": {
+      "sila": "7"
+    },
+    "statsRefine": {
+      "sila": "0.6"
+    }
+  },
+  "111": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "6",
+      "mp": "90"
+    },
+    "statsRefine": {
+      "hitrost": "0.5",
+      "mp": "6"
+    }
+  },
+  "112": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "6",
+      "mp": "90"
+    },
+    "statsRefine": {
+      "provorstvo": "0.5",
+      "mp": "6"
+    }
+  },
+  "113": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "2",
+      "sila": "6.8"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "sila": "0.7"
+    }
+  },
+  "114": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "2",
+      "razum": "6.8"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "razum": "0.7"
+    }
+  },
+  "115": {
+    "txtNum": "2.8,0.2,razum;3.4,0.3,stoikost",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "116": {
+    "txtNum": "130,15,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "117": {
+    "txtNum": "170,15,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "118": {
+    "txtNum": "6,0,provorstvostak",
+    "stats": {
+      "provorstvo": "7"
+    },
+    "statsRefine": {
+      "provorstvo": "0.6"
+    }
+  },
+  "119": {
+    "txtNum": "6,0,hitroststak",
+    "stats": {
+      "hitrost": "7"
+    },
+    "statsRefine": {
+      "hitrost": "0.6"
+    }
+  },
+  "120": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "6.6",
+      "provorstvo": "6.6"
+    },
+    "statsRefine": {
+      "hitrost": "0.5",
+      "provorstvo": "0.5"
+    }
+  },
+  "121": {
+    "txtNum": "",
+    "stats": {
+      "volia": "13"
+    },
+    "statsRefine": {
+      "volia": "1"
+    }
+  },
+  "122": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "13"
+    },
+    "statsRefine": {
+      "stoikost": "1"
+    }
+  },
+  "123": {
+    "txtNum": "",
+    "stats": {
+      "razum": "5.4",
+      "volia": "8"
+    },
+    "statsRefine": {
+      "razum": "0.6",
+      "volia": "0.4"
+    }
+  },
+  "124": {
+    "txtNum": "",
+    "stats": {
+      "razum": "5.4",
+      "stoikost": "8"
+    },
+    "statsRefine": {
+      "razum": "0.6",
+      "stoikost": "0.4"
+    }
+  },
+  "125": {
+    "txtNum": "",
+    "stats": {
+      "sila": "5.4",
+      "volia": "8"
+    },
+    "statsRefine": {
+      "sila": "0.6",
+      "volia": "0.4"
+    }
+  },
+  "126": {
+    "txtNum": "",
+    "stats": {
+      "sila": "5.4",
+      "stoikost": "8"
+    },
+    "statsRefine": {
+      "sila": "0.6",
+      "stoikost": "0.4"
+    }
+  },
+  "127": {
+    "txtNum": "12,0.7,razum;12,0.7,volia",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "128": {
+    "txtNum": "26,2.2,antidef",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "129": {
+    "txtNum": "26,2.2,antidef",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "130": {
+    "txtNum": "",
+    "stats": {
+      "krajahp": "10",
+      "hp": "228"
+    },
+    "statsRefine": {
+      "krajahp": "0.7",
+      "hp": "18"
+    }
+  },
+  "131": {
+    "txtNum": "",
+    "stats": {
+      "sila": "7",
+      "razum": "7"
+    },
+    "statsRefine": {
+      "sila": "0.5",
+      "razum": "0.5"
+    }
+  },
+  "132": {
+    "txtNum": "",
+    "stats": {
+      "sila": "7",
+      "krajahp": "20"
+    },
+    "statsRefine": {
+      "sila": "0.5",
+      "krajahp": "1.6"
+    }
+  },
+  "133": {
+    "txtNum": "",
+    "stats": {
+      "razum": "7",
+      "krajahp": "20"
+    },
+    "statsRefine": {
+      "razum": "0.5",
+      "krajahp": "1.6"
+    }
+  },
+  "134": {
+    "txtNum": "500,50,defdam",
+    "stats": {
+      "sr": "3"
+    },
+    "statsRefine": {
+      "sr": "2"
+    }
+  },
+  "135": {
+    "txtNum": "6,0.5,sila",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "136": {
+    "txtNum": "12.5,1,antidef",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "137": {
+    "txtNum": "12.5,1,antidef",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "138": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "14"
+    },
+    "statsRefine": {
+      "hitrost": "2"
+    }
+  },
+  "139": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "14"
+    },
+    "statsRefine": {
+      "provorstvo": "2"
+    }
+  },
+  "140": {
+    "txtNum": "",
+    "stats": {
+      "krajahp": "32"
+    },
+    "statsRefine": {
+      "krajahp": "2.5"
+    }
+  },
+  "141": {
+    "txtNum": "15,0,razum",
+    "stats": {
+      "krajahp": "6.8"
+    },
+    "statsRefine": {
+      "krajahp": "1.7"
+    }
+  },
+  "142": {
+    "txtNum": "5,0,silastak",
+    "stats": {
+      "sila": "5"
+    },
+    "statsRefine": {
+      "sila": "0.6"
+    }
+  },
+  "143": {
+    "txtNum": "5,0,razumstak",
+    "stats": {
+      "razum": "5"
+    },
+    "statsRefine": {
+      "razum": "0.6"
+    }
+  },
+  "144": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "7"
+    },
+    "statsRefine": {
+      "provorstvo": "0.6"
+    }
+  },
+  "145": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "7"
+    },
+    "statsRefine": {
+      "hitrost": "0.6"
+    }
+  },
+  "146": {
+    "txtNum": "6,0,speed",
+    "stats": {
+      "provorstvo": "2.5"
+    },
+    "statsRefine": {
+      "provorstvo": "0.7"
+    }
+  },
+  "147": {
+    "txtNum": "",
+    "stats": {
+      "sila": "6",
+      "hitrost": "7"
+    },
+    "statsRefine": {
+      "sila": "0.6",
+      "hitrost": "0.45"
+    }
+  },
+  "148": {
+    "txtNum": "",
+    "stats": {
+      "razum": "6",
+      "hitrost": "7"
+    },
+    "statsRefine": {
+      "razum": "0.6",
+      "hitrost": "0.45"
+    }
+  },
+  "149": {
+    "txtNum": "",
+    "stats": {
+      "hp": "396"
+    },
+    "statsRefine": {
+      "hp": "30"
+    }
+  },
+  "150": {
+    "txtNum": "",
+    "stats": {
+      "hp": "60"
+    },
+    "statsRefine": {
+      "hp": "12"
+    }
+  },
+  "151": {
+    "txtNum": "",
+    "stats": {
+      "volia": "6",
+      "krajahp": "12"
+    },
+    "statsRefine": {
+      "volia": "0.5",
+      "krajahp": "0.9"
+    }
+  },
+  "152": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "6",
+      "krajahp": "12"
+    },
+    "statsRefine": {
+      "stoikost": "0.5",
+      "krajahp": "0.9"
+    }
+  },
+  "153": {
+    "txtNum": "",
+    "stats": {
+      "sila": "5",
+      "provorstvo": "9"
+    },
+    "statsRefine": {
+      "sila": "1",
+      "provorstvo": "1"
+    }
+  },
+  "154": {
+    "txtNum": "",
+    "stats": {
+      "razum": "5",
+      "provorstvo": "9"
+    },
+    "statsRefine": {
+      "razum": "1",
+      "provorstvo": "1"
+    }
+  },
+  "155": {
+    "txtNum": "12,2,hitrost",
+    "stats": {
+      "hitrost": "12"
+    },
+    "statsRefine": {
+      "hitrost": "2"
+    }
+  },
+  "156": {
+    "txtNum": "",
+    "stats": {
+      "svMin": "16"
+    },
+    "statsRefine": {
+      "svMin": "2"
+    }
+  },
+  "157": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "4",
+      "sila": "5"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "sila": "0.75"
+    }
+  },
+  "158": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "4",
+      "razum": "5"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "razum": "0.75"
+    }
+  },
+  "159": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "4",
+      "hp": "102",
+      "regenhp": "1"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "hp": "12",
+      "regenhp": "0.15"
+    }
+  },
+  "160": {
+    "txtNum": "12,2,provorstvo",
+    "stats": {
+      "provorstvo": "12"
+    },
+    "statsRefine": {
+      "provorstvo": "2"
+    }
+  },
+  "161": {
+    "txtNum": "",
+    "stats": {
+      "regenhp": "1",
+      "regenmp": "1"
+    },
+    "statsRefine": {
+      "regenhp": "0.07",
+      "regenmp": "0.07"
+    }
+  },
+  "162": {
+    "txtNum": "",
+    "stats": {
+      "krajahp": "6"
+    },
+    "statsRefine": {
+      "krajahp": "0.4"
+    }
+  },
+  "163": {
+    "txtNum": "",
+    "stats": {
+      "sila": "5",
+      "hitrost": "9"
+    },
+    "statsRefine": {
+      "sila": "1",
+      "hitrost": "1"
+    }
+  },
+  "164": {
+    "txtNum": "",
+    "stats": {
+      "razum": "5",
+      "hitrost": "9"
+    },
+    "statsRefine": {
+      "razum": "1",
+      "hitrost": "1"
+    }
+  },
+  "165": {
+    "txtNum": "48,3,health",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "166": {
+    "txtNum": "48,3,energy",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "167": {
+    "txtNum": "",
+    "stats": {
+      "sila": "4"
+    },
+    "statsRefine": {
+      "sila": "0.4"
+    }
+  },
+  "168": {
+    "txtNum": "",
+    "stats": {
+      "razum": "4"
+    },
+    "statsRefine": {
+      "razum": "0.4"
+    }
+  },
+  "169": {
+    "txtNum": "7,0,speed",
+    "stats": {
+      "regenhp": "1.2"
+    },
+    "statsRefine": {
+      "regenhp": "0.4"
+    }
+  },
+  "170": {
+    "txtNum": "18,4.5,health;7,0,speed",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "171": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "14"
+    },
+    "statsRefine": {
+      "stoikost": "2"
+    }
+  },
+  "172": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "12",
+      "volia": "12"
+    },
+    "statsRefine": {
+      "stoikost": "0",
+      "volia": "0"
+    }
+  },
+  "173": {
+    "txtNum": "",
+    "stats": {
+      "hp": "60"
+    },
+    "statsRefine": {
+      "hp": "14.4"
+    }
+  },
+  "174": {
+    "txtNum": "300,0,health;11.1,0,health",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "175": {
+    "txtNum": "",
+    "stats": {
+      "sila": "3",
+      "krajahp": "5.4"
+    },
+    "statsRefine": {
+      "sila": "0.3",
+      "krajahp": "0.4"
+    }
+  },
+  "176": {
+    "txtNum": "190,7.5,dopdam",
+    "stats": {
+      "sila": "2"
+    },
+    "statsRefine": {
+      "sila": "0.3"
+    }
+  },
+  "177": {
+    "txtNum": "12,3,health",
+    "stats": {
+      "sr": "7"
+    },
+    "statsRefine": {
+      "sr": "0"
+    }
+  },
+  "178": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "5",
+      "hp": "102",
+      "mp": "85"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "hp": "13.2",
+      "mp": "11"
+    }
+  },
+  "179": {
+    "txtNum": "130,22.5,dopdam",
+    "stats": {
+      "sr": "2"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "180": {
+    "txtNum": "nobuff,50,99,num,sv_max",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "181": {
+    "txtNum": "",
+    "stats": {
+      "hp": "84"
+    },
+    "statsRefine": {
+      "hp": "30"
+    }
+  },
+  "182": {
+    "txtNum": "50,4,dopdam",
+    "stats": {
+      "provorstvo": "5"
+    },
+    "statsRefine": {
+      "provorstvo": "0.3"
+    }
+  },
+  "183": {
+    "txtNum": "",
+    "stats": {
+      "mp": "240"
+    },
+    "statsRefine": {
+      "mp": "45"
+    }
+  },
+  "184": {
+    "txtNum": "12,2,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "185": {
+    "txtNum": "190,7.5,dopdam",
+    "stats": {
+      "razum": "2"
+    },
+    "statsRefine": {
+      "razum": "0.3"
+    }
+  },
+  "186": {
+    "txtNum": "",
+    "stats": {
+      "mp": "60"
+    },
+    "statsRefine": {
+      "mp": "20"
+    }
+  },
+  "187": {
+    "txtNum": "42,6.5,healthenergy",
+    "stats": {
+      "hp": "200"
+    },
+    "statsRefine": {
+      "hp": "12.5"
+    }
+  },
+  "188": {
+    "txtNum": "",
+    "stats": {
+      "sila": "4.2"
+    },
+    "statsRefine": {
+      "sila": "0.3"
+    }
+  },
+  "189": {
+    "txtNum": "",
+    "stats": {
+      "razum": "4.2"
+    },
+    "statsRefine": {
+      "razum": "0.3"
+    }
+  },
+  "190": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "2.3"
+    },
+    "statsRefine": {
+      "regenmp": "0.15"
+    }
+  },
+  "191": {
+    "txtNum": "",
+    "stats": {
+      "regenhp": "2.3"
+    },
+    "statsRefine": {
+      "regenhp": "0.15"
+    }
+  },
+  "192": {
+    "txtNum": "",
+    "stats": {
+      "razum": "3",
+      "krajahp": "5.4"
+    },
+    "statsRefine": {
+      "razum": "0.3",
+      "krajahp": "0.4"
+    }
+  },
+  "193": {
+    "txtNum": "100,0,hp",
+    "stats": {
+      "hp": "138"
+    },
+    "statsRefine": {
+      "hp": "14.4"
+    }
+  },
+  "194": {
+    "txtNum": "6,1,volia",
+    "stats": {
+      "volia": "6"
+    },
+    "statsRefine": {
+      "volia": "1"
+    }
+  },
+  "195": {
+    "txtNum": "6,1,stoikost",
+    "stats": {
+      "stoikost": "6"
+    },
+    "statsRefine": {
+      "stoikost": "1"
+    }
+  },
+  "196": {
+    "txtNum": "210,22.5,dopdam",
+    "stats": {
+      "sr": "2"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "197": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "16"
+    },
+    "statsRefine": {
+      "stoikost": "1.2"
+    }
+  },
+  "198": {
+    "txtNum": "",
+    "stats": {
+      "volia": "16"
+    },
+    "statsRefine": {
+      "volia": "1.2"
+    }
+  },
+  "199": {
+    "txtNum": "18,1.5,antidef",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "200": {
+    "txtNum": "",
+    "stats": {
+      "sr": "19"
+    },
+    "statsRefine": {
+      "sr": "2"
+    }
+  },
+  "201": {
+    "txtNum": "12,2,sila",
+    "stats": {
+      "sila": "12"
+    },
+    "statsRefine": {
+      "sila": "2"
+    }
+  },
+  "202": {
+    "txtNum": "12,2,razum",
+    "stats": {
+      "razum": "12"
+    },
+    "statsRefine": {
+      "razum": "2"
+    }
+  },
+  "203": {
+    "txtNum": "650,50,health",
+    "stats": {
+      "sr": "9"
+    },
+    "statsRefine": {
+      "sr": "2"
+    }
+  },
+  "204": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "4.2"
+    },
+    "statsRefine": {
+      "provorstvo": "0.3"
+    }
+  },
+  "205": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "4.2"
+    },
+    "statsRefine": {
+      "hitrost": "0.3"
+    }
+  },
+  "206": {
+    "txtNum": "",
+    "stats": {
+      "razum": "7",
+      "hp": "54"
+    },
+    "statsRefine": {
+      "razum": "0.45",
+      "hp": "4.8"
+    }
+  },
+  "207": {
+    "txtNum": "",
+    "stats": {
+      "sila": "7",
+      "hp": "54"
+    },
+    "statsRefine": {
+      "sila": "0.45",
+      "hp": "4.8"
+    }
+  },
+  "208": {
+    "txtNum": "7,0,speed",
+    "stats": {
+      "hp": "66"
+    },
+    "statsRefine": {
+      "hp": "18"
+    }
+  },
+  "209": {
+    "txtNum": "",
+    "stats": {
+      "regenhp": "9"
+    },
+    "statsRefine": {
+      "regenhp": "0.6"
+    }
+  },
+  "210": {
+    "txtNum": "18,0,krajahp",
+    "stats": {
+      "krajahp": "20"
+    },
+    "statsRefine": {
+      "krajahp": "2"
+    }
+  },
+  "211": {
+    "txtNum": "",
+    "stats": {
+      "razum": "13",
+      "hp": "288"
+    },
+    "statsRefine": {
+      "razum": "1.2",
+      "hp": "18"
+    }
+  },
+  "212": {
+    "txtNum": "",
+    "stats": {
+      "sila": "13",
+      "hp": "288"
+    },
+    "statsRefine": {
+      "sila": "1.2",
+      "hp": "18"
+    }
+  },
+  "213": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "11.5",
+      "provorstvo": "11.5"
+    },
+    "statsRefine": {
+      "hitrost": "0.9",
+      "provorstvo": "0.9"
+    }
+  },
+  "214": {
+    "txtNum": "",
+    "stats": {
+      "sv": "22"
+    },
+    "statsRefine": {
+      "sv": "1.65"
+    }
+  },
+  "215": {
+    "txtNum": "",
+    "stats": {
+      "srsv": "19"
+    },
+    "statsRefine": {
+      "srsv": "2"
+    }
+  },
+  "216": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "5",
+      "stoikost": "3",
+      "volia": "3"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "stoikost": "0.4",
+      "volia": "0.4"
+    }
+  },
+  "217": {
+    "txtNum": "",
+    "stats": {
+      "sila": "3",
+      "stoikost": "3"
+    },
+    "statsRefine": {
+      "sila": "0.3",
+      "stoikost": "0.2"
+    }
+  },
+  "218": {
+    "txtNum": "",
+    "stats": {
+      "sila": "3",
+      "volia": "3"
+    },
+    "statsRefine": {
+      "sila": "0.3",
+      "volia": "0.2"
+    }
+  },
+  "219": {
+    "txtNum": "",
+    "stats": {
+      "razum": "3",
+      "stoikost": "3"
+    },
+    "statsRefine": {
+      "razum": "0.3",
+      "stoikost": "0.2"
+    }
+  },
+  "220": {
+    "txtNum": "",
+    "stats": {
+      "razum": "3",
+      "volia": "3"
+    },
+    "statsRefine": {
+      "razum": "0.3",
+      "volia": "0.2"
+    }
+  },
+  "221": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "7",
+      "regenhp": "1"
+    },
+    "statsRefine": {
+      "provorstvo": "0.5",
+      "regenhp": "0.1"
+    }
+  },
+  "222": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "7",
+      "regenhp": "1"
+    },
+    "statsRefine": {
+      "hitrost": "0.5",
+      "regenhp": "0.1"
+    }
+  },
+  "223": {
+    "txtNum": "",
+    "stats": {
+      "hp": "126"
+    },
+    "statsRefine": {
+      "hp": "9"
+    }
+  },
+  "224": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "13",
+      "hp": "288"
+    },
+    "statsRefine": {
+      "stoikost": "1.2",
+      "hp": "18"
+    }
+  },
+  "225": {
+    "txtNum": "",
+    "stats": {
+      "volia": "13",
+      "hp": "288"
+    },
+    "statsRefine": {
+      "volia": "1.2",
+      "hp": "18"
+    }
+  },
+  "226": {
+    "txtNum": "1,0.1,stvol;1,0.1,hitprov",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "227": {
+    "txtNum": "50,4,defdam",
+    "stats": {
+      "hitrost": "3"
+    },
+    "statsRefine": {
+      "hitrost": "0.3"
+    }
+  },
+  "228": {
+    "txtNum": "15,3,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "229": {
+    "txtNum": "260,15,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "230": {
+    "txtNum": "",
+    "stats": {
+      "hp": "684"
+    },
+    "statsRefine": {
+      "hp": "48"
+    }
+  },
+  "231": {
+    "txtNum": "10,0,speed",
+    "stats": {
+      "hp": "102"
+    },
+    "statsRefine": {
+      "hp": "24"
+    }
+  },
+  "232": {
+    "txtNum": "10,0,speed",
+    "stats": {
+      "stoikost": "6.6",
+      "volia": "6.6"
+    },
+    "statsRefine": {
+      "stoikost": "0.8",
+      "volia": "0.8"
+    }
+  },
+  "233": {
+    "txtNum": "",
+    "stats": {
+      "sr": "4.2"
+    },
+    "statsRefine": {
+      "sr": "0.3"
+    }
+  },
+  "234": {
+    "txtNum": "",
+    "stats": {
+      "regenhp": "1.7",
+      "regenmp": "1.7"
+    },
+    "statsRefine": {
+      "regenhp": "0.125",
+      "regenmp": "0.125"
+    }
+  },
+  "235": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "5",
+      "stoikost": "3.6"
+    },
+    "statsRefine": {
+      "provorstvo": "0.5",
+      "stoikost": "0.2"
+    }
+  },
+  "236": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "5",
+      "volia": "3.6"
+    },
+    "statsRefine": {
+      "provorstvo": "0.5",
+      "volia": "0.2"
+    }
+  },
+  "237": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "5",
+      "stoikost": "3.6"
+    },
+    "statsRefine": {
+      "hitrost": "0.5",
+      "stoikost": "0.2"
+    }
+  },
+  "238": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "5",
+      "volia": "3.6"
+    },
+    "statsRefine": {
+      "hitrost": "0.5",
+      "volia": "0.2"
+    }
+  },
+  "239": {
+    "txtNum": "",
+    "stats": {
+      "sila": "7",
+      "regenhp": "2.2"
+    },
+    "statsRefine": {
+      "sila": "0.6",
+      "regenhp": "0.15"
+    }
+  },
+  "240": {
+    "txtNum": "",
+    "stats": {
+      "razum": "7",
+      "regenhp": "2.2"
+    },
+    "statsRefine": {
+      "razum": "0.6",
+      "regenhp": "0.15"
+    }
+  },
+  "241": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "7",
+      "regenhp": "2.2"
+    },
+    "statsRefine": {
+      "provorstvo": "0.6",
+      "regenhp": "0.15"
+    }
+  },
+  "242": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "7",
+      "regenhp": "2.2"
+    },
+    "statsRefine": {
+      "hitrost": "0.6",
+      "regenhp": "0.15"
+    }
+  },
+  "243": {
+    "txtNum": "",
+    "stats": {
+      "sila": "8",
+      "hp": "240"
+    },
+    "statsRefine": {
+      "sila": "0.6",
+      "hp": "18"
+    }
+  },
+  "244": {
+    "txtNum": "",
+    "stats": {
+      "razum": "8",
+      "hp": "240"
+    },
+    "statsRefine": {
+      "razum": "0.6",
+      "hp": "18"
+    }
+  },
+  "245": {
+    "txtNum": "",
+    "stats": {
+      "sila": "8",
+      "regenhp": "4.5"
+    },
+    "statsRefine": {
+      "sila": "0.6",
+      "regenhp": "0.3"
+    }
+  },
+  "246": {
+    "txtNum": "",
+    "stats": {
+      "razum": "8",
+      "regenhp": "4.5"
+    },
+    "statsRefine": {
+      "razum": "0.6",
+      "regenhp": "0.3"
+    }
+  },
+  "247": {
+    "txtNum": "",
+    "stats": {
+      "sila": "13",
+      "stoikost": "5",
+      "volia": "5"
+    },
+    "statsRefine": {
+      "sila": "0.75",
+      "stoikost": "0.3",
+      "volia": "0.3"
+    }
+  },
+  "248": {
+    "txtNum": "",
+    "stats": {
+      "razum": "13",
+      "stoikost": "5",
+      "volia": "5"
+    },
+    "statsRefine": {
+      "razum": "0.75",
+      "stoikost": "0.3",
+      "volia": "0.3"
+    }
+  },
+  "249": {
+    "txtNum": "",
+    "stats": {
+      "sv": "10",
+      "provorstvo": "12"
+    },
+    "statsRefine": {
+      "sv": "1",
+      "provorstvo": "0.9"
+    }
+  },
+  "250": {
+    "txtNum": "",
+    "stats": {
+      "sv": "10",
+      "hitrost": "12"
+    },
+    "statsRefine": {
+      "sv": "1",
+      "hitrost": "0.9"
+    }
+  },
+  "251": {
+    "txtNum": "",
+    "stats": {
+      "volia": "14"
+    },
+    "statsRefine": {
+      "volia": "2"
+    }
+  },
+  "252": {
+    "txtNum": "240,15,energy",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "253": {
+    "txtNum": "12,1,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "254": {
+    "txtNum": "",
+    "stats": {
+      "mp": "685"
+    },
+    "statsRefine": {
+      "mp": "52"
+    }
+  },
+  "255": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "19",
+      "hp": "120"
+    },
+    "statsRefine": {
+      "provorstvo": "1.5",
+      "hp": "9.6"
+    }
+  },
+  "256": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "19",
+      "hp": "120"
+    },
+    "statsRefine": {
+      "hitrost": "1.5",
+      "hp": "9.6"
+    }
+  },
+  "257": {
+    "txtNum": "",
+    "stats": {
+      "hp": "408",
+      "regenhp": "1.5"
+    },
+    "statsRefine": {
+      "hp": "30",
+      "regenhp": "0.125"
+    }
+  },
+  "258": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13",
+      "mp": "100"
+    },
+    "statsRefine": {
+      "hitrost": "1",
+      "mp": "7"
+    }
+  },
+  "259": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13",
+      "krajahp": "5.4"
+    },
+    "statsRefine": {
+      "provorstvo": "1",
+      "krajahp": "0.4"
+    }
+  },
+  "260": {
+    "txtNum": "",
+    "stats": {
+      "mp": "190"
+    },
+    "statsRefine": {
+      "mp": "14"
+    }
+  },
+  "261": {
+    "txtNum": "",
+    "stats": {
+      "sila": "11"
+    },
+    "statsRefine": {
+      "sila": "0.8"
+    }
+  },
+  "262": {
+    "txtNum": "",
+    "stats": {
+      "razum": "11"
+    },
+    "statsRefine": {
+      "razum": "0.8"
+    }
+  },
+  "263": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "11"
+    },
+    "statsRefine": {
+      "hitrost": "0.8"
+    }
+  },
+  "264": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "11"
+    },
+    "statsRefine": {
+      "provorstvo": "0.8"
+    }
+  },
+  "265": {
+    "txtNum": "",
+    "stats": {
+      "hp": "336"
+    },
+    "statsRefine": {
+      "hp": "25.2"
+    }
+  },
+  "266": {
+    "txtNum": "",
+    "stats": {
+      "sila": "9"
+    },
+    "statsRefine": {
+      "sila": "0.6"
+    }
+  },
+  "267": {
+    "txtNum": "",
+    "stats": {
+      "razum": "9"
+    },
+    "statsRefine": {
+      "razum": "0.6"
+    }
+  },
+  "268": {
+    "txtNum": "352,16,health",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "269": {
+    "txtNum": "70,5,dopdam;14,1,;350,25,",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "270": {
+    "txtNum": "",
+    "stats": {
+      "hp": "96"
+    },
+    "statsRefine": {
+      "hp": "24"
+    }
+  },
+  "271": {
+    "txtNum": "",
+    "stats": {
+      "sr": "4"
+    },
+    "statsRefine": {
+      "sr": "0.8"
+    }
+  },
+  "272": {
+    "txtNum": "200,0,hpopis",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "273": {
+    "txtNum": "",
+    "stats": {
+      "sila": "9"
+    },
+    "statsRefine": {
+      "sila": "0.6"
+    }
+  },
+  "274": {
+    "txtNum": "",
+    "stats": {
+      "razum": "9"
+    },
+    "statsRefine": {
+      "razum": "0.6"
+    }
+  },
+  "275": {
+    "txtNum": "100,0,hp",
+    "stats": {
+      "hp": "138"
+    },
+    "statsRefine": {
+      "hp": "14.4"
+    }
+  },
+  "276": {
+    "txtNum": "",
+    "stats": {
+      "hp": "684"
+    },
+    "statsRefine": {
+      "hp": "48"
+    }
+  },
+  "277": {
+    "txtNum": "",
+    "stats": {
+      "sr": "19"
+    },
+    "statsRefine": {
+      "sr": "2"
+    }
+  },
+  "278": {
+    "txtNum": "",
+    "stats": {
+      "sila": "9"
+    },
+    "statsRefine": {
+      "sila": "0.6"
+    }
+  },
+  "279": {
+    "txtNum": "",
+    "stats": {
+      "razum": "9"
+    },
+    "statsRefine": {
+      "razum": "0.6"
+    }
+  },
+  "280": {
+    "txtNum": "",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "281": {
+    "txtNum": "",
+    "stats": {
+      "hp": "120"
+    },
+    "statsRefine": {
+      "hp": "18"
+    }
+  },
+  "282": {
+    "txtNum": "2,0,speeda",
+    "stats": {
+      "sr": "4"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "283": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7.2"
+    },
+    "statsRefine": {
+      "sr": "0.6"
+    }
+  },
+  "284": {
+    "txtNum": "",
+    "stats": {
+      "sv": "7"
+    },
+    "statsRefine": {
+      "sv": "0.8"
+    }
+  },
+  "285": {
+    "txtNum": "30,2.5,hitrost",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "286": {
+    "txtNum": "",
+    "stats": {
+      "hp": "96"
+    },
+    "statsRefine": {
+      "hp": "21"
+    }
+  },
+  "287": {
+    "txtNum": "",
+    "stats": {
+      "sv": "6"
+    },
+    "statsRefine": {
+      "sv": "0.75"
+    }
+  },
+  "288": {
+    "txtNum": "",
+    "stats": {
+      "krajahp": "7.2"
+    },
+    "statsRefine": {
+      "krajahp": "0.6"
+    }
+  },
+  "289": {
+    "txtNum": "",
+    "stats": {
+      "sr": "17"
+    },
+    "statsRefine": {
+      "sr": "0"
+    }
+  },
+  "290": {
+    "txtNum": "all,180,2040,num,hp",
+    "stats": {
+      "sr": "6.5"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "291": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "3.5"
+    },
+    "statsRefine": {
+      "regenmp": "0.3"
+    }
+  },
+  "292": {
+    "txtNum": "",
+    "stats": {
+      "sv": "2",
+      "sr": "7.3"
+    },
+    "statsRefine": {
+      "sv": "0.1",
+      "sr": "0.5"
+    }
+  },
+  "293": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5",
+      "regenmp": "3"
+    },
+    "statsRefine": {
+      "sr": "1",
+      "regenmp": "0"
+    }
+  },
+  "294": {
+    "txtNum": "all,180,2040,num,hp",
+    "stats": {
+      "hp": "79.2",
+      "ph": "6.2"
+    },
+    "statsRefine": {
+      "hp": "6",
+      "ph": "0.5"
+    }
+  },
+  "295": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7",
+      "ph": "2.2"
+    },
+    "statsRefine": {
+      "sr": "0.5",
+      "ph": "0.5"
+    }
+  },
+  "296": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "6",
+      "sila": "5"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "sila": "1"
+    }
+  },
+  "297": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "298": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "6",
+      "hitrost": "5"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "hitrost": "1"
+    }
+  },
+  "299": {
+    "txtNum": "",
+    "stats": {
+      "krajahp": "8",
+      "provorstvo": "6.5"
+    },
+    "statsRefine": {
+      "krajahp": "0.7",
+      "provorstvo": "0.5"
+    }
+  },
+  "300": {
+    "txtNum": "all,180,2040,num,hp",
+    "stats": {
+      "sr": "17"
+    },
+    "statsRefine": {
+      "sr": "0"
+    }
+  },
+  "301": {
+    "txtNum": "all,18,36.02884615,num,sr_max",
+    "stats": {
+      "sr": "5.2",
+      "regenhp": "1.1"
+    },
+    "statsRefine": {
+      "sr": "0.625",
+      "regenhp": "0.1"
+    }
+  },
+  "302": {
+    "txtNum": "",
+    "stats": {
+      "hp": "192",
+      "provorstvo": "10"
+    },
+    "statsRefine": {
+      "hp": "14.4",
+      "provorstvo": "0.8"
+    }
+  },
+  "303": {
+    "txtNum": "",
+    "stats": {
+      "hp": "210",
+      "ph": "17.6"
+    },
+    "statsRefine": {
+      "hp": "0",
+      "ph": "0"
+    }
+  },
+  "304": {
+    "txtNum": "",
+    "stats": {
+      "hp": "360",
+      "mp": "140"
+    },
+    "statsRefine": {
+      "hp": "24",
+      "mp": "10"
+    }
+  },
+  "305": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7.5",
+      "krajahp": "15"
+    },
+    "statsRefine": {
+      "sr": "0.5",
+      "krajahp": "1"
+    }
+  },
+  "306": {
+    "txtNum": "",
+    "stats": {
+      "sr": "18.6",
+      "ph": "6"
+    },
+    "statsRefine": {
+      "sr": "0",
+      "ph": "0"
+    }
+  },
+  "307": {
+    "txtNum": "18.5,1.5,krajahp",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "308": {
+    "txtNum": "",
+    "stats": {
+      "sr": "25",
+      "sv": "10"
+    },
+    "statsRefine": {
+      "sr": "0",
+      "sv": "0"
+    }
+  },
+  "309": {
+    "txtNum": "",
+    "stats": {
+      "sr": "12",
+      "volia": "11"
+    },
+    "statsRefine": {
+      "sr": "0.9",
+      "volia": "0.9"
+    }
+  },
+  "310": {
+    "txtNum": "all,180,2040,num,hp",
+    "stats": {
+      "hp": "210",
+      "ph": "16.4"
+    },
+    "statsRefine": {
+      "hp": "15.6",
+      "ph": "1.2"
+    }
+  },
+  "311": {
+    "txtNum": "",
+    "stats": {
+      "mp": "130"
+    },
+    "statsRefine": {
+      "mp": "10"
+    }
+  },
+  "312": {
+    "txtNum": "7,0,speed",
+    "stats": {
+      "regenmp": "1"
+    },
+    "statsRefine": {
+      "regenmp": "0.4"
+    }
+  },
+  "313": {
+    "txtNum": "",
+    "stats": {
+      "sila": "14",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "sila": "1.1",
+      "hitrost": "0.6"
+    }
+  },
+  "314": {
+    "txtNum": "",
+    "stats": {
+      "razum": "14",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "razum": "1.1",
+      "hitrost": "0.6"
+    }
+  },
+  "315": {
+    "txtNum": "",
+    "stats": {
+      "sila": "14",
+      "provorstvo": "10"
+    },
+    "statsRefine": {
+      "sila": "1.1",
+      "provorstvo": "0.6"
+    }
+  },
+  "316": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13",
+      "provorstvo": "10"
+    },
+    "statsRefine": {
+      "sr": "1.1",
+      "provorstvo": "0.6"
+    }
+  },
+  "317": {
+    "txtNum": "15,0.7,halfsv",
+    "stats": {
+      "hitrost": "12"
+    },
+    "statsRefine": {
+      "hitrost": "1.1"
+    }
+  },
+  "318": {
+    "txtNum": "",
+    "stats": {
+      "sr": "11"
+    },
+    "statsRefine": {
+      "sr": "0.8"
+    }
+  },
+  "319": {
+    "txtNum": "58,2,energy",
+    "stats": {
+      "regenmp": "3.2"
+    },
+    "statsRefine": {
+      "regenmp": "0.3"
+    }
+  },
+  "320": {
+    "txtNum": "15,0.7,halfsv",
+    "stats": {
+      "provorstvo": "12"
+    },
+    "statsRefine": {
+      "provorstvo": "1.1"
+    }
+  },
+  "321": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "8",
+      "sv": "8"
+    },
+    "statsRefine": {
+      "hitrost": "0.6",
+      "sv": "0.6"
+    }
+  },
+  "322": {
+    "txtNum": "nobuff,150,1000,num,sr_max",
+    "stats": {
+      "provorstvo": "8",
+      "sv": "8"
+    },
+    "statsRefine": {
+      "provorstvo": "0.6",
+      "sv": "0.6"
+    }
+  },
+  "323": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "10",
+      "stoikost": "6.5"
+    },
+    "statsRefine": {
+      "provorstvo": "0.7",
+      "stoikost": "0.5"
+    }
+  },
+  "324": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "10",
+      "volia": "6.5"
+    },
+    "statsRefine": {
+      "provorstvo": "0.7",
+      "volia": "0.5"
+    }
+  },
+  "325": {
+    "txtNum": "100,20,dopdam",
+    "stats": {
+      "hitrost": "10",
+      "stoikost": "6.5"
+    },
+    "statsRefine": {
+      "hitrost": "0.7",
+      "stoikost": "0.5"
+    }
+  },
+  "326": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "10",
+      "volia": "6.5"
+    },
+    "statsRefine": {
+      "hitrost": "0.7",
+      "volia": "0.5"
+    }
+  },
+  "327": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5.6",
+      "provorstvo": "5.6"
+    },
+    "statsRefine": {
+      "sr": "0.4",
+      "provorstvo": "0.4"
+    }
+  },
+  "328": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5",
+      "provorstvo": "6.2"
+    },
+    "statsRefine": {
+      "sr": "0.3",
+      "provorstvo": "0.5"
+    }
+  },
+  "329": {
+    "txtNum": "70,10,damage",
+    "stats": {
+      "sila": "5.6",
+      "hitrost": "5.6"
+    },
+    "statsRefine": {
+      "sila": "0.4",
+      "hitrost": "0.4"
+    }
+  },
+  "330": {
+    "txtNum": "200,20,dopdam",
+    "stats": {
+      "sr": "5.6",
+      "hitrost": "5.6"
+    },
+    "statsRefine": {
+      "sr": "0.4",
+      "hitrost": "0.4"
+    }
+  },
+  "331": {
+    "txtNum": "",
+    "stats": {
+      "sr": "9"
+    },
+    "statsRefine": {
+      "sr": "0.7"
+    }
+  },
+  "332": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "6.5"
+    },
+    "statsRefine": {
+      "provorstvo": "0.5"
+    }
+  },
+  "333": {
+    "txtNum": "50,10,damage",
+    "stats": {
+      "hitrost": "6.5"
+    },
+    "statsRefine": {
+      "hitrost": "0.5"
+    }
+  },
+  "334": {
+    "txtNum": "58,2,damage",
+    "stats": {
+      "krajamp": "24.2"
+    },
+    "statsRefine": {
+      "krajamp": "1.7"
+    }
+  },
+  "335": {
+    "txtNum": "",
+    "stats": {
+      "hp": "66",
+      "regenhp": "1.2"
+    },
+    "statsRefine": {
+      "hp": "3.6",
+      "regenhp": "0.1"
+    }
+  },
+  "336": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "2.3"
+    },
+    "statsRefine": {
+      "regenmp": "0.2"
+    }
+  },
+  "337": {
+    "txtNum": "",
+    "stats": {
+      "krajamp": "16.2"
+    },
+    "statsRefine": {
+      "krajamp": "1.2"
+    }
+  },
+  "338": {
+    "txtNum": "295,17.5,health",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "339": {
+    "txtNum": "250,20,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "340": {
+    "txtNum": "7,0,speed;208,0,defdam;22.2,0,defdam",
+    "stats": {
+      "sr": "5.8",
+      "stoikost": "5.8"
+    },
+    "statsRefine": {
+      "sr": "0.2",
+      "stoikost": "0.2"
+    }
+  },
+  "341": {
+    "txtNum": "310,25,dopdam;310,25,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "342": {
+    "txtNum": "45,3.75,antisr",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "343": {
+    "txtNum": "",
+    "stats": {
+      "ph": "6.5"
+    },
+    "statsRefine": {
+      "ph": "0.5"
+    }
+  },
+  "344": {
+    "txtNum": "325,12.5,health",
+    "stats": {
+      "sr": "8.5",
+      "hp": "84"
+    },
+    "statsRefine": {
+      "sr": "0.5",
+      "hp": "6"
+    }
+  },
+  "345": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "10",
+      "hp": "180"
+    },
+    "statsRefine": {
+      "stoikost": "0.7",
+      "hp": "18"
+    }
+  },
+  "346": {
+    "txtNum": "",
+    "stats": {
+      "volia": "10",
+      "hp": "180"
+    },
+    "statsRefine": {
+      "volia": "0.7",
+      "hp": "18"
+    }
+  },
+  "347": {
+    "txtNum": "",
+    "stats": {
+      "sr": "4.5"
+    },
+    "statsRefine": {
+      "sr": "0.375"
+    }
+  },
+  "348": {
+    "txtNum": "",
+    "stats": {
+      "sv": "9"
+    },
+    "statsRefine": {
+      "sv": "0.7"
+    }
+  },
+  "349": {
+    "txtNum": "120,7.5,dopdam",
+    "stats": {
+      "speedtal": "6",
+      "provorstvo": "5"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "provorstvo": "1"
+    }
+  },
+  "350": {
+    "txtNum": "",
+    "stats": {
+      "ph": "11",
+      "sv": "11"
+    },
+    "statsRefine": {
+      "ph": "0.9",
+      "sv": "0.9"
+    }
+  },
+  "351": {
+    "txtNum": "20,1.25,dopsila",
+    "stats": {
+      "sila": "6.5"
+    },
+    "statsRefine": {
+      "sila": "0.5"
+    }
+  },
+  "352": {
+    "txtNum": "20,1.25,doprazum",
+    "stats": {
+      "razum": "6.5"
+    },
+    "statsRefine": {
+      "razum": "0.5"
+    }
+  },
+  "353": {
+    "txtNum": "",
+    "stats": {
+      "sr": "4.8",
+      "hp": "90",
+      "regenmp": "1.8"
+    },
+    "statsRefine": {
+      "sr": "0.2",
+      "hp": "10",
+      "regenmp": "0.2"
+    }
+  },
+  "354": {
+    "txtNum": "",
+    "stats": {
+      "sr": "12",
+      "volia": "6"
+    },
+    "statsRefine": {
+      "sr": "1",
+      "volia": "0.5"
+    }
+  },
+  "355": {
+    "txtNum": "",
+    "stats": {
+      "sr": "12",
+      "stoikost": "6"
+    },
+    "statsRefine": {
+      "sr": "1",
+      "stoikost": "0.5"
+    }
+  },
+  "356": {
+    "txtNum": "18,1,antidef",
+    "stats": {
+      "sila": "9"
+    },
+    "statsRefine": {
+      "sila": "0.7"
+    }
+  },
+  "357": {
+    "txtNum": "18,1,antidef",
+    "stats": {
+      "razum": "9"
+    },
+    "statsRefine": {
+      "razum": "0.7"
+    }
+  },
+  "358": {
+    "txtNum": "",
+    "stats": {
+      "sr": "6.5",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "sr": "0.5",
+      "hitrost": "0.7"
+    }
+  },
+  "359": {
+    "txtNum": "140,10,dopdam",
+    "stats": {
+      "sr": "22.5"
+    },
+    "statsRefine": {
+      "sr": "1.7"
+    }
+  },
+  "360": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13",
+      "hp": "300"
+    },
+    "statsRefine": {
+      "sr": "1",
+      "hp": "24"
+    }
+  },
+  "361": {
+    "txtNum": "",
+    "stats": {
+      "hp": "129.6"
+    },
+    "statsRefine": {
+      "hp": "9.6"
+    }
+  },
+  "362": {
+    "txtNum": "",
+    "stats": {
+      "sv": "5.6",
+      "ph": "5.6"
+    },
+    "statsRefine": {
+      "sv": "0.4",
+      "ph": "0.4"
+    }
+  },
+  "363": {
+    "txtNum": "",
+    "stats": {
+      "sv": "5.6",
+      "ph": "5.6"
+    },
+    "statsRefine": {
+      "sv": "0.4",
+      "ph": "0.4"
+    }
+  },
+  "364": {
+    "txtNum": "20,1.5,antidef",
+    "stats": {
+      "sila": "12",
+      "sv": "11"
+    },
+    "statsRefine": {
+      "sila": "1",
+      "sv": "0.5"
+    }
+  },
+  "365": {
+    "txtNum": "20,1.5,antidef",
+    "stats": {
+      "razum": "12",
+      "sv": "11"
+    },
+    "statsRefine": {
+      "razum": "1",
+      "sv": "0.5"
+    }
+  },
+  "366": {
+    "txtNum": "7.7,0.6,stoikostrz",
+    "stats": {
+      "stoikost": "14.5",
+      "hp": "336",
+      "stoikostrz": "7.7"
+    },
+    "statsRefine": {
+      "stoikost": "1.2",
+      "hp": "25.2",
+      "stoikostrz": "0.6"
+    }
+  },
+  "367": {
+    "txtNum": "7.7,0.6,voliarz",
+    "stats": {
+      "volia": "14.5",
+      "hp": "336",
+      "voliarz": "7.7"
+    },
+    "statsRefine": {
+      "volia": "1.2",
+      "hp": "25.2",
+      "voliarz": "0.6"
+    }
+  },
+  "368": {
+    "txtNum": "6,0,speedtal",
+    "stats": {
+      "sv": "10",
+      "speedtalrz": "6"
+    },
+    "statsRefine": {
+      "sv": "1.1",
+      "speedtalrz": "0"
+    }
+  },
+  "369": {
+    "txtNum": "7.7,0.6,hitrostrz",
+    "stats": {
+      "hitrost": "20.3",
+      "hp": "156",
+      "hitrostrz": "7.7"
+    },
+    "statsRefine": {
+      "hitrost": "1.5",
+      "hp": "12",
+      "hitrostrz": "0.6"
+    }
+  },
+  "370": {
+    "txtNum": "5.4,0.4,provorstvorz",
+    "stats": {
+      "sila": "7.4",
+      "provorstvo": "10.5",
+      "provorstvorz": "5.4"
+    },
+    "statsRefine": {
+      "sila": "0.6",
+      "provorstvo": "0.8",
+      "provorstvorz": "0.4"
+    }
+  },
+  "371": {
+    "txtNum": "5.4,0.4,provorstvorz",
+    "stats": {
+      "razum": "7.4",
+      "provorstvo": "10.5",
+      "provorstvorz": "5.4"
+    },
+    "statsRefine": {
+      "razum": "0.6",
+      "provorstvo": "0.8",
+      "provorstvorz": "0.4"
+    }
+  },
+  "372": {
+    "txtNum": "6,0,speedtal",
+    "stats": {
+      "hp": "300",
+      "speedtalrz": "6"
+    },
+    "statsRefine": {
+      "hp": "32.4",
+      "speedtalrz": "0"
+    }
+  },
+  "373": {
+    "txtNum": "5.4,0.4,silarz",
+    "stats": {
+      "sila": "9",
+      "hp": "270",
+      "silarz": "5.4"
+    },
+    "statsRefine": {
+      "sila": "0.7",
+      "hp": "19.2",
+      "silarz": "0.4"
+    }
+  },
+  "374": {
+    "txtNum": "5.4,0.4,razumrz",
+    "stats": {
+      "razum": "9",
+      "hp": "270",
+      "razumrz": "5.4"
+    },
+    "statsRefine": {
+      "razum": "0.7",
+      "hp": "19.2",
+      "razumrz": "0.4"
+    }
+  },
+  "375": {
+    "txtNum": "5,0,speed;5,0,speeddvz",
+    "stats": {
+      "regenmp": "2"
+    },
+    "statsRefine": {
+      "regenmp": "0.5"
+    }
+  },
+  "376": {
+    "txtNum": "",
+    "stats": {
+      "hp": "146.4"
+    },
+    "statsRefine": {
+      "hp": "26.4"
+    }
+  },
+  "377": {
+    "txtNum": "7.7,0.6,provorstvorz",
+    "stats": {
+      "provorstvo": "20.3",
+      "hp": "156",
+      "provorstvorz": "7.7"
+    },
+    "statsRefine": {
+      "provorstvo": "1.5",
+      "hp": "12",
+      "provorstvorz": "0.6"
+    }
+  },
+  "378": {
+    "txtNum": "3.7,0.3,silarz",
+    "stats": {
+      "sila": "12.4",
+      "silarz": "3.7"
+    },
+    "statsRefine": {
+      "sila": "0.9",
+      "silarz": "0.3"
+    }
+  },
+  "379": {
+    "txtNum": "3.7,0.3,razumrz",
+    "stats": {
+      "razum": "12.4",
+      "razumrz": "3.7"
+    },
+    "statsRefine": {
+      "razum": "0.9",
+      "razumrz": "0.3"
+    }
+  },
+  "380": {
+    "txtNum": "6.4,1,krajahprz",
+    "stats": {
+      "provorstvo": "5.6",
+      "krajahp": "11.4",
+      "krajahprz": "6.4"
+    },
+    "statsRefine": {
+      "provorstvo": "0.4",
+      "krajahp": "0.8",
+      "krajahprz": "1"
+    }
+  },
+  "381": {
+    "txtNum": "2.9,0.2,hitrostrz",
+    "stats": {
+      "hitrost": "9.8",
+      "hitrostrz": "2.9"
+    },
+    "statsRefine": {
+      "hitrost": "0.7",
+      "hitrostrz": "0.2"
+    }
+  },
+  "382": {
+    "txtNum": "2.9,0.2,provorstvorz",
+    "stats": {
+      "provorstvo": "9.8",
+      "provorstvorz": "2.9"
+    },
+    "statsRefine": {
+      "provorstvo": "0.7",
+      "provorstvorz": "0.2"
+    }
+  },
+  "383": {
+    "txtNum": "3.5,0.2,krajahprz",
+    "stats": {
+      "sila": "7",
+      "krajahprz": "3.5"
+    },
+    "statsRefine": {
+      "sila": "0.6",
+      "krajahprz": "0.2"
+    }
+  },
+  "384": {
+    "txtNum": "3.5,0.2,krajahprz",
+    "stats": {
+      "razum": "7",
+      "krajahprz": "3.5"
+    },
+    "statsRefine": {
+      "razum": "0.6",
+      "krajahprz": "0.2"
+    }
+  },
+  "385": {
+    "txtNum": "",
+    "stats": {
+      "hp": "129.6"
+    },
+    "statsRefine": {
+      "hp": "19.2"
+    }
+  },
+  "386": {
+    "txtNum": "200,12.5,health",
+    "stats": {
+      "hp": "75.6"
+    },
+    "statsRefine": {
+      "hp": "6"
+    }
+  },
+  "387": {
+    "txtNum": "200,12.5,energy",
+    "stats": {
+      "mp": "76"
+    },
+    "statsRefine": {
+      "mp": "6"
+    }
+  },
+  "388": {
+    "txtNum": "12,1,dopdam;5,0.5,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "389": {
+    "txtNum": "0.9,0.05,regenhpvz",
+    "stats": {
+      "regenhp": "2.6",
+      "regenhpvz": "0.9"
+    },
+    "statsRefine": {
+      "regenhp": "0.2",
+      "regenhpvz": "0.05"
+    }
+  },
+  "390": {
+    "txtNum": "12,1,dopdam;5,0.5,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "391": {
+    "txtNum": "1.6,0.1,hitrostvz",
+    "stats": {
+      "hitrost": "4.6",
+      "hitrostvz": "1.6"
+    },
+    "statsRefine": {
+      "hitrost": "0.4",
+      "hitrostvz": "0.1"
+    }
+  },
+  "392": {
+    "txtNum": "1.6,0.1,provorstvovz",
+    "stats": {
+      "provorstvo": "4.6",
+      "provorstvovz": "1.6"
+    },
+    "statsRefine": {
+      "provorstvo": "0.4",
+      "provorstvovz": "0.1"
+    }
+  },
+  "393": {
+    "txtNum": "1.3,0.1,regenmpvz",
+    "stats": {
+      "razum": "4",
+      "regenmp": "1.7",
+      "regenmpvz": "1.3"
+    },
+    "statsRefine": {
+      "razum": "0.3",
+      "regenmp": "0.1",
+      "regenmpvz": "0.1"
+    }
+  },
+  "394": {
+    "txtNum": "1.3,0.1,regenmpvz",
+    "stats": {
+      "sila": "4",
+      "regenmp": "1.7",
+      "regenmpvz": "1.3"
+    },
+    "statsRefine": {
+      "sila": "0.3",
+      "regenmp": "0.1",
+      "regenmpvz": "0.1"
+    }
+  },
+  "395": {
+    "txtNum": "6,0.5,silavz",
+    "stats": {
+      "hp": "420",
+      "sila": "4",
+      "silavz": "6"
+    },
+    "statsRefine": {
+      "hp": "30",
+      "sila": "0.3",
+      "silavz": "0.5"
+    }
+  },
+  "396": {
+    "txtNum": "1.8,0.1,regenhpvz",
+    "stats": {
+      "hp": "222",
+      "regenhp": "1.3",
+      "regenhpvz": "1.8"
+    },
+    "statsRefine": {
+      "hp": "18",
+      "regenhp": "0.1",
+      "regenhpvz": "0.1"
+    }
+  },
+  "397": {
+    "txtNum": "6,0.5,razumvz",
+    "stats": {
+      "hp": "420",
+      "razum": "4",
+      "razumvz": "6"
+    },
+    "statsRefine": {
+      "hp": "30",
+      "razum": "0.3",
+      "razumvz": "0.5"
+    }
+  },
+  "398": {
+    "txtNum": "3.5,0.2,hitrostvz",
+    "stats": {
+      "razum": "6",
+      "hitrost": "3.5",
+      "hitrostvz": "3.5"
+    },
+    "statsRefine": {
+      "razum": "0.5",
+      "hitrost": "0.3",
+      "hitrostvz": "0.2"
+    }
+  },
+  "399": {
+    "txtNum": "3.5,0.2,hitrostvz",
+    "stats": {
+      "sila": "6",
+      "hitrost": "3.5",
+      "hitrostvz": "3.5"
+    },
+    "statsRefine": {
+      "sila": "0.5",
+      "hitrost": "0.3",
+      "hitrostvz": "0.2"
+    }
+  },
+  "400": {
+    "txtNum": "4,0.3,svvz",
+    "stats": {
+      "sila": "6",
+      "sv": "6",
+      "svvz": "4"
+    },
+    "statsRefine": {
+      "sila": "0.5",
+      "sv": "0.4",
+      "svvz": "0.3"
+    }
+  },
+  "401": {
+    "txtNum": "4,0.3,svvz",
+    "stats": {
+      "razum": "6",
+      "sv": "6",
+      "svvz": "4"
+    },
+    "statsRefine": {
+      "razum": "0.5",
+      "sv": "0.4",
+      "svvz": "0.3"
+    }
+  },
+  "402": {
+    "txtNum": "14,1,krajahpvz",
+    "stats": {
+      "provorstvo": "10",
+      "krajahp": "27",
+      "krajahpvz": "14"
+    },
+    "statsRefine": {
+      "provorstvo": "0.8",
+      "krajahp": "2",
+      "krajahpvz": "1"
+    }
+  },
+  "403": {
+    "txtNum": "2,0,regenmpstak",
+    "stats": {
+      "regenmp": "2"
+    },
+    "statsRefine": {
+      "regenmp": "0.25"
+    }
+  },
+  "404": {
+    "txtNum": "144,0,hpstak",
+    "stats": {
+      "hp": "144"
+    },
+    "statsRefine": {
+      "hp": "18"
+    }
+  },
+  "405": {
+    "txtNum": "5.6,0,krajahpstak",
+    "stats": {
+      "krajahp": "5.6"
+    },
+    "statsRefine": {
+      "krajahp": "0.7"
+    }
+  },
+  "406": {
+    "txtNum": "4,0,silastak",
+    "stats": {
+      "sila": "6"
+    },
+    "statsRefine": {
+      "sila": "0"
+    }
+  },
+  "407": {
+    "txtNum": "4,0,razumstak",
+    "stats": {
+      "razum": "6"
+    },
+    "statsRefine": {
+      "razum": "0"
+    }
+  },
+  "408": {
+    "txtNum": "162,0,hpstak",
+    "stats": {
+      "hp": "162"
+    },
+    "statsRefine": {
+      "hp": "24"
+    }
+  },
+  "409": {
+    "txtNum": "4.8,0,razumstak",
+    "stats": {
+      "razum": "4.8"
+    },
+    "statsRefine": {
+      "razum": "0.6"
+    }
+  },
+  "410": {
+    "txtNum": "4.8,0,silastak",
+    "stats": {
+      "sila": "4.8"
+    },
+    "statsRefine": {
+      "sila": "0.6"
+    }
+  },
+  "411": {
+    "txtNum": "2.6,0,regenhpstak",
+    "stats": {
+      "regenhp": "2.6"
+    },
+    "statsRefine": {
+      "regenhp": "0.35"
+    }
+  },
+  "412": {
+    "txtNum": "18,0,razumstak",
+    "stats": {
+      "razum": "12",
+      "ph": "6"
+    },
+    "statsRefine": {
+      "razum": "1.2",
+      "ph": "0.8"
+    }
+  },
+  "413": {
+    "txtNum": "18,0,silastak",
+    "stats": {
+      "sila": "12",
+      "ph": "6"
+    },
+    "statsRefine": {
+      "sila": "1.2",
+      "ph": "0.8"
+    }
+  },
+  "414": {
+    "txtNum": "9,0,razumstak",
+    "stats": {
+      "razum": "6",
+      "hp": "90"
+    },
+    "statsRefine": {
+      "razum": "0.6",
+      "hp": "12"
+    }
+  },
+  "415": {
+    "txtNum": "18,0,silastak",
+    "stats": {
+      "sila": "12",
+      "hp": "180"
+    },
+    "statsRefine": {
+      "sila": "1",
+      "hp": "30"
+    }
+  },
+  "416": {
+    "txtNum": "18,0,razumstak",
+    "stats": {
+      "razum": "12",
+      "hp": "180"
+    },
+    "statsRefine": {
+      "razum": "1",
+      "hp": "30"
+    }
+  },
+  "417": {
+    "txtNum": "9,0,hitroststak",
+    "stats": {
+      "hitrost": "6",
+      "hp": "90"
+    },
+    "statsRefine": {
+      "hitrost": "0.6",
+      "hp": "12"
+    }
+  },
+  "418": {
+    "txtNum": "9,0,provorstvostak",
+    "stats": {
+      "provorstvo": "6",
+      "hp": "90"
+    },
+    "statsRefine": {
+      "provorstvo": "0.6",
+      "hp": "12"
+    }
+  },
+  "419": {
+    "txtNum": "7,0,provorstvostak",
+    "stats": {
+      "razum": "3",
+      "provorstvo": "4"
+    },
+    "statsRefine": {
+      "razum": "0.4",
+      "provorstvo": "0.4"
+    }
+  },
+  "420": {
+    "txtNum": "7,0,provorstvostak",
+    "stats": {
+      "sila": "3",
+      "provorstvo": "4"
+    },
+    "statsRefine": {
+      "sila": "0.4",
+      "provorstvo": "0.4"
+    }
+  },
+  "421": {
+    "txtNum": "204,0,hpstak",
+    "stats": {
+      "hp": "84",
+      "sr": "4"
+    },
+    "statsRefine": {
+      "hp": "12",
+      "sr": "0.4"
+    }
+  },
+  "422": {
+    "txtNum": "9,0,silastak",
+    "stats": {
+      "sila": "6",
+      "hp": "90"
+    },
+    "statsRefine": {
+      "sila": "0.6",
+      "hp": "12"
+    }
+  },
+  "423": {
+    "txtNum": "540,0,hpstak",
+    "stats": {
+      "hp": "240",
+      "sv": "10"
+    },
+    "statsRefine": {
+      "hp": "30",
+      "sv": "1"
+    }
+  },
+  "424": {
+    "txtNum": "12.5,0,stoikoststak",
+    "stats": {
+      "hp": "168",
+      "stoikost": "7"
+    },
+    "statsRefine": {
+      "hp": "18",
+      "stoikost": "0.8"
+    }
+  },
+  "425": {
+    "txtNum": "12.5,0,voliastak",
+    "stats": {
+      "hp": "168",
+      "volia": "7"
+    },
+    "statsRefine": {
+      "hp": "18",
+      "volia": "0.8"
+    }
+  },
+  "426": {
+    "txtNum": "12.5,0,hitroststak",
+    "stats": {
+      "hitrost": "7.5",
+      "sr": "5"
+    },
+    "statsRefine": {
+      "hitrost": "0.8",
+      "sr": "0.6"
+    }
+  },
+  "427": {
+    "txtNum": "12.5,0,provorstvostak",
+    "stats": {
+      "provorstvo": "7",
+      "krajahp": "9"
+    },
+    "statsRefine": {
+      "provorstvo": "0.8",
+      "krajahp": "1"
+    }
+  },
+  "428": {
+    "txtNum": "300,0,health;11.1,0,health",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "429": {
+    "txtNum": "15,0,silastak",
+    "stats": {
+      "sila": "5"
+    },
+    "statsRefine": {
+      "sila": "1"
+    }
+  },
+  "430": {
+    "txtNum": "15,0,razumstak",
+    "stats": {
+      "razum": "5"
+    },
+    "statsRefine": {
+      "razum": "1"
+    }
+  },
+  "431": {
+    "txtNum": "11,0,provorstvostak",
+    "stats": {
+      "provorstvo": "3.5"
+    },
+    "statsRefine": {
+      "provorstvo": "0.6"
+    }
+  },
+  "432": {
+    "txtNum": "11,0,hitroststak",
+    "stats": {
+      "hitrost": "3.5"
+    },
+    "statsRefine": {
+      "hitrost": "0.6"
+    }
+  },
+  "433": {
+    "txtNum": "7.5,0,stoikoststak",
+    "stats": {
+      "stoikost": "2.5"
+    },
+    "statsRefine": {
+      "stoikost": "0.4"
+    }
+  },
+  "434": {
+    "txtNum": "7.5,0,voliastak",
+    "stats": {
+      "volia": "2.5"
+    },
+    "statsRefine": {
+      "volia": "0.4"
+    }
+  },
+  "435": {
+    "txtNum": "",
+    "stats": {
+      "sila": "23"
+    },
+    "statsRefine": {
+      "sila": "2"
+    }
+  },
+  "436": {
+    "txtNum": "",
+    "stats": {
+      "sv": "19"
+    },
+    "statsRefine": {
+      "sv": "1.4"
+    }
+  },
+  "437": {
+    "txtNum": "",
+    "stats": {
+      "razum": "23"
+    },
+    "statsRefine": {
+      "razum": "2"
+    }
+  },
+  "438": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13"
+    },
+    "statsRefine": {
+      "hitrost": "1"
+    }
+  },
+  "439": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13"
+    },
+    "statsRefine": {
+      "provorstvo": "1"
+    }
+  },
+  "440": {
+    "txtNum": "",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "441": {
+    "txtNum": "",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "442": {
+    "txtNum": "",
+    "stats": {
+      "razum": "5"
+    },
+    "statsRefine": {
+      "razum": "0.4"
+    }
+  },
+  "443": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7.2"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "444": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "6",
+      "hp": "210"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "hp": "15"
+    }
+  },
+  "445": {
+    "txtNum": "",
+    "stats": {
+      "sv": "19"
+    },
+    "statsRefine": {
+      "sv": "1.4"
+    }
+  },
+  "446": {
+    "txtNum": "",
+    "stats": {
+      "ph": "27"
+    },
+    "statsRefine": {
+      "ph": "2"
+    }
+  },
+  "447": {
+    "txtNum": "",
+    "stats": {
+      "ph": "7.2"
+    },
+    "statsRefine": {
+      "ph": "0.5"
+    }
+  },
+  "448": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "449": {
+    "txtNum": "",
+    "stats": {
+      "sr": "9",
+      "provorstvo": "10"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "provorstvo": "0.7"
+    }
+  },
+  "450": {
+    "txtNum": "",
+    "stats": {
+      "sr": "9",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "hitrost": "0.7"
+    }
+  },
+  "451": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "13.5",
+      "hp": "405"
+    },
+    "statsRefine": {
+      "stoikost": "1",
+      "hp": "30"
+    }
+  },
+  "452": {
+    "txtNum": "",
+    "stats": {
+      "volia": "13.5",
+      "hp": "405"
+    },
+    "statsRefine": {
+      "volia": "1",
+      "hp": "30"
+    }
+  },
+  "453": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "3.5"
+    },
+    "statsRefine": {
+      "regenmp": "0"
+    }
+  },
+  "454": {
+    "txtNum": "all,180,2040,num,hp",
+    "stats": {
+      "sr": "3.2",
+      "hp": "120"
+    },
+    "statsRefine": {
+      "sr": "0.2",
+      "hp": "9"
+    }
+  },
+  "455": {
+    "txtNum": "all,180,2040,num,hp",
+    "stats": {
+      "provorstvo": "8.5",
+      "hp": "135"
+    },
+    "statsRefine": {
+      "provorstvo": "0.7",
+      "hp": "9"
+    }
+  },
+  "456": {
+    "txtNum": "all,180,2040,num,hp",
+    "stats": {
+      "sv": "9",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "sv": "0.7",
+      "hitrost": "0.7"
+    }
+  },
+  "457": {
+    "txtNum": "all,180,2040,num,hp",
+    "stats": {
+      "ph": "15",
+      "hp": "360"
+    },
+    "statsRefine": {
+      "ph": "1.1",
+      "hp": "27"
+    }
+  },
+  "458": {
+    "txtNum": "all,180,2040,num,hp",
+    "stats": {
+      "sr": "15",
+      "hp": "360"
+    },
+    "statsRefine": {
+      "sr": "1.1",
+      "hp": "27"
+    }
+  },
+  "459": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.4"
+    }
+  },
+  "460": {
+    "txtNum": "",
+    "stats": {
+      "ph": "7.2"
+    },
+    "statsRefine": {
+      "ph": "0.5"
+    }
+  },
+  "461": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "462": {
+    "txtNum": "7,0,speed",
+    "stats": {
+      "hp": "180"
+    },
+    "statsRefine": {
+      "hp": "30"
+    }
+  },
+  "463": {
+    "txtNum": "",
+    "stats": {
+      "sr": "12",
+      "hp": "210"
+    },
+    "statsRefine": {
+      "sr": "0.9",
+      "hp": "15"
+    }
+  },
+  "464": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.4"
+    }
+  },
+  "465": {
+    "txtNum": "",
+    "stats": {
+      "hp": "216"
+    },
+    "statsRefine": {
+      "hp": "15"
+    }
+  },
+  "466": {
+    "txtNum": "",
+    "stats": {
+      "sr": "10",
+      "hp": "270"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "hp": "21"
+    }
+  },
+  "467": {
+    "txtNum": "",
+    "stats": {
+      "sv": "8.5",
+      "hp": "135"
+    },
+    "statsRefine": {
+      "sv": "0.7",
+      "hp": "9"
+    }
+  },
+  "468": {
+    "txtNum": "",
+    "stats": {
+      "regenhp": "5"
+    },
+    "statsRefine": {
+      "regenhp": "0.4"
+    }
+  },
+  "469": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "6",
+      "sr": "7"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "sr": "1"
+    }
+  },
+  "470": {
+    "txtNum": "",
+    "stats": {
+      "sv": "12",
+      "hp": "210"
+    },
+    "statsRefine": {
+      "sv": "0.9",
+      "hp": "15"
+    }
+  },
+  "471": {
+    "txtNum": "250,25,health;250,25,dopdam",
+    "stats": {
+      "sv": "12",
+      "hitrost": "15"
+    },
+    "statsRefine": {
+      "sv": "0.9",
+      "hitrost": "1.1"
+    }
+  },
+  "472": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "2.7"
+    },
+    "statsRefine": {
+      "regenmp": "0.2"
+    }
+  },
+  "473": {
+    "txtNum": "all,58,385.5,num,sr_max;all,10,32.5,num,sr_max",
+    "stats": {
+      "sr": "7.2"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "474": {
+    "txtNum": "",
+    "stats": {
+      "ph": "10"
+    },
+    "statsRefine": {
+      "ph": "0.8"
+    }
+  },
+  "475": {
+    "txtNum": "",
+    "stats": {
+      "ph": "10.5",
+      "hp": "75"
+    },
+    "statsRefine": {
+      "ph": "0.7",
+      "hp": "9"
+    }
+  },
+  "476": {
+    "txtNum": "",
+    "stats": {
+      "sr": "10.5",
+      "hp": "75"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "hp": "9"
+    }
+  },
+  "477": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13"
+    },
+    "statsRefine": {
+      "hitrost": "1"
+    }
+  },
+  "478": {
+    "txtNum": "7,0,speed",
+    "stats": {
+      "regenmp": "1.6"
+    },
+    "statsRefine": {
+      "regenmp": "0.4"
+    }
+  },
+  "479": {
+    "txtNum": "",
+    "stats": {
+      "sr": "10"
+    },
+    "statsRefine": {
+      "sr": "0.8"
+    }
+  },
+  "480": {
+    "txtNum": "all,18.7,36.4,num,hp",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "481": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "482": {
+    "txtNum": "all,9.35,18.2,num,hp",
+    "stats": {
+      "hp": "216"
+    },
+    "statsRefine": {
+      "hp": "15"
+    }
+  },
+  "483": {
+    "txtNum": "",
+    "stats": {
+      "ph": "12",
+      "hp": "210"
+    },
+    "statsRefine": {
+      "ph": "0.9",
+      "hp": "15"
+    }
+  },
+  "484": {
+    "txtNum": "all,37.4,72.8,num,hp",
+    "stats": {
+      "ph": "15",
+      "sv": "12"
+    },
+    "statsRefine": {
+      "ph": "1.1",
+      "sv": "0.9"
+    }
+  },
+  "485": {
+    "txtNum": "200,15,health",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "486": {
+    "txtNum": "200,15,health",
+    "stats": {
+      "hp": "150"
+    },
+    "statsRefine": {
+      "hp": "12"
+    }
+  },
+  "487": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "3.9"
+    },
+    "statsRefine": {
+      "regenmp": "0.3"
+    }
+  },
+  "488": {
+    "txtNum": "160,10,health",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "489": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "10",
+      "hp": "270"
+    },
+    "statsRefine": {
+      "stoikost": "0.7",
+      "hp": "21"
+    }
+  },
+  "490": {
+    "txtNum": "all,38,341.75,num,sr_max",
+    "stats": {
+      "sr": "7.2"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "491": {
+    "txtNum": "",
+    "stats": {
+      "sr": "10"
+    },
+    "statsRefine": {
+      "sr": "0.8"
+    }
+  },
+  "492": {
+    "txtNum": "90,10,damage",
+    "stats": {
+      "hp": "90",
+      "sr": "8"
+    },
+    "statsRefine": {
+      "hp": "9",
+      "sr": "1.2"
+    }
+  },
+  "493": {
+    "txtNum": "",
+    "stats": {
+      "sv": "10",
+      "hp": "270"
+    },
+    "statsRefine": {
+      "sv": "0.7",
+      "hp": "21"
+    }
+  },
+  "494": {
+    "txtNum": "",
+    "stats": {
+      "sr": "27"
+    },
+    "statsRefine": {
+      "sr": "2"
+    }
+  },
+  "495": {
+    "txtNum": "160,9,damage",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "496": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.4"
+    }
+  },
+  "497": {
+    "txtNum": "380,20,damage",
+    "stats": {
+      "krajahp": "10"
+    },
+    "statsRefine": {
+      "krajahp": "0.8"
+    }
+  },
+  "498": {
+    "txtNum": "",
+    "stats": {
+      "sv": "13"
+    },
+    "statsRefine": {
+      "sv": "1"
+    }
+  },
+  "499": {
+    "txtNum": "140,10,damage",
+    "stats": {
+      "sr": "9",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "hitrost": "0.7"
+    }
+  },
+  "500": {
+    "txtNum": "170,10,damage",
+    "stats": {
+      "hp": "360",
+      "hitrost": "15"
+    },
+    "statsRefine": {
+      "hp": "27",
+      "hitrost": "1.1"
+    }
+  },
+  "501": {
+    "txtNum": "",
+    "stats": {
+      "hp": "300"
+    },
+    "statsRefine": {
+      "hp": "24"
+    }
+  },
+  "502": {
+    "txtNum": "",
+    "stats": {
+      "razum": "7",
+      "hitrost": "3"
+    },
+    "statsRefine": {
+      "razum": "0.5",
+      "hitrost": "0.3"
+    }
+  },
+  "503": {
+    "txtNum": "",
+    "stats": {
+      "sila": "7",
+      "hitrost": "3"
+    },
+    "statsRefine": {
+      "sila": "0.5",
+      "hitrost": "0.3"
+    }
+  },
+  "504": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "10",
+      "sv": "9"
+    },
+    "statsRefine": {
+      "hitrost": "0.7",
+      "sv": "0.7"
+    }
+  },
+  "505": {
+    "txtNum": "320,20,damage",
+    "stats": {
+      "hp": "360",
+      "sv": "15"
+    },
+    "statsRefine": {
+      "hp": "27",
+      "sv": "1.1"
+    }
+  },
+  "506": {
+    "txtNum": "all,22,34.5,num,provorstvo",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "507": {
+    "txtNum": "5,0.4,sr_at",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.4"
+    }
+  },
+  "508": {
+    "txtNum": "all,22,29.5,num,provorstvo",
+    "stats": {
+      "sila": "4.5",
+      "provorstvo": "8.5"
+    },
+    "statsRefine": {
+      "sila": "0.3",
+      "provorstvo": "0.7"
+    }
+  },
+  "509": {
+    "txtNum": "all,22,29.5,num,provorstvo",
+    "stats": {
+      "razum": "4.5",
+      "provorstvo": "8.5"
+    },
+    "statsRefine": {
+      "razum": "0.3",
+      "provorstvo": "0.7"
+    }
+  },
+  "510": {
+    "txtNum": "all,20,27.5,num,provorstvo",
+    "stats": {
+      "hp": "270",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "hp": "15",
+      "hitrost": "0.9"
+    }
+  },
+  "511": {
+    "txtNum": "all,19,21.5,num,provorstvo",
+    "stats": {
+      "provorstvo": "10",
+      "sv": "9"
+    },
+    "statsRefine": {
+      "provorstvo": "0.7",
+      "sv": "0.7"
+    }
+  },
+  "512": {
+    "txtNum": "",
+    "stats": {
+      "sr": "3.6"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "513": {
+    "txtNum": "40,0,sec;140,0,mag",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.4"
+    }
+  },
+  "514": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5",
+      "hp": "150"
+    },
+    "statsRefine": {
+      "sr": "0.4",
+      "hp": "12"
+    }
+  },
+  "515": {
+    "txtNum": "",
+    "stats": {
+      "sr": "8.5",
+      "hp": "135"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "hp": "9"
+    }
+  },
+  "516": {
+    "txtNum": "",
+    "stats": {
+      "sr": "8.5",
+      "hp": "135"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "hp": "9"
+    }
+  },
+  "517": {
+    "txtNum": "3,0,speeda",
+    "stats": {
+      "hp": "210"
+    },
+    "statsRefine": {
+      "hp": "24"
+    }
+  },
+  "518": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "5"
+    },
+    "statsRefine": {
+      "provorstvo": "0.4"
+    }
+  },
+  "519": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "10"
+    },
+    "statsRefine": {
+      "provorstvo": "0.8"
+    }
+  },
+  "520": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "7",
+      "hitrost": "6"
+    },
+    "statsRefine": {
+      "provorstvo": "0.5",
+      "hitrost": "0.5"
+    }
+  },
+  "521": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "17",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "provorstvo": "1.2",
+      "hitrost": "0.8"
+    }
+  },
+  "522": {
+    "txtNum": "150,10,health",
+    "stats": {
+      "sr": "2.7"
+    },
+    "statsRefine": {
+      "sr": "0.2"
+    }
+  },
+  "523": {
+    "txtNum": "200,10,mp_pie",
+    "stats": {
+      "regenmp": "2.7"
+    },
+    "statsRefine": {
+      "regenmp": "0.2"
+    }
+  },
+  "524": {
+    "txtNum": "",
+    "stats": {
+      "sr": "3.2",
+      "hp": "120"
+    },
+    "statsRefine": {
+      "sr": "0.2",
+      "hp": "9"
+    }
+  },
+  "525": {
+    "txtNum": "7,0,speed;260,20,",
+    "stats": {
+      "hp": "180"
+    },
+    "statsRefine": {
+      "hp": "30"
+    }
+  },
+  "526": {
+    "txtNum": "",
+    "stats": {
+      "sr": "10",
+      "stoikost": "9"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "stoikost": "0.7"
+    }
+  },
+  "527": {
+    "txtNum": "250,15,sec",
+    "stats": {
+      "sr": "10",
+      "volia": "9"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "volia": "0.7"
+    }
+  },
+  "528": {
+    "txtNum": "300,25,health",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "529": {
+    "txtNum": "260,15,defdam",
+    "stats": {
+      "hp": "150"
+    },
+    "statsRefine": {
+      "hp": "12"
+    }
+  },
+  "530": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "5"
+    },
+    "statsRefine": {
+      "hitrost": "0.4"
+    }
+  },
+  "531": {
+    "txtNum": "",
+    "stats": {
+      "hp": "390"
+    },
+    "statsRefine": {
+      "hp": "30"
+    }
+  },
+  "532": {
+    "txtNum": "300,20,defdam",
+    "stats": {
+      "sr": "10",
+      "hp": "510"
+    },
+    "statsRefine": {
+      "sr": "0.8",
+      "hp": "36"
+    }
+  },
+  "533": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "534": {
+    "txtNum": "",
+    "stats": {
+      "ph": "7.2"
+    },
+    "statsRefine": {
+      "ph": "0.5"
+    }
+  },
+  "535": {
+    "txtNum": "50,3,dopdam",
+    "stats": {
+      "hitrost": "7",
+      "sv": "6"
+    },
+    "statsRefine": {
+      "hitrost": "0.5",
+      "sv": "0.5"
+    }
+  },
+  "536": {
+    "txtNum": "60,4,dopdam",
+    "stats": {
+      "hitrost": "9",
+      "hp": "270"
+    },
+    "statsRefine": {
+      "hitrost": "0.7",
+      "hp": "21"
+    }
+  },
+  "537": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "17",
+      "provorstvo": "10"
+    },
+    "statsRefine": {
+      "hitrost": "1.2",
+      "provorstvo": "0.8"
+    }
+  },
+  "538": {
+    "txtNum": "310,15,dophp",
+    "stats": {
+      "hp": "210"
+    },
+    "statsRefine": {
+      "hp": "15.6"
+    }
+  },
+  "539": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.4"
+    }
+  },
+  "540": {
+    "txtNum": "13,1,stoikost;8,0.5,dopstoikost",
+    "stats": {
+      "stoikost": "13"
+    },
+    "statsRefine": {
+      "stoikost": "1"
+    }
+  },
+  "541": {
+    "txtNum": "13,1,volia;8,0.5,dopvolia",
+    "stats": {
+      "volia": "13"
+    },
+    "statsRefine": {
+      "volia": "1"
+    }
+  },
+  "542": {
+    "txtNum": "19,1.4,sila;8,0.5,sila",
+    "stats": {
+      "sila": "19"
+    },
+    "statsRefine": {
+      "sila": "1.4"
+    }
+  },
+  "543": {
+    "txtNum": "19,1.4,razum;8,0.5,razum",
+    "stats": {
+      "razum": "19"
+    },
+    "statsRefine": {
+      "razum": "1.4"
+    }
+  },
+  "544": {
+    "txtNum": "",
+    "stats": {
+      "ph": "13"
+    },
+    "statsRefine": {
+      "ph": "1"
+    }
+  },
+  "545": {
+    "txtNum": "",
+    "stats": {
+      "sr": "27"
+    },
+    "statsRefine": {
+      "sr": "2"
+    }
+  },
+  "546": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7.2"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "547": {
+    "txtNum": "76,4,dopdam",
+    "stats": {
+      "provorstvo": "10",
+      "hp": "270"
+    },
+    "statsRefine": {
+      "provorstvo": "0.7",
+      "hp": "21"
+    }
+  },
+  "548": {
+    "txtNum": "",
+    "stats": {
+      "hp": "135",
+      "sv": "8.5"
+    },
+    "statsRefine": {
+      "hp": "9",
+      "sv": "0.7"
+    }
+  },
+  "549": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "550": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13"
+    },
+    "statsRefine": {
+      "hitrost": "1"
+    }
+  },
+  "551": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13"
+    },
+    "statsRefine": {
+      "provorstvo": "1"
+    }
+  },
+  "552": {
+    "txtNum": "210,15,dopdam",
+    "stats": {
+      "sr": "9",
+      "provorstvo": "10"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "provorstvo": "0.7"
+    }
+  },
+  "553": {
+    "txtNum": "",
+    "stats": {
+      "sr": "15",
+      "hp": "360"
+    },
+    "statsRefine": {
+      "sr": "1.1",
+      "hp": "27"
+    }
+  },
+  "554": {
+    "txtNum": "260,20,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "555": {
+    "txtNum": "",
+    "stats": {
+      "razum": "7.2"
+    },
+    "statsRefine": {
+      "razum": "0.5"
+    }
+  },
+  "556": {
+    "txtNum": "",
+    "stats": {
+      "sila": "7.2"
+    },
+    "statsRefine": {
+      "sila": "0.5"
+    }
+  },
+  "557": {
+    "txtNum": "120,10,dopdam",
+    "stats": {
+      "speedtal": "6",
+      "hitrost": "7"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "hitrost": "1"
+    }
+  },
+  "558": {
+    "txtNum": "150,10,dopdam",
+    "stats": {
+      "hitrost": "15",
+      "hp": "360"
+    },
+    "statsRefine": {
+      "hitrost": "1.1",
+      "hp": "27"
+    }
+  },
+  "559": {
+    "txtNum": "42,3,dopdam",
+    "stats": {
+      "razum": "4"
+    },
+    "statsRefine": {
+      "razum": "0.6"
+    }
+  },
+  "560": {
+    "txtNum": "19,1,dopdam",
+    "stats": {
+      "razum": "13"
+    },
+    "statsRefine": {
+      "razum": "1"
+    }
+  },
+  "561": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "10",
+      "sv": "9"
+    },
+    "statsRefine": {
+      "hitrost": "0.7",
+      "sv": "0.7"
+    }
+  },
+  "562": {
+    "txtNum": "20,1.5,",
+    "stats": {
+      "sr": "9",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "hitrost": "0.7"
+    }
+  },
+  "563": {
+    "txtNum": "33,2,dopdam",
+    "stats": {
+      "sr": "12",
+      "hitrost": "15"
+    },
+    "statsRefine": {
+      "sr": "0.9",
+      "hitrost": "1.1"
+    }
+  },
+  "564": {
+    "txtNum": "8,1,dopdam;6,0,silastak",
+    "stats": {
+      "sr": "4.2"
+    },
+    "statsRefine": {
+      "sr": "0"
+    }
+  },
+  "565": {
+    "txtNum": "6,0,razumstak",
+    "stats": {
+      "sr": "4.2"
+    },
+    "statsRefine": {
+      "sr": "0"
+    }
+  },
+  "566": {
+    "txtNum": "550,41.25,dopdam",
+    "stats": {
+      "hp": "210"
+    },
+    "statsRefine": {
+      "hp": "0"
+    }
+  },
+  "567": {
+    "txtNum": "550,41.25,dopdam",
+    "stats": {
+      "ph": "7"
+    },
+    "statsRefine": {
+      "ph": "0"
+    }
+  },
+  "568": {
+    "txtNum": "550,41.25,dopdam",
+    "stats": {
+      "sr": "7"
+    },
+    "statsRefine": {
+      "sr": "0"
+    }
+  },
+  "569": {
+    "txtNum": "all,11,48.26,num,sr_max",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "570": {
+    "txtNum": "12,1,dopdam",
+    "stats": {
+      "sr": "7",
+      "hitrost": "6"
+    },
+    "statsRefine": {
+      "sr": "0.5",
+      "hitrost": "0.5"
+    }
+  },
+  "571": {
+    "txtNum": "all,21,25.8,num,sr_max",
+    "stats": {
+      "hitrost": "10",
+      "sv": "9"
+    },
+    "statsRefine": {
+      "hitrost": "0.7",
+      "sv": "0.7"
+    }
+  },
+  "572": {
+    "txtNum": "all,5.6,63.9,num,hp",
+    "stats": {
+      "hitrost": "10",
+      "hp": "354"
+    },
+    "statsRefine": {
+      "hitrost": "0.7",
+      "hp": "0"
+    }
+  },
+  "573": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "15",
+      "sv": "12"
+    },
+    "statsRefine": {
+      "hitrost": "1.1",
+      "sv": "0.9"
+    }
+  },
+  "574": {
+    "txtNum": "38,3,dopdam",
+    "stats": {
+      "sila": "5",
+      "razum": "5",
+      "provorstvo": "5",
+      "hitrost": "5",
+      "stoikost": "5",
+      "volia": "5"
+    },
+    "statsRefine": {
+      "sila": "0",
+      "razum": "0",
+      "provorstvo": "0",
+      "hitrost": "0",
+      "stoikost": "0",
+      "volia": "0"
+    }
+  },
+  "575": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "576": {
+    "txtNum": "",
+    "stats": {
+      "srsv": "27"
+    },
+    "statsRefine": {
+      "srsv": "2"
+    }
+  },
+  "577": {
+    "txtNum": "5,0,speed;5,0,speeddvz",
+    "stats": {
+      "regenmp": "3.4"
+    },
+    "statsRefine": {
+      "regenmp": "0.4"
+    }
+  },
+  "578": {
+    "txtNum": "240,0,voshp",
+    "stats": {
+      "sila": "1.6",
+      "razum": "1.6",
+      "provorstvo": "1.6",
+      "hitrost": "1.6",
+      "stoikost": "1.6",
+      "volia": "1.6"
+    },
+    "statsRefine": {
+      "sila": "0",
+      "razum": "0",
+      "provorstvo": "0",
+      "hitrost": "0",
+      "stoikost": "0",
+      "volia": "0"
+    }
+  },
+  "579": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "7",
+      "provorstvo": "6"
+    },
+    "statsRefine": {
+      "hitrost": "0.5",
+      "provorstvo": "0.5"
+    }
+  },
+  "580": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13"
+    },
+    "statsRefine": {
+      "provorstvo": "1"
+    }
+  },
+  "581": {
+    "txtNum": "",
+    "stats": {
+      "razum": "17",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "razum": "1.2",
+      "hitrost": "0.8"
+    }
+  },
+  "582": {
+    "txtNum": "12,0,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "583": {
+    "txtNum": "20,2,dopdam",
+    "stats": {
+      "sr": "9",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "hitrost": "0.7"
+    }
+  },
+  "584": {
+    "txtNum": "all,10,53.75,num,sr_max;all,54,267.75,num,sr_max",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.4"
+    }
+  },
+  "585": {
+    "txtNum": "all,10,53.75,num,sr_max;all,54,267.75,num,sr_max",
+    "stats": {
+      "hp": "84",
+      "sr": "7"
+    },
+    "statsRefine": {
+      "hp": "3",
+      "sr": "0.75"
+    }
+  },
+  "586": {
+    "txtNum": "all,10,53.75,num,sr_max;all,54,267.75,num,sr_max",
+    "stats": {
+      "provorstvo": "7.2"
+    },
+    "statsRefine": {
+      "provorstvo": "0.5"
+    }
+  },
+  "587": {
+    "txtNum": "all,10,53.75,num,sr_max;all,54,267.75,num,sr_max",
+    "stats": {
+      "hitrost": "7.2"
+    },
+    "statsRefine": {
+      "hitrost": "0.5"
+    }
+  },
+  "588": {
+    "txtNum": "",
+    "stats": {
+      "hp": "390"
+    },
+    "statsRefine": {
+      "hp": "30"
+    }
+  },
+  "589": {
+    "txtNum": "",
+    "stats": {
+      "sv": "13"
+    },
+    "statsRefine": {
+      "sv": "1"
+    }
+  },
+  "590": {
+    "txtNum": "",
+    "stats": {
+      "sr": "19"
+    },
+    "statsRefine": {
+      "sr": "1.4"
+    }
+  },
+  "591": {
+    "txtNum": "",
+    "stats": {
+      "sv": "13",
+      "hp": "180"
+    },
+    "statsRefine": {
+      "sv": "1",
+      "hp": "12"
+    }
+  },
+  "592": {
+    "txtNum": "all,25,50,num,razum",
+    "stats": {
+      "razum": "13"
+    },
+    "statsRefine": {
+      "razum": "1"
+    }
+  },
+  "593": {
+    "txtNum": "all,25,50,num,razum",
+    "stats": {
+      "provorstvo": "19"
+    },
+    "statsRefine": {
+      "provorstvo": "1.4"
+    }
+  },
+  "594": {
+    "txtNum": "all,25,50,num,razum",
+    "stats": {
+      "hitrost": "19"
+    },
+    "statsRefine": {
+      "hitrost": "1.4"
+    }
+  },
+  "595": {
+    "txtNum": "all,25,50,num,razum",
+    "stats": {
+      "razum": "17",
+      "ph": "10"
+    },
+    "statsRefine": {
+      "razum": "1.2",
+      "ph": "0.8"
+    }
+  },
+  "596": {
+    "txtNum": "all,25,50,num,sila",
+    "stats": {
+      "sila": "13"
+    },
+    "statsRefine": {
+      "sila": "1"
+    }
+  },
+  "597": {
+    "txtNum": "all,25,50,num,sila",
+    "stats": {
+      "provorstvo": "19"
+    },
+    "statsRefine": {
+      "provorstvo": "1.4"
+    }
+  },
+  "598": {
+    "txtNum": "all,25,50,num,sila",
+    "stats": {
+      "hitrost": "19"
+    },
+    "statsRefine": {
+      "hitrost": "1.4"
+    }
+  },
+  "599": {
+    "txtNum": "all,25,50,num,sila",
+    "stats": {
+      "sila": "17",
+      "ph": "10"
+    },
+    "statsRefine": {
+      "sila": "1.2",
+      "ph": "0.8"
+    }
+  },
+  "600": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "2.7"
+    },
+    "statsRefine": {
+      "regenmp": "0.2"
+    }
+  },
+  "601": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13"
+    },
+    "statsRefine": {
+      "hitrost": "1"
+    }
+  },
+  "602": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7.2"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "603": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "3",
+      "sr": "7"
+    },
+    "statsRefine": {
+      "hitrost": "0.3",
+      "sr": "0.5"
+    }
+  },
+  "604": {
+    "txtNum": "",
+    "stats": {
+      "krajahp": "10"
+    },
+    "statsRefine": {
+      "krajahp": "0.8"
+    }
+  },
+  "605": {
+    "txtNum": "13,1,sr_at",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "606": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7.2"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "607": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "10"
+    },
+    "statsRefine": {
+      "provorstvo": "0.8"
+    }
+  },
+  "608": {
+    "txtNum": "2,0,speed;8,0,speedstak",
+    "stats": {
+      "regenmp": "1.7"
+    },
+    "statsRefine": {
+      "regenmp": "0.3"
+    }
+  },
+  "609": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.4"
+    }
+  },
+  "610": {
+    "txtNum": "",
+    "stats": {
+      "razum": "9",
+      "ph": "10"
+    },
+    "statsRefine": {
+      "razum": "0.7",
+      "ph": "0.7"
+    }
+  },
+  "611": {
+    "txtNum": "",
+    "stats": {
+      "sila": "9",
+      "ph": "10"
+    },
+    "statsRefine": {
+      "sila": "0.7",
+      "ph": "0.7"
+    }
+  },
+  "612": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "613": {
+    "txtNum": "",
+    "stats": {
+      "hp": "360",
+      "sr": "15"
+    },
+    "statsRefine": {
+      "hp": "27",
+      "sr": "1.1"
+    }
+  },
+  "614": {
+    "txtNum": "260,15,health",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "615": {
+    "txtNum": "11,1,kdset",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.4"
+    }
+  },
+  "616": {
+    "txtNum": "3,0.25,silaopis",
+    "stats": {
+      "sila": "10"
+    },
+    "statsRefine": {
+      "sila": "0.8"
+    }
+  },
+  "617": {
+    "txtNum": "3,0.25,razumopis",
+    "stats": {
+      "razum": "10"
+    },
+    "statsRefine": {
+      "razum": "0.8"
+    }
+  },
+  "618": {
+    "txtNum": "175,10,health",
+    "stats": {
+      "sr": "8.5",
+      "hp": "135"
+    },
+    "statsRefine": {
+      "sr": "0.7",
+      "hp": "9"
+    }
+  },
+  "619": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7",
+      "hp": "90"
+    },
+    "statsRefine": {
+      "sr": "0.5",
+      "hp": "9"
+    }
+  },
+  "620": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7.2"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "621": {
+    "txtNum": "",
+    "stats": {
+      "sila": "13"
+    },
+    "statsRefine": {
+      "sila": "1"
+    }
+  },
+  "622": {
+    "txtNum": "",
+    "stats": {
+      "razum": "13"
+    },
+    "statsRefine": {
+      "razum": "1"
+    }
+  },
+  "623": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13"
+    },
+    "statsRefine": {
+      "hitrost": "1"
+    }
+  },
+  "624": {
+    "txtNum": "",
+    "stats": {
+      "sr": "19"
+    },
+    "statsRefine": {
+      "sr": "1.4"
+    }
+  },
+  "625": {
+    "txtNum": "",
+    "stats": {
+      "sila": "13.5",
+      "hitrost": "13.5"
+    },
+    "statsRefine": {
+      "sila": "1",
+      "hitrost": "1"
+    }
+  },
+  "626": {
+    "txtNum": "",
+    "stats": {
+      "razum": "13.5",
+      "hitrost": "13.5"
+    },
+    "statsRefine": {
+      "razum": "1",
+      "hitrost": "1"
+    }
+  },
+  "627": {
+    "txtNum": "",
+    "stats": {
+      "hp": "390"
+    },
+    "statsRefine": {
+      "hp": "30"
+    }
+  },
+  "628": {
+    "txtNum": "all,25,68.75,num,sv_max",
+    "stats": {
+      "hp": "570"
+    },
+    "statsRefine": {
+      "hp": "42"
+    }
+  },
+  "629": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "13.5",
+      "hp": "405"
+    },
+    "statsRefine": {
+      "stoikost": "1",
+      "hp": "30"
+    }
+  },
+  "630": {
+    "txtNum": "",
+    "stats": {
+      "volia": "13.5",
+      "hp": "405"
+    },
+    "statsRefine": {
+      "volia": "1",
+      "hp": "30"
+    }
+  },
+  "631": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13"
+    },
+    "statsRefine": {
+      "provorstvo": "1"
+    }
+  },
+  "632": {
+    "txtNum": "",
+    "stats": {
+      "sr": "19"
+    },
+    "statsRefine": {
+      "sr": "1.4"
+    }
+  },
+  "633": {
+    "txtNum": "",
+    "stats": {
+      "razum": "13.5",
+      "provorstvo": "13.5"
+    },
+    "statsRefine": {
+      "razum": "1",
+      "provorstvo": "1"
+    }
+  },
+  "634": {
+    "txtNum": "",
+    "stats": {
+      "sila": "13.5",
+      "provorstvo": "13.5"
+    },
+    "statsRefine": {
+      "sila": "1",
+      "provorstvo": "1"
+    }
+  },
+  "635": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7",
+      "hp": "90"
+    },
+    "statsRefine": {
+      "sr": "0.5",
+      "hp": "9"
+    }
+  },
+  "636": {
+    "txtNum": "",
+    "stats": {
+      "sila": "13"
+    },
+    "statsRefine": {
+      "sila": "1"
+    }
+  },
+  "637": {
+    "txtNum": "",
+    "stats": {
+      "razum": "13"
+    },
+    "statsRefine": {
+      "razum": "1"
+    }
+  },
+  "638": {
+    "txtNum": "",
+    "stats": {
+      "ph": "4",
+      "hp": "96"
+    },
+    "statsRefine": {
+      "ph": "0.3",
+      "hp": "6"
+    }
+  },
+  "639": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "640": {
+    "txtNum": "",
+    "stats": {
+      "razum": "19"
+    },
+    "statsRefine": {
+      "razum": "1.4"
+    }
+  },
+  "641": {
+    "txtNum": "",
+    "stats": {
+      "sila": "19"
+    },
+    "statsRefine": {
+      "sila": "1.4"
+    }
+  },
+  "642": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "27"
+    },
+    "statsRefine": {
+      "provorstvo": "2"
+    }
+  },
+  "643": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "27"
+    },
+    "statsRefine": {
+      "hitrost": "2"
+    }
+  },
+  "644": {
+    "txtNum": "",
+    "stats": {
+      "sv": "27"
+    },
+    "statsRefine": {
+      "sv": "2"
+    }
+  },
+  "645": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "646": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7.3"
+    },
+    "statsRefine": {
+      "sr": "0"
+    }
+  },
+  "647": {
+    "txtNum": "",
+    "stats": {
+      "sr": "8.5"
+    },
+    "statsRefine": {
+      "sr": "0.7"
+    }
+  },
+  "648": {
+    "txtNum": "",
+    "stats": {
+      "hp": "390"
+    },
+    "statsRefine": {
+      "hp": "30"
+    }
+  },
+  "649": {
+    "txtNum": "",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "650": {
+    "txtNum": "",
+    "stats": {
+      "sv": "9"
+    },
+    "statsRefine": {
+      "sv": "0.7"
+    }
+  },
+  "651": {
+    "txtNum": "",
+    "stats": {
+      "sr": "10"
+    },
+    "statsRefine": {
+      "sr": "0.8"
+    }
+  },
+  "652": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13"
+    },
+    "statsRefine": {
+      "provorstvo": "1"
+    }
+  },
+  "653": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13"
+    },
+    "statsRefine": {
+      "hitrost": "1"
+    }
+  },
+  "654": {
+    "txtNum": "",
+    "stats": {
+      "sr": "15",
+      "hp": "120"
+    },
+    "statsRefine": {
+      "sr": "1",
+      "hp": "12"
+    }
+  },
+  "655": {
+    "txtNum": "",
+    "stats": {
+      "sr": "10"
+    },
+    "statsRefine": {
+      "sr": "0.8"
+    }
+  },
+  "656": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "13"
+    },
+    "statsRefine": {
+      "stoikost": "1"
+    }
+  },
+  "657": {
+    "txtNum": "",
+    "stats": {
+      "volia": "13"
+    },
+    "statsRefine": {
+      "volia": "1"
+    }
+  },
+  "658": {
+    "txtNum": "",
+    "stats": {
+      "ph": "15",
+      "hp": "120"
+    },
+    "statsRefine": {
+      "ph": "1",
+      "hp": "12"
+    }
+  },
+  "659": {
+    "txtNum": "",
+    "stats": {
+      "sr": "10"
+    },
+    "statsRefine": {
+      "sr": "0.8"
+    }
+  },
+  "660": {
+    "txtNum": "",
+    "stats": {
+      "sila": "13"
+    },
+    "statsRefine": {
+      "sila": "1"
+    }
+  },
+  "661": {
+    "txtNum": "",
+    "stats": {
+      "razum": "13"
+    },
+    "statsRefine": {
+      "razum": "1"
+    }
+  },
+  "662": {
+    "txtNum": "",
+    "stats": {
+      "sv": "15",
+      "hp": "120"
+    },
+    "statsRefine": {
+      "sv": "1",
+      "hp": "12"
+    }
+  },
+  "663": {
+    "txtNum": "",
+    "stats": {
+      "sr": "21",
+      "hp": "180"
+    },
+    "statsRefine": {
+      "sr": "1.6",
+      "hp": "12"
+    }
+  },
+  "664": {
+    "txtNum": "",
+    "stats": {
+      "sv": "21",
+      "hp": "180"
+    },
+    "statsRefine": {
+      "sv": "1.6",
+      "hp": "12"
+    }
+  },
+  "665": {
+    "txtNum": "",
+    "stats": {
+      "ph": "21",
+      "hp": "180"
+    },
+    "statsRefine": {
+      "ph": "1.6",
+      "hp": "12"
+    }
+  },
+  "666": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7",
+      "regenmp": "1.6"
+    },
+    "statsRefine": {
+      "sr": "0.5",
+      "regenmp": "0.2"
+    }
+  },
+  "667": {
+    "txtNum": "",
+    "stats": {
+      "sila": "13"
+    },
+    "statsRefine": {
+      "sila": "1"
+    }
+  },
+  "668": {
+    "txtNum": "",
+    "stats": {
+      "razum": "13"
+    },
+    "statsRefine": {
+      "razum": "1"
+    }
+  },
+  "669": {
+    "txtNum": "",
+    "stats": {
+      "sr": "19"
+    },
+    "statsRefine": {
+      "sr": "1.4"
+    }
+  },
+  "670": {
+    "txtNum": "7,0,speed",
+    "stats": {
+      "regenmp": "1.6"
+    },
+    "statsRefine": {
+      "regenmp": "0.2"
+    }
+  },
+  "671": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13"
+    },
+    "statsRefine": {
+      "provorstvo": "1"
+    }
+  },
+  "672": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13"
+    },
+    "statsRefine": {
+      "hitrost": "1"
+    }
+  },
+  "673": {
+    "txtNum": "",
+    "stats": {
+      "sr": "19"
+    },
+    "statsRefine": {
+      "sr": "1.4"
+    }
+  },
+  "674": {
+    "txtNum": "",
+    "stats": {
+      "razum": "10"
+    },
+    "statsRefine": {
+      "razum": "0.8"
+    }
+  },
+  "675": {
+    "txtNum": "",
+    "stats": {
+      "sila": "10"
+    },
+    "statsRefine": {
+      "sila": "0.8"
+    }
+  },
+  "676": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13"
+    },
+    "statsRefine": {
+      "provorstvo": "1"
+    }
+  },
+  "677": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13"
+    },
+    "statsRefine": {
+      "hitrost": "1"
+    }
+  },
+  "678": {
+    "txtNum": "",
+    "stats": {
+      "sv": "19"
+    },
+    "statsRefine": {
+      "sv": "1.4"
+    }
+  },
+  "679": {
+    "txtNum": "",
+    "stats": {
+      "hpmp": "570"
+    },
+    "statsRefine": {
+      "hpmp": "42"
+    }
+  },
+  "680": {
+    "txtNum": "",
+    "stats": {
+      "razum": "10"
+    },
+    "statsRefine": {
+      "razum": "0.8"
+    }
+  },
+  "681": {
+    "txtNum": "",
+    "stats": {
+      "sila": "10"
+    },
+    "statsRefine": {
+      "sila": "0.8"
+    }
+  },
+  "682": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13"
+    },
+    "statsRefine": {
+      "provorstvo": "1"
+    }
+  },
+  "683": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13"
+    },
+    "statsRefine": {
+      "hitrost": "1"
+    }
+  },
+  "684": {
+    "txtNum": "",
+    "stats": {
+      "sr": "19"
+    },
+    "statsRefine": {
+      "sr": "1.4"
+    }
+  },
+  "685": {
+    "txtNum": "",
+    "stats": {
+      "sv": "27"
+    },
+    "statsRefine": {
+      "sv": "2"
+    }
+  },
+  "686": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "687": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "19"
+    },
+    "statsRefine": {
+      "provorstvo": "1.4"
+    }
+  },
+  "688": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "19"
+    },
+    "statsRefine": {
+      "hitrost": "1.4"
+    }
+  },
+  "689": {
+    "txtNum": "",
+    "stats": {
+      "sr": "27"
+    },
+    "statsRefine": {
+      "sr": "2"
+    }
+  },
+  "690": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "691": {
+    "txtNum": "",
+    "stats": {
+      "sila": "13.5",
+      "hitrost": "13.5"
+    },
+    "statsRefine": {
+      "sila": "1",
+      "hitrost": "1"
+    }
+  },
+  "692": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "19"
+    },
+    "statsRefine": {
+      "hitrost": "1.4"
+    }
+  },
+  "693": {
+    "txtNum": "",
+    "stats": {
+      "razum": "13.5",
+      "hitrost": "13.5"
+    },
+    "statsRefine": {
+      "razum": "1",
+      "hitrost": "1"
+    }
+  },
+  "694": {
+    "txtNum": "",
+    "stats": {
+      "sila": "7.2"
+    },
+    "statsRefine": {
+      "sila": "0.5"
+    }
+  },
+  "695": {
+    "txtNum": "",
+    "stats": {
+      "razum": "7.2"
+    },
+    "statsRefine": {
+      "razum": "0.5"
+    }
+  },
+  "696": {
+    "txtNum": "",
+    "stats": {
+      "sr": "10"
+    },
+    "statsRefine": {
+      "sr": "0.8"
+    }
+  },
+  "697": {
+    "txtNum": "",
+    "stats": {
+      "ph": "10",
+      "hp": "90"
+    },
+    "statsRefine": {
+      "ph": "0.8",
+      "hp": "6"
+    }
+  },
+  "698": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "699": {
+    "txtNum": "",
+    "stats": {
+      "ph": "19"
+    },
+    "statsRefine": {
+      "ph": "1.4"
+    }
+  },
+  "700": {
+    "txtNum": "",
+    "stats": {
+      "sila": "15",
+      "ph": "12"
+    },
+    "statsRefine": {
+      "sila": "1.1",
+      "ph": "0.9"
+    }
+  },
+  "701": {
+    "txtNum": "",
+    "stats": {
+      "razum": "15",
+      "ph": "12"
+    },
+    "statsRefine": {
+      "razum": "1.1",
+      "ph": "0.9"
+    }
+  },
+  "702": {
+    "txtNum": "",
+    "stats": {
+      "sr": "10"
+    },
+    "statsRefine": {
+      "sr": "0.8"
+    }
+  },
+  "703": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13"
+    },
+    "statsRefine": {
+      "provorstvo": "1"
+    }
+  },
+  "704": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "13"
+    },
+    "statsRefine": {
+      "hitrost": "1"
+    }
+  },
+  "705": {
+    "txtNum": "",
+    "stats": {
+      "sv": "19"
+    },
+    "statsRefine": {
+      "sv": "1.4"
+    }
+  },
+  "706": {
+    "txtNum": "",
+    "stats": {
+      "sila": "5"
+    },
+    "statsRefine": {
+      "sila": "0.4"
+    }
+  },
+  "707": {
+    "txtNum": "",
+    "stats": {
+      "razum": "5"
+    },
+    "statsRefine": {
+      "razum": "0.4"
+    }
+  },
+  "708": {
+    "txtNum": "5,0,speed",
+    "stats": {
+      "hp": "65"
+    },
+    "statsRefine": {
+      "hp": "15"
+    }
+  },
+  "709": {
+    "txtNum": "",
+    "stats": {
+      "sr": "10"
+    },
+    "statsRefine": {
+      "sr": "0.8"
+    }
+  },
+  "710": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "2.7"
+    },
+    "statsRefine": {
+      "regenmp": "0.2"
+    }
+  },
+  "711": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.4"
+    }
+  },
+  "712": {
+    "txtNum": "",
+    "stats": {
+      "ph": "7.2"
+    },
+    "statsRefine": {
+      "ph": "0.5"
+    }
+  },
+  "713": {
+    "txtNum": "",
+    "stats": {
+      "sr": "7.2"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "714": {
+    "txtNum": "",
+    "stats": {
+      "sv": "12",
+      "hp": "210"
+    },
+    "statsRefine": {
+      "sv": "0.9",
+      "hp": "15"
+    }
+  },
+  "715": {
+    "txtNum": "",
+    "stats": {
+      "ph": "12",
+      "hp": "210"
+    },
+    "statsRefine": {
+      "ph": "0.9",
+      "hp": "15"
+    }
+  },
+  "716": {
+    "txtNum": "",
+    "stats": {
+      "sr": "27"
+    },
+    "statsRefine": {
+      "sr": "2"
+    }
+  },
+  "717": {
+    "txtNum": "",
+    "stats": {
+      "sila": "13"
+    },
+    "statsRefine": {
+      "sila": "1"
+    }
+  },
+  "718": {
+    "txtNum": "",
+    "stats": {
+      "razum": "13"
+    },
+    "statsRefine": {
+      "razum": "1"
+    }
+  },
+  "719": {
+    "txtNum": "",
+    "stats": {
+      "ph": "19"
+    },
+    "statsRefine": {
+      "ph": "1.4"
+    }
+  },
+  "720": {
+    "txtNum": "",
+    "stats": {
+      "hp": "570"
+    },
+    "statsRefine": {
+      "hp": "42"
+    }
+  },
+  "721": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "27"
+    },
+    "statsRefine": {
+      "stoikost": "2"
+    }
+  },
+  "722": {
+    "txtNum": "",
+    "stats": {
+      "volia": "27"
+    },
+    "statsRefine": {
+      "volia": "2"
+    }
+  },
+  "723": {
+    "txtNum": "6,0,hitroststak",
+    "stats": {
+      "hitrost": "10",
+      "sr": "9"
+    },
+    "statsRefine": {
+      "hitrost": "1",
+      "sr": "0.7"
+    }
+  },
+  "724": {
+    "txtNum": "5,0,speed",
+    "stats": {
+      "sr": "2.2"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "725": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "5.5"
+    },
+    "statsRefine": {
+      "regenmp": "0.4"
+    }
+  },
+  "726": {
+    "txtNum": "",
+    "stats": {
+      "sr": "3",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "sr": "0.2",
+      "hitrost": "0.8"
+    }
+  },
+  "727": {
+    "txtNum": "",
+    "stats": {
+      "sr": "3",
+      "provorstvo": "10"
+    },
+    "statsRefine": {
+      "sr": "0.2",
+      "provorstvo": "0.8"
+    }
+  },
+  "728": {
+    "txtNum": "",
+    "stats": {
+      "sr": "19"
+    },
+    "statsRefine": {
+      "sr": "1.4"
+    }
+  },
+  "729": {
+    "txtNum": "",
+    "stats": {
+      "mp": "570"
+    },
+    "statsRefine": {
+      "mp": "42"
+    }
+  },
+  "730": {
+    "txtNum": "",
+    "stats": {
+      "sila": "21",
+      "ph": "6"
+    },
+    "statsRefine": {
+      "sila": "1.6",
+      "ph": "0.4"
+    }
+  },
+  "731": {
+    "txtNum": "",
+    "stats": {
+      "razum": "21",
+      "ph": "6"
+    },
+    "statsRefine": {
+      "razum": "1.6",
+      "ph": "0.4"
+    }
+  },
+  "732": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "13"
+    },
+    "statsRefine": {
+      "provorstvo": "1"
+    }
+  },
+  "733": {
+    "txtNum": "all,39,185.25,num,sr_max;all,30,142.5,num,sv_max",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "734": {
+    "txtNum": "",
+    "stats": {
+      "sila": "5"
+    },
+    "statsRefine": {
+      "sila": "0.4"
+    }
+  },
+  "735": {
+    "txtNum": "",
+    "stats": {
+      "razum": "5"
+    },
+    "statsRefine": {
+      "razum": "0.4"
+    }
+  },
+  "736": {
+    "txtNum": "25,2,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "737": {
+    "txtNum": "25,2,dopdam",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "738": {
+    "txtNum": "",
+    "stats": {
+      "ph": "13",
+      "hp": "180"
+    },
+    "statsRefine": {
+      "ph": "1",
+      "hp": "13.5"
+    }
+  },
+  "739": {
+    "txtNum": "all,78,370.5,num,sr_max;all,60,285,num,sv_max",
+    "stats": {
+      "provorstvo": "17",
+      "sv": "10"
+    },
+    "statsRefine": {
+      "provorstvo": "1.2",
+      "sv": "0.8"
+    }
+  },
+  "740": {
+    "txtNum": "",
+    "stats": {
+      "sv": "24"
+    },
+    "statsRefine": {
+      "sv": "0"
+    }
+  },
+  "741": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "4"
+    },
+    "statsRefine": {
+      "speedtal": "0"
+    }
+  },
+  "742": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "2.7"
+    },
+    "statsRefine": {
+      "regenmp": "0.2"
+    }
+  },
+  "743": {
+    "txtNum": "280,0,healthrec",
+    "stats": {
+      "sr": "7.2"
+    },
+    "statsRefine": {
+      "sr": "0.5"
+    }
+  },
+  "744": {
+    "txtNum": "7,0,speed;3,0,dopspeed",
+    "stats": {
+      "ph": "6"
+    },
+    "statsRefine": {
+      "ph": "1"
+    }
+  },
+  "745": {
+    "txtNum": "",
+    "stats": {
+      "hp": "390"
+    },
+    "statsRefine": {
+      "hp": "0"
+    }
+  },
+  "746": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "2",
+      "sila": "17"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "sila": "1.4"
+    }
+  },
+  "747": {
+    "txtNum": "",
+    "stats": {
+      "speedtal": "2",
+      "razum": "17"
+    },
+    "statsRefine": {
+      "speedtal": "0",
+      "razum": "1.4"
+    }
+  },
+  "748": {
+    "txtNum": "",
+    "stats": {
+      "sr": "17",
+      "hitrost": "10"
+    },
+    "statsRefine": {
+      "sr": "1.2",
+      "hitrost": "0.8"
+    }
+  },
+  "749": {
+    "txtNum": "",
+    "stats": {
+      "sila": "2",
+      "razum": "2",
+      "provorstvo": "2",
+      "hitrost": "2",
+      "stoikost": "2",
+      "volia": "2"
+    },
+    "statsRefine": {
+      "sila": "0.4",
+      "razum": "0.4",
+      "provorstvo": "0.4",
+      "hitrost": "0.4",
+      "stoikost": "0.4",
+      "volia": "0.4"
+    }
+  },
+  "750": {
+    "txtNum": "",
+    "stats": {
+      "sr": "5"
+    },
+    "statsRefine": {
+      "sr": "0.4"
+    }
+  },
+  "751": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "3.9"
+    },
+    "statsRefine": {
+      "regenmp": "0.3"
+    }
+  },
+  "752": {
+    "txtNum": "7,0,speed",
+    "stats": {
+      "sr": "3"
+    },
+    "statsRefine": {
+      "sr": "0.8"
+    }
+  },
+  "753": {
+    "txtNum": "",
+    "stats": {
+      "sr": "8",
+      "sv": "5"
+    },
+    "statsRefine": {
+      "sr": "0.5",
+      "sv": "0.5"
+    }
+  },
+  "754": {
+    "txtNum": "",
+    "stats": {
+      "ph": "8",
+      "sv": "5"
+    },
+    "statsRefine": {
+      "ph": "0.5",
+      "sv": "0.5"
+    }
+  },
+  "755": {
+    "txtNum": "",
+    "stats": {
+      "sr": "19"
+    },
+    "statsRefine": {
+      "sr": "1.4"
+    }
+  },
+  "756": {
+    "txtNum": "",
+    "stats": {
+      "ph": "27"
+    },
+    "statsRefine": {
+      "ph": "2"
+    }
+  },
+  "757": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "758": {
+    "txtNum": "",
+    "stats": {
+      "regenmp": "3.9"
+    },
+    "statsRefine": {
+      "regenmp": "0.3"
+    }
+  },
+  "759": {
+    "txtNum": "7,0,speed",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "760": {
+    "txtNum": "",
+    "stats": {
+      "hitrost": "19"
+    },
+    "statsRefine": {
+      "hitrost": "1.4"
+    }
+  },
+  "761": {
+    "txtNum": "",
+    "stats": {
+      "provorstvo": "19"
+    },
+    "statsRefine": {
+      "provorstvo": "1.4"
+    }
+  },
+  "762": {
+    "txtNum": "",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "763": {
+    "txtNum": "",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "764": {
+    "txtNum": "",
+    "stats": {
+      "sila": "5"
+    },
+    "statsRefine": {
+      "sila": "0.4"
+    }
+  },
+  "765": {
+    "txtNum": "",
+    "stats": {
+      "stoikost": "3.6"
+    },
+    "statsRefine": {
+      "stoikost": "1"
+    }
+  },
+  "766": {
+    "txtNum": "225,0,hpstak",
+    "stats": {
+      "hp": "75"
+    },
+    "statsRefine": {
+      "hp": "12"
+    }
+  },
+  "767": {
+    "txtNum": "225,0,mpstak",
+    "stats": {
+      "mp": "75"
+    },
+    "statsRefine": {
+      "mp": "12"
+    }
+  },
+  "768": {
+    "txtNum": "all,10,62.5,num,sr_max;all,10,10,num,sr_max",
+    "stats": {
+      "regenmp": "2.4"
+    },
+    "statsRefine": {
+      "regenmp": "0.2"
+    }
+  },
+  "769": {
+    "txtNum": "9,0,speed;all,4,11.5,num,sr_max,min:10",
+    "stats": "",
+    "statsRefine": ""
+  },
+  "770": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "771": {
+    "txtNum": "all,21,25.8,num,sr_max",
+    "stats": {
+      "ph": "8.3",
+      "sv": "8.3"
+    },
+    "statsRefine": {
+      "ph": "1",
+      "sv": "1"
+    }
+  },
+  "772": {
+    "txtNum": "all,21,25.8,num,sr_max",
+    "stats": {
+      "sr": "16.6"
+    },
+    "statsRefine": {
+      "sr": "2"
+    }
+  },
+  "773": {
+    "txtNum": "",
+    "stats": {
+      "sila": "5",
+      "razum": "5",
+      "provorstvo": "5",
+      "hitrost": "5",
+      "stoikost": "5",
+      "volia": "5"
+    },
+    "statsRefine": {
+      "sila": "0.5",
+      "razum": "0.5",
+      "provorstvo": "0.5",
+      "hitrost": "0.5",
+      "stoikost": "0.5",
+      "volia": "0.5"
+    }
+  },
+  "774": {
+    "txtNum": "",
+    "stats": {
+      "hp": "270"
+    },
+    "statsRefine": {
+      "hp": "10"
+    }
+  },
+  "775": {
+    "txtNum": "",
+    "stats": {
+      "sr": "13"
+    },
+    "statsRefine": {
+      "sr": "1"
+    }
+  },
+  "776": {
+    "txtNum": "",
+    "stats": {
+      "sr": "8.3",
+      "ph": "8.3"
+    },
+    "statsRefine": {
+      "sr": "1",
+      "ph": "1"
+    }
+  },
+  "777": {
+    "txtNum": "",
+    "stats": {
+      "sr": "9",
+      "hitrost": " 14"
+    },
+    "statsRefine": {
+      "sr": "1",
+      "hitrost": "2"
+    }
+  },
+  "778": {
+    "txtNum": "",
+    "stats": {
+      "sila": "10"
+    },
+    "statsRefine": {
+      "sila": "0.8"
+    }
+  },
+  "779": {
+    "txtNum": "",
+    "stats": {
+      "razum": "10"
+    },
+    "statsRefine": {
+      "razum": "0.8"
+    }
+  },
+  "780": {
+    "txtNum": "",
+    "stats": {
+      "ph": "13"
+    },
+    "statsRefine": {
+      "ph": "1"
+    }
+  },
+  "781": {
+    "txtNum": "",
+    "stats": {
+      "hp": "570"
+    },
+    "statsRefine": {
+      "hp": "42"
+    }
+  },
+  "782": {
+    "txtNum": "",
+    "stats": {
+      "srsv": "27"
+    },
+    "statsRefine": {
+      "srsv": "2"
+    }
+  }
+}

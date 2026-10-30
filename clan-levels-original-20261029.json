@@ -1,0 +1,608 @@
+{
+  "source": {
+    "repository": "Prime-World-Classic/Prime-World",
+    "commit": "2dfaebf19",
+    "file": "pw_publish/branch/Server/Social/xdb/ExportedSocialData.xml",
+    "object": "/Social/Guild/GuildLevels.GUILDLEVELS",
+    "sha256": "ed2903ab75d6614d5664ab7a97ee5ff12f831a00297013ee3a32ffa3b40cdaf7",
+    "transformer": "pw_publish/branch/Server/Social/modeldata/StaticData.py:61-63"
+  },
+  "requiredExperienceMultiplier": "100000",
+  "integerEncoding": "decimal strings; preserve exact values above Number.MAX_SAFE_INTEGER",
+  "levels": [
+    {
+      "level": 1,
+      "rawRequiredExperience": "0",
+      "requiredExperience": "0",
+      "fromPreviousLevel": "0"
+    },
+    {
+      "level": 2,
+      "rawRequiredExperience": "5",
+      "requiredExperience": "500000",
+      "fromPreviousLevel": "500000"
+    },
+    {
+      "level": 3,
+      "rawRequiredExperience": "11",
+      "requiredExperience": "1100000",
+      "fromPreviousLevel": "600000"
+    },
+    {
+      "level": 4,
+      "rawRequiredExperience": "19",
+      "requiredExperience": "1900000",
+      "fromPreviousLevel": "800000"
+    },
+    {
+      "level": 5,
+      "rawRequiredExperience": "29",
+      "requiredExperience": "2900000",
+      "fromPreviousLevel": "1000000"
+    },
+    {
+      "level": 6,
+      "rawRequiredExperience": "41",
+      "requiredExperience": "4100000",
+      "fromPreviousLevel": "1200000"
+    },
+    {
+      "level": 7,
+      "rawRequiredExperience": "54",
+      "requiredExperience": "5400000",
+      "fromPreviousLevel": "1300000"
+    },
+    {
+      "level": 8,
+      "rawRequiredExperience": "68",
+      "requiredExperience": "6800000",
+      "fromPreviousLevel": "1400000"
+    },
+    {
+      "level": 9,
+      "rawRequiredExperience": "85",
+      "requiredExperience": "8500000",
+      "fromPreviousLevel": "1700000"
+    },
+    {
+      "level": 10,
+      "rawRequiredExperience": "107",
+      "requiredExperience": "10700000",
+      "fromPreviousLevel": "2200000"
+    },
+    {
+      "level": 11,
+      "rawRequiredExperience": "133",
+      "requiredExperience": "13300000",
+      "fromPreviousLevel": "2600000"
+    },
+    {
+      "level": 12,
+      "rawRequiredExperience": "164",
+      "requiredExperience": "16400000",
+      "fromPreviousLevel": "3100000"
+    },
+    {
+      "level": 13,
+      "rawRequiredExperience": "202",
+      "requiredExperience": "20200000",
+      "fromPreviousLevel": "3800000"
+    },
+    {
+      "level": 14,
+      "rawRequiredExperience": "245",
+      "requiredExperience": "24500000",
+      "fromPreviousLevel": "4300000"
+    },
+    {
+      "level": 15,
+      "rawRequiredExperience": "293",
+      "requiredExperience": "29300000",
+      "fromPreviousLevel": "4800000"
+    },
+    {
+      "level": 16,
+      "rawRequiredExperience": "346",
+      "requiredExperience": "34600000",
+      "fromPreviousLevel": "5300000"
+    },
+    {
+      "level": 17,
+      "rawRequiredExperience": "404",
+      "requiredExperience": "40400000",
+      "fromPreviousLevel": "5800000"
+    },
+    {
+      "level": 18,
+      "rawRequiredExperience": "470",
+      "requiredExperience": "47000000",
+      "fromPreviousLevel": "6600000"
+    },
+    {
+      "level": 19,
+      "rawRequiredExperience": "542",
+      "requiredExperience": "54200000",
+      "fromPreviousLevel": "7200000"
+    },
+    {
+      "level": 20,
+      "rawRequiredExperience": "619",
+      "requiredExperience": "61900000",
+      "fromPreviousLevel": "7700000"
+    },
+    {
+      "level": 21,
+      "rawRequiredExperience": "713",
+      "requiredExperience": "71300000",
+      "fromPreviousLevel": "9400000"
+    },
+    {
+      "level": 22,
+      "rawRequiredExperience": "834",
+      "requiredExperience": "83400000",
+      "fromPreviousLevel": "12100000"
+    },
+    {
+      "level": 23,
+      "rawRequiredExperience": "984",
+      "requiredExperience": "98400000",
+      "fromPreviousLevel": "15000000"
+    },
+    {
+      "level": 24,
+      "rawRequiredExperience": "1167",
+      "requiredExperience": "116700000",
+      "fromPreviousLevel": "18300000"
+    },
+    {
+      "level": 25,
+      "rawRequiredExperience": "1394",
+      "requiredExperience": "139400000",
+      "fromPreviousLevel": "22700000"
+    },
+    {
+      "level": 26,
+      "rawRequiredExperience": "1663",
+      "requiredExperience": "166300000",
+      "fromPreviousLevel": "26900000"
+    },
+    {
+      "level": 27,
+      "rawRequiredExperience": "1945",
+      "requiredExperience": "194500000",
+      "fromPreviousLevel": "28200000"
+    },
+    {
+      "level": 28,
+      "rawRequiredExperience": "2257",
+      "requiredExperience": "225700000",
+      "fromPreviousLevel": "31200000"
+    },
+    {
+      "level": 29,
+      "rawRequiredExperience": "2582",
+      "requiredExperience": "258200000",
+      "fromPreviousLevel": "32500000"
+    },
+    {
+      "level": 30,
+      "rawRequiredExperience": "2987",
+      "requiredExperience": "298700000",
+      "fromPreviousLevel": "40500000"
+    },
+    {
+      "level": 31,
+      "rawRequiredExperience": "3409",
+      "requiredExperience": "340900000",
+      "fromPreviousLevel": "42200000"
+    },
+    {
+      "level": 32,
+      "rawRequiredExperience": "3871",
+      "requiredExperience": "387100000",
+      "fromPreviousLevel": "46200000"
+    },
+    {
+      "level": 33,
+      "rawRequiredExperience": "4350",
+      "requiredExperience": "435000000",
+      "fromPreviousLevel": "47900000"
+    },
+    {
+      "level": 34,
+      "rawRequiredExperience": "4872",
+      "requiredExperience": "487200000",
+      "fromPreviousLevel": "52200000"
+    },
+    {
+      "level": 35,
+      "rawRequiredExperience": "5413",
+      "requiredExperience": "541300000",
+      "fromPreviousLevel": "54100000"
+    },
+    {
+      "level": 36,
+      "rawRequiredExperience": "6000",
+      "requiredExperience": "600000000",
+      "fromPreviousLevel": "58700000"
+    },
+    {
+      "level": 37,
+      "rawRequiredExperience": "6630",
+      "requiredExperience": "663000000",
+      "fromPreviousLevel": "63000000"
+    },
+    {
+      "level": 38,
+      "rawRequiredExperience": "7310",
+      "requiredExperience": "731000000",
+      "fromPreviousLevel": "68000000"
+    },
+    {
+      "level": 39,
+      "rawRequiredExperience": "8040",
+      "requiredExperience": "804000000",
+      "fromPreviousLevel": "73000000"
+    },
+    {
+      "level": 40,
+      "rawRequiredExperience": "8820",
+      "requiredExperience": "882000000",
+      "fromPreviousLevel": "78000000"
+    },
+    {
+      "level": 41,
+      "rawRequiredExperience": "9650",
+      "requiredExperience": "965000000",
+      "fromPreviousLevel": "83000000"
+    },
+    {
+      "level": 42,
+      "rawRequiredExperience": "10640",
+      "requiredExperience": "1064000000",
+      "fromPreviousLevel": "99000000"
+    },
+    {
+      "level": 43,
+      "rawRequiredExperience": "11650",
+      "requiredExperience": "1165000000",
+      "fromPreviousLevel": "101000000"
+    },
+    {
+      "level": 44,
+      "rawRequiredExperience": "12690",
+      "requiredExperience": "1269000000",
+      "fromPreviousLevel": "104000000"
+    },
+    {
+      "level": 45,
+      "rawRequiredExperience": "13760",
+      "requiredExperience": "1376000000",
+      "fromPreviousLevel": "107000000"
+    },
+    {
+      "level": 46,
+      "rawRequiredExperience": "14850",
+      "requiredExperience": "1485000000",
+      "fromPreviousLevel": "109000000"
+    },
+    {
+      "level": 47,
+      "rawRequiredExperience": "15970",
+      "requiredExperience": "1597000000",
+      "fromPreviousLevel": "112000000"
+    },
+    {
+      "level": 48,
+      "rawRequiredExperience": "17120",
+      "requiredExperience": "1712000000",
+      "fromPreviousLevel": "115000000"
+    },
+    {
+      "level": 49,
+      "rawRequiredExperience": "18290",
+      "requiredExperience": "1829000000",
+      "fromPreviousLevel": "117000000"
+    },
+    {
+      "level": 50,
+      "rawRequiredExperience": "19490",
+      "requiredExperience": "1949000000",
+      "fromPreviousLevel": "120000000"
+    },
+    {
+      "level": 51,
+      "rawRequiredExperience": "20720",
+      "requiredExperience": "2072000000",
+      "fromPreviousLevel": "123000000"
+    },
+    {
+      "level": 52,
+      "rawRequiredExperience": "21970",
+      "requiredExperience": "2197000000",
+      "fromPreviousLevel": "125000000"
+    },
+    {
+      "level": 53,
+      "rawRequiredExperience": "23250",
+      "requiredExperience": "2325000000",
+      "fromPreviousLevel": "128000000"
+    },
+    {
+      "level": 54,
+      "rawRequiredExperience": "24560",
+      "requiredExperience": "2456000000",
+      "fromPreviousLevel": "131000000"
+    },
+    {
+      "level": 55,
+      "rawRequiredExperience": "25890",
+      "requiredExperience": "2589000000",
+      "fromPreviousLevel": "133000000"
+    },
+    {
+      "level": 56,
+      "rawRequiredExperience": "27250",
+      "requiredExperience": "2725000000",
+      "fromPreviousLevel": "136000000"
+    },
+    {
+      "level": 57,
+      "rawRequiredExperience": "28640",
+      "requiredExperience": "2864000000",
+      "fromPreviousLevel": "139000000"
+    },
+    {
+      "level": 58,
+      "rawRequiredExperience": "30050",
+      "requiredExperience": "3005000000",
+      "fromPreviousLevel": "141000000"
+    },
+    {
+      "level": 59,
+      "rawRequiredExperience": "31490",
+      "requiredExperience": "3149000000",
+      "fromPreviousLevel": "144000000"
+    },
+    {
+      "level": 60,
+      "rawRequiredExperience": "32960",
+      "requiredExperience": "3296000000",
+      "fromPreviousLevel": "147000000"
+    },
+    {
+      "level": 61,
+      "rawRequiredExperience": "34460",
+      "requiredExperience": "3446000000",
+      "fromPreviousLevel": "150000000"
+    },
+    {
+      "level": 62,
+      "rawRequiredExperience": "35980",
+      "requiredExperience": "3598000000",
+      "fromPreviousLevel": "152000000"
+    },
+    {
+      "level": 63,
+      "rawRequiredExperience": "37530",
+      "requiredExperience": "3753000000",
+      "fromPreviousLevel": "155000000"
+    },
+    {
+      "level": 64,
+      "rawRequiredExperience": "39110",
+      "requiredExperience": "3911000000",
+      "fromPreviousLevel": "158000000"
+    },
+    {
+      "level": 65,
+      "rawRequiredExperience": "40710",
+      "requiredExperience": "4071000000",
+      "fromPreviousLevel": "160000000"
+    },
+    {
+      "level": 66,
+      "rawRequiredExperience": "42340",
+      "requiredExperience": "4234000000",
+      "fromPreviousLevel": "163000000"
+    },
+    {
+      "level": 67,
+      "rawRequiredExperience": "44000",
+      "requiredExperience": "4400000000",
+      "fromPreviousLevel": "166000000"
+    },
+    {
+      "level": 68,
+      "rawRequiredExperience": "45680",
+      "requiredExperience": "4568000000",
+      "fromPreviousLevel": "168000000"
+    },
+    {
+      "level": 69,
+      "rawRequiredExperience": "47390",
+      "requiredExperience": "4739000000",
+      "fromPreviousLevel": "171000000"
+    },
+    {
+      "level": 70,
+      "rawRequiredExperience": "49130",
+      "requiredExperience": "4913000000",
+      "fromPreviousLevel": "174000000"
+    },
+    {
+      "level": 71,
+      "rawRequiredExperience": "50890",
+      "requiredExperience": "5089000000",
+      "fromPreviousLevel": "176000000"
+    },
+    {
+      "level": 72,
+      "rawRequiredExperience": "52680",
+      "requiredExperience": "5268000000",
+      "fromPreviousLevel": "179000000"
+    },
+    {
+      "level": 73,
+      "rawRequiredExperience": "54500",
+      "requiredExperience": "5450000000",
+      "fromPreviousLevel": "182000000"
+    },
+    {
+      "level": 74,
+      "rawRequiredExperience": "56340",
+      "requiredExperience": "5634000000",
+      "fromPreviousLevel": "184000000"
+    },
+    {
+      "level": 75,
+      "rawRequiredExperience": "58210",
+      "requiredExperience": "5821000000",
+      "fromPreviousLevel": "187000000"
+    },
+    {
+      "level": 76,
+      "rawRequiredExperience": "60110",
+      "requiredExperience": "6011000000",
+      "fromPreviousLevel": "190000000"
+    },
+    {
+      "level": 77,
+      "rawRequiredExperience": "62030",
+      "requiredExperience": "6203000000",
+      "fromPreviousLevel": "192000000"
+    },
+    {
+      "level": 78,
+      "rawRequiredExperience": "63980",
+      "requiredExperience": "6398000000",
+      "fromPreviousLevel": "195000000"
+    },
+    {
+      "level": 79,
+      "rawRequiredExperience": "65960",
+      "requiredExperience": "6596000000",
+      "fromPreviousLevel": "198000000"
+    },
+    {
+      "level": 80,
+      "rawRequiredExperience": "67960",
+      "requiredExperience": "6796000000",
+      "fromPreviousLevel": "200000000"
+    },
+    {
+      "level": 81,
+      "rawRequiredExperience": "69990",
+      "requiredExperience": "6999000000",
+      "fromPreviousLevel": "203000000"
+    },
+    {
+      "level": 82,
+      "rawRequiredExperience": "72050",
+      "requiredExperience": "7205000000",
+      "fromPreviousLevel": "206000000"
+    },
+    {
+      "level": 83,
+      "rawRequiredExperience": "74140",
+      "requiredExperience": "7414000000",
+      "fromPreviousLevel": "209000000"
+    },
+    {
+      "level": 84,
+      "rawRequiredExperience": "76250",
+      "requiredExperience": "7625000000",
+      "fromPreviousLevel": "211000000"
+    },
+    {
+      "level": 85,
+      "rawRequiredExperience": "78390",
+      "requiredExperience": "7839000000",
+      "fromPreviousLevel": "214000000"
+    },
+    {
+      "level": 86,
+      "rawRequiredExperience": "80560",
+      "requiredExperience": "8056000000",
+      "fromPreviousLevel": "217000000"
+    },
+    {
+      "level": 87,
+      "rawRequiredExperience": "82750",
+      "requiredExperience": "8275000000",
+      "fromPreviousLevel": "219000000"
+    },
+    {
+      "level": 88,
+      "rawRequiredExperience": "84970",
+      "requiredExperience": "8497000000",
+      "fromPreviousLevel": "222000000"
+    },
+    {
+      "level": 89,
+      "rawRequiredExperience": "87220",
+      "requiredExperience": "8722000000",
+      "fromPreviousLevel": "225000000"
+    },
+    {
+      "level": 90,
+      "rawRequiredExperience": "89490",
+      "requiredExperience": "8949000000",
+      "fromPreviousLevel": "227000000"
+    },
+    {
+      "level": 91,
+      "rawRequiredExperience": "91790",
+      "requiredExperience": "9179000000",
+      "fromPreviousLevel": "230000000"
+    },
+    {
+      "level": 92,
+      "rawRequiredExperience": "94120",
+      "requiredExperience": "9412000000",
+      "fromPreviousLevel": "233000000"
+    },
+    {
+      "level": 93,
+      "rawRequiredExperience": "96470",
+      "requiredExperience": "9647000000",
+      "fromPreviousLevel": "235000000"
+    },
+    {
+      "level": 94,
+      "rawRequiredExperience": "98850",
+      "requiredExperience": "9885000000",
+      "fromPreviousLevel": "238000000"
+    },
+    {
+      "level": 95,
+      "rawRequiredExperience": "101260",
+      "requiredExperience": "10126000000",
+      "fromPreviousLevel": "241000000"
+    },
+    {
+      "level": 96,
+      "rawRequiredExperience": "103690",
+      "requiredExperience": "10369000000",
+      "fromPreviousLevel": "243000000"
+    },
+    {
+      "level": 97,
+      "rawRequiredExperience": "106150",
+      "requiredExperience": "10615000000",
+      "fromPreviousLevel": "246000000"
+    },
+    {
+      "level": 98,
+      "rawRequiredExperience": "108640",
+      "requiredExperience": "10864000000",
+      "fromPreviousLevel": "249000000"
+    },
+    {
+      "level": 99,
+      "rawRequiredExperience": "9999999999999",
+      "requiredExperience": "999999999999900000",
+      "fromPreviousLevel": "999999989135900000"
+    }
+  ]
+}
