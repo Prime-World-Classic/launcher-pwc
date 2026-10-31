@@ -55,6 +55,22 @@ const CATEGORIES = [
 // категории, выбор в которых хранит лаунчер
 const LOCAL_CATEGORIES = [CAT.loadscreen, CAT.praise];
 
+// Что этот лончер умеет рисовать — ЕДИНСТВЕННЫЙ рубильник категории: вкладка
+// категории в CATEGORIES (или LOCAL_CATEGORIES) = она открыта, убрал вкладку =
+// закрыта и для бэкенда, и для «Всего ассортимента»/«Коллекции» (иначе товар
+// утечёт туда без вкладки). Трогать только здесь; набор игрока живёт в
+// shop_item_available_user сутки, и blocked = 1 задним числом не убирает товар
+// из уже выданного набора (он молча потеряет слот из 10, а buy() blocked не
+// проверяет). Окна «Магазин»/«Коллекция» (window.js) список не шлют: на
+// неизвестной категории Shop.getIcon даёт App.error('Некорректный categoryId N')
+// и пустую иконку.
+const OPEN_CATEGORIES = Array.from(new Set([...CATEGORIES.map((cat) => cat.categoryId), ...LOCAL_CATEGORIES]));
+
+// allCategories — мост к бэкенду без поддержки categories (там «всё или LEGACY»)
+const SHOP_SCOPE = { allCategories: true, categories: OPEN_CATEGORIES };
+
+const isOpenCategory = (categoryId) => OPEN_CATEGORIES.includes(Number(categoryId));
+
 // selected — { categoryId: externalId } (нет записи — стандартный), у загрузочных экранов — список externalId (ротация)
 const LOCAL_STORAGE = 'fair_local_v2';
 
@@ -238,13 +254,16 @@ export async function fair(tab = null, { previewData = null } = {}) {
   const ctx = { topHero: { heroId: 1, skinId: 1, frameId: 0 }, available: [], purchased: [], local: previewData ? { selected: {} } : loadLocalState() };
 
   const [available, purchased, topHero] = previewData ? [previewData.available, previewData.purchased, previewData.topHero] : await Promise.all([
-    App.api.request('shop', 'available').catch((e) => (App.error(e), [])),
-    App.api.request('shop', 'purchase').catch((e) => (App.error(e), [])),
+    // SHOP_SCOPE: categories — что отдаёт новый бэкенд, allCategories — чтобы ярмарка
+    // не осталась без экранов и похвал на старом. Без этого бэкенд режет категории
+    // 4 и 5, и товары, уже лежащие в наборе игрока, в ярмарке не видны.
+    App.api.request('shop', 'available', SHOP_SCOPE).catch((e) => (App.error(e), [])),
+    App.api.request('shop', 'purchase', SHOP_SCOPE).catch((e) => (App.error(e), [])),
     App.api.request(App.CURRENT_MM, 'getHeroWithFrameId').catch((e) => (App.error(e), null)),
   ]);
   if (topHero) ctx.topHero = topHero;
-  ctx.available = (available || []).map((item) => ({ ...item, categoryId: Number(item.categoryId) }));
-  ctx.purchased = (purchased || []).map((item) => ({ ...item, categoryId: Number(item.categoryId) }));
+  ctx.available = (available || []).map((item) => ({ ...item, categoryId: Number(item.categoryId) })).filter((item) => isOpenCategory(item.categoryId));
+  ctx.purchased = (purchased || []).map((item) => ({ ...item, categoryId: Number(item.categoryId) })).filter((item) => isOpenCategory(item.categoryId));
 
   for (const categoryId of LOCAL_CATEGORIES) {
     // стандартный экран / похвала — всегда в коллекции
@@ -627,7 +646,7 @@ export async function fair(tab = null, { previewData = null } = {}) {
         }
         // купленный товар появится в коллекции при следующем открытии
         const localPurchased = ctx.purchased.filter((p) => p.local);
-        const purchased = await App.api.request('shop', 'purchase').catch(() => null);
+        const purchased = await App.api.request('shop', 'purchase', SHOP_SCOPE).catch(() => null);
         if (purchased) {
           ctx.purchased = [...purchased.map((p) => ({ ...p, categoryId: Number(p.categoryId) })), ...localPurchased];
         }
