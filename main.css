@@ -10243,18 +10243,18 @@ button.build-action-item.btn-hover.color-1 .btn-duplicate {
 #wquest .wquest__timer {
   position: absolute;
   left: 50%;
-  bottom: -0.75cqh;
+  bottom: -0.9cqh;
   transform: translateX(-50%);
   z-index: 4;
   width: 8.73cqh;
-  height: 3.58cqh;
+  height: 2cqh;
   padding: 0;
   border-radius: 0;
-  background: url(img/quest/5.png) center / contain no-repeat;
+  background: url(img/quest/5.png) center / 100% 100% no-repeat;
   color: #f5e9ad;
   font-size: 1.38cqh;
   font-weight: 400;
-  line-height: 3.58cqh;
+  line-height: 2cqh;
   text-align: center;
   text-shadow: 0 0.18cqh 0.22cqh rgba(0, 0, 0, 0.75);
   box-shadow: none;
@@ -10620,25 +10620,38 @@ button.build-action-item.btn-hover.color-1 .btn-duplicate {
   font-variant-numeric: tabular-nums;
 }
 
+#wquest .wquest__chip--hero .wquest__chip-icon {
+  background-size: cover;
+}
+
+#wquest .wquest__chip--hero .wquest__chip-value {
+  width: max-content;
+  max-width: 100%;
+  min-width: 10ch;
+  height: 2.3cqh;
+  padding: 0 0.85cqh;
+  border-radius: 1.15cqh;
+  line-height: 2.3cqh;
+}
+
 @media (max-width: 680px) {
   #wquest {
+    box-sizing: border-box;
     width: 84cqw !important;
-    max-width: 84cqw !important;
-    padding-left: 11.2cqh;
+    max-width: calc(100cqw - 14cqh) !important;
   }
-  .wquest__avatar,
-  .quest_container {
+  #wquest .quest_container {
     top: -6.49cqh;
     left: -9cqh;
     width: 12.7cqh;
     height: 12.7cqh;
   }
   #wquest .wquest__timer {
-    bottom: -0.67cqh;
+    bottom: -0.8cqh;
     width: 7.8cqh;
-    height: 3.2cqh;
+    height: 1.8cqh;
     font-size: 1.22cqh;
-    line-height: 3.2cqh;
+    line-height: 1.8cqh;
   }
 }
 
@@ -10768,7 +10781,7 @@ button.build-action-item.btn-hover.color-1 .btn-duplicate {
   padding: 0.15cqh 0.45cqh;
   border-radius: 0.6cqh;
   background: rgba(0, 42, 48, 0.72);
-  color: #d7f6f7;
+  color: #f5e9ad;
   font: 0.95cqh / 1.2 'DejaVuSans', sans-serif;
   text-align: center;
   text-shadow: 0 0.15cqh 0.2cqh rgba(0, 0, 0, 0.8);

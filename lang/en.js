@@ -6793,6 +6793,7 @@ export const en = {
     inviteViaQr: 'via QR code',
     questStart: 'Start',
     questFinish: 'Complete',
+    questHeroReward: 'Hero {name}',
     supportSocialText: 'Have questions or need help? Contact us on social media.',
     chatSend: 'Send message',
     chatScrollDown: 'Scroll chat down',

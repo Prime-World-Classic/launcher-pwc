@@ -6771,6 +6771,7 @@ export const ru = {
     inviteViaQr: 'через QR-код',
     questStart: 'Начать',
     questFinish: 'Завершить',
+    questHeroReward: 'Герой {name}',
     supportSocialText: 'У вас есть вопросы или нужна помощь, то можете связаться с нами через социальные сети.',
     chatSend: 'Отправить сообщение',
     chatScrollDown: 'Прокрутить чат вниз',
