@@ -31,6 +31,7 @@ import { getHeroSearchAliases } from './heroSearchAliases.js';
 import { uiIcon } from './uiIcon.js';
 import { TalentAdmin } from './talentAdmin.js';
 import { ReplayUpload } from './replayUpload.js';
+import { CrashReport } from './crashReport.js';
 import { HeroFrame } from './heroFrame.js';
 import { HeroStar } from './heroStar.js';
 import { Stats } from './stats.js';
@@ -1548,6 +1549,7 @@ export class View {
     Shop.retrieveLastUpdate();
     syncFairGameFiles(); // номер выбранной похвалы и тексты похвал — в файлы игры
     ReplayUpload.resume(); // недосланные реплеи боёв (после перезапуска лончера тоже)
+    CrashReport.resume(); // недосланные отчёты о крашах игры
 
     View.setCss('content/castle.css');
 

@@ -2,6 +2,7 @@ import { App } from './app.js';
 import { Lang } from './lang.js';
 import { NativeAPI } from './nativeApi.js';
 import { ReplayUpload } from './replayUpload.js';
+import { CrashReport } from './crashReport.js';
 import { renderBackendToken } from './gameRender.js';
 
 export class PWGame {
@@ -250,8 +251,12 @@ export class PWGame {
 
     PWGame.openProtocolSocket();
 
+    // краш игры (окно «Unhandled Exception») — дамп, лог и реплей на бэкенд, не дожидаясь закрытия окна (crashReport.js)
+    CrashReport.watch(id);
+
     // игра закрыта — реплей этого боя на бэкенд (replayUpload.js), зрителю не нужно
     const onGameExit = () => {
+      CrashReport.afterGame();
       if (method !== 'spectate') {
         ReplayUpload.afterGame(id);
       }
