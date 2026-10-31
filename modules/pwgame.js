@@ -255,8 +255,8 @@ export class PWGame {
     CrashReport.watch(id);
 
     // игра закрыта — реплей этого боя на бэкенд (replayUpload.js), зрителю не нужно
-    const onGameExit = () => {
-      CrashReport.afterGame();
+    const onGameExit = (error = null) => {
+      CrashReport.afterGame(error && error.code);
       if (method !== 'spectate') {
         ReplayUpload.afterGame(id);
       }

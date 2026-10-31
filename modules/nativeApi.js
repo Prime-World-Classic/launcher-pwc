@@ -296,8 +296,9 @@ export class NativeAPI {
 
         resolve(stdout);
 
+        // error.code — код выхода процесса, если он не 0 (crashReport.js различает по нему краш)
         if (callback) {
-          callback();
+          callback(error || null);
         }
       });
     });
