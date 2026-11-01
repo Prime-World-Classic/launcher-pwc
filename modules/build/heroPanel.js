@@ -330,7 +330,7 @@ export class HeroPanel {
         await MM.gameStartCheck();
         await App.api.request(App.CURRENT_MM, 'heroParty', { id: MM.partyId, hero: ed.heroId });
         await App.api.request(App.CURRENT_MM, 'start', {
-          version: App.PW_VERSION, mode: 99, mac: NativeAPI.getMACAdress(), cache: await NativeAPI.getCacheIndex(), v: 2,
+          version: App.PW_VERSION, mode: 99, mac: await NativeAPI.getMACAdresses(), cache: await NativeAPI.getCacheIndex(), v: 2,
         });
       } catch (error) {
         App.error(error);

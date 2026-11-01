@@ -171,6 +171,7 @@ export const be = {
     buildSettingsSetSortModeDefault: 'Стандартная',
     buildSettingsSetSortModePopular: 'Па папулярнасці',
     buildSettingsSetHoverOnTalent: 'Падсветка сета пры навядзенні на талент',
+    buildSettingsConsumablesFold: 'Хаваць спіс расходнікаў (адкрыць навядзеннем на надпіс)',
     sortSetsRmbMirrorBuild: 'ПКМ - Адлюстраваць білд',
     showStatistics: 'Паказаць статыстыку',
     friendInGroup: 'У групе',

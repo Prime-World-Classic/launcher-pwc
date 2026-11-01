@@ -26,8 +26,23 @@ export const CONSUMABLES = [
   'TrueSightPotion',
   'EyeOfSeeing',
   'KU-Stick',
+  'EyeOfSeeingCheap',
+  'EyeOfSeeingCheapest',
+  'SignOfBirds',
+  'SignOfCopy',
+  'SignOfNova',
+  'SignOfPriestess',
+  'SignOfStarfall',
+  'DispellPotion',
+  'CleansingAllPotion',
+  'InvulnerabilityAmulet',
+  'StealthCloak',
+  'OpenWarFog',
 ];
 export const MAX_PER_SLOT = 3;
+
+// порядок на панели — как в лавках: новые биты только в конец CONSUMABLES, фонари — рядом
+const LIST_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
 const ALL = (1 << CONSUMABLES.length) - 1;
 const SAVE_DELAY_MS = 400;
@@ -107,11 +122,13 @@ export class Consumables {
       DOM({ style: 'build-consumable-item', data: { kind }, ariaLabel: consumableName(kind) }),
     );
     for (const [kind, item] of this.items.entries()) item.style.backgroundImage = `url("${consumableIcon(kind)}")`;
-    this.list = DOM({ style: 'build-consumables' }, ...this.items);
+    this.list = DOM({ style: 'build-consumables' }, ...LIST_ORDER.map((kind) => this.items[kind]));
+    // обёртка сворачивает список с полосой прокрутки, надпись остаётся (настройка buildConsumablesFold, CSS)
+    this.fold = DOM({ style: 'build-consumables-fold' }, this.list);
     this.section = DOM(
       { tag: 'fieldset', style: ['build-inventory-fieldset', 'build-consumables-section'] },
       DOM({ tag: 'legend', style: 'build-inventory-legend' }, Lang.text('consumables')),
-      this.list,
+      this.fold,
     );
   }
 
@@ -120,8 +137,17 @@ export class Consumables {
     this.server = JSON.stringify(this.slots);
   }
 
+  // шаг прокрутки списка — строка иконок
+  rowHeight() {
+    return this.items[0].offsetHeight;
+  }
+
   attach() {
     const ed = this.ed;
+    ed.listen(this.list, 'wheel', (e) => {
+      e.preventDefault();
+      this.list.scrollBy({ top: Math.sign(e.deltaY) * this.rowHeight(), behavior: 'smooth' });
+    }, { passive: false });
     ed.listen(this.list, 'mouseover', (e) => {
       const item = e.target.closest?.('.build-consumable-item');
       if (item && !this.drag) ed.tooltip.showConsumable(item, CONSUMABLES[Number(item.dataset.kind)]);

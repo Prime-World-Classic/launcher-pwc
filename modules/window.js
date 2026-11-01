@@ -976,6 +976,8 @@ export class Window {
 
   static async quest(item) {
     let quest = await App.api.request('quest', 'get', { id: item.id });
+    const status = Number(quest.status ?? item.status);
+    View.refreshQuestHeroAvailability([{ ...item, ...quest, reward: item.reward }]);
     let helpBtn = DOM({
       id: 'wshop_help',
       domaudio: domAudioPresets.defaultButton,
@@ -1001,7 +1003,17 @@ export class Window {
 
     const body = DOM({ style: 'wquest__body' }, questText('description'));
 
-    const objectiveText = DOM({ style: 'wquest__objective-title' }, questText('target'));
+    const rewardHeroId = Number(quest.rewardHeroId || item.reward?.hero) || 0;
+    const heroOnlyReward = rewardHeroId === 66 || rewardHeroId === 67;
+    const objectiveText = DOM({ style: 'wquest__objective-title' });
+    if (heroOnlyReward) {
+      objectiveText.append(
+        DOM({}, Lang.text('questHeroTargetTitle')),
+        DOM({ tag: 'ul', style: 'wquest__objective-list' }, ...Lang.text('questHeroTargetItems').map((text) => DOM({ tag: 'li' }, text))),
+      );
+    } else {
+      objectiveText.textContent = questText('target');
+    }
     const objective = DOM({ style: 'wquest__objective' }, objectiveText);
     //const objText = DOM({ style: 'wquest__objective' }, quest.target);
     //objective.appendChild(objText);
@@ -1011,25 +1023,32 @@ export class Window {
       objective.style.setProperty('--quest-progress', `${progress}%`);
       const counter = DOM({ style: 'wquest__objective-counter' }, quest.score, ' / ', quest.total);
       //objText.append(counter);
-	  objective.append(counter);
+      objective.append(counter);
     }
 
-    const tokens = item.reward;
+    const rewardItems = heroOnlyReward ? { hero: rewardHeroId } : { ...(item.reward || {}), ...(rewardHeroId ? { hero: rewardHeroId } : {}) };
     const rewards = DOM({ style: 'wquest__rewards' });
-    for (let reward in item.reward) {
-      const chip = DOM({ style: 'wquest__chip' });
+    for (const reward of Object.keys(rewardItems)) {
+      const isHero = reward === 'hero' && Number(rewardItems[reward]) > 0;
+      const chip = DOM({ style: ['wquest__chip', isHero ? 'wquest__chip--hero' : ''].filter(Boolean) });
       const icon = DOM({ style: 'wquest__chip-icon' });
       let iconUrl = '';
       switch (reward) {
         case 'crystal':
           iconUrl = `url("content/img/queue/DiamondBlue.png")`;
           break;
+        case 'hero':
+          iconUrl = `url("content/hero/${Number(rewardItems[reward])}/1.webp")`;
+          icon.setAttribute('role', 'img');
+          icon.setAttribute('aria-label', Lang.heroName(Number(rewardItems[reward])));
+          break;
         default:
           iconUrl = `url("content/img/queue/Spravka.png")`;
       }
       icon.style.backgroundImage = iconUrl;
 
-      const val = DOM({ style: 'wquest__chip-value' }, item.reward[reward]);
+      const value = isHero ? Lang.text('questHeroReward').replace('{name}', Lang.heroName(Number(rewardItems[reward]))) : rewardItems[reward];
+      const val = DOM({ style: 'wquest__chip-value' }, value);
       chip.appendChild(icon);
       chip.appendChild(val);
       rewards.appendChild(chip);
@@ -1040,7 +1059,7 @@ export class Window {
     const avatarContainer = DOM({ style: 'quest_container' }, avatarBackground, avatar);
     const timerMs = Number(item.timer ?? quest.timer ?? item.timeLeft ?? quest.timeLeft ?? item.remainingMs ?? quest.remainingMs ?? item.remaining ?? quest.remaining ?? 0) || 0;
     // day = 0 — квест без срока, таймер не показываем
-    const hasTimer = Number(quest.status ?? item.status) === 1 && Number(quest.day ?? item.day) !== 0;
+    const hasTimer = status === 1 && Number(quest.day ?? item.day) !== 0;
 
     avatar.style.backgroundImage = `url("content/hero/${item.heroId}/1.webp")`;
     avatar.style.backgroundSize = 'cover, contain';
@@ -1049,10 +1068,9 @@ export class Window {
 
     if (hasTimer) {
       const timer = DOM({ style: ['quest-item-timer', 'wquest__timer'] });
-      let timerLeft = Math.max(0, timerMs);
+      const timerEndsAt = Date.now() + Math.max(0, timerMs);
       const updateTimer = () => {
-        timer.textContent = Timer.getFormattedTimer(timerLeft) || '00:00';
-        timerLeft = Math.max(0, timerLeft - 1000);
+        timer.textContent = Timer.getFormattedTimer(Math.max(0, timerEndsAt - Date.now())) || '00:00';
       };
       updateTimer();
       const timerInterval = setInterval(updateTimer, 1000);
@@ -1070,7 +1088,7 @@ export class Window {
     content.appendChild(rewards);
     content.appendChild(avatarContainer);
 
-    switch (quest.status) {
+    switch (status) {
       case 0:
         content.appendChild(
           DOM(
@@ -1085,7 +1103,7 @@ export class Window {
 
                   Window.close('main');
 
-                  View.castleQuestUpdate();
+                  await View.castleQuestUpdate();
                 },
               ],
             },
@@ -1109,7 +1127,8 @@ export class Window {
 
                   Window.close('main');
 
-                  View.castleQuestUpdate();
+                  await View.castleQuestUpdate();
+                  if (rewardHeroId) View.refreshQuestHeroAvailability([], true);
                 },
               ],
             },
@@ -3069,7 +3088,7 @@ export class Window {
                   await App.api.request(App.CURRENT_MM, 'joinParty', {
                     code: data.code,
                     version: App.PW_VERSION,
-                    mac: NativeAPI.getMACAdress(),
+                    mac: await NativeAPI.getMACAdresses(),
                     cache: await NativeAPI.getCacheIndex(),
                   });
                   Window.inviteData = null;

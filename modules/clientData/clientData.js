@@ -425,7 +425,8 @@ export class ClientData {
 
   // Расходник (Items/Consumables/<имя>.ARCT): тексты, константы, условия — как у таланта
   static consumable(name) {
-    const key = normalizeKey(`Items/Consumables/${name}.ARCT.xdb`);
+    // знаки лавки Чуди лежат отдельно от остальных расходников
+    const key = normalizeKey(`Items/${name.startsWith('SignOf') ? 'Scrolls' : 'Consumables'}/${name}.ARCT.xdb`);
     if (!ClientData._consumables.has(key)) {
       ClientData._consumables.set(
         key,

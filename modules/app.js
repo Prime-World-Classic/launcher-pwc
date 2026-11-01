@@ -30,8 +30,8 @@ export class App {
   // PW_VERSION обязан совпадать с версией модели того режима, в который идёт
   // клиент: mm ↔ objects/mm.model.js, mmtest ↔ objects/mmtest.model.js
   // (`this.version`) — иначе каждый mm-запрос даёт «Вышло обновление …».
-  // С 2.16.0 обе модели одной версии (сейчас 3.0.0).
-  static PW_VERSION = '3.0.0';
+  // С 2.16.0 обе модели одной версии (сейчас 3.0.1).
+  static PW_VERSION = '3.0.1';
 
   // Режим матчмейкинга — по манифесту (clientChannel.js): тестовая сборка
   // (package.json.name с «Dev») → mmtest, публичная → mm. До 2026-10-19 значение
@@ -2868,7 +2868,7 @@ export class App {
         login: login.value.trim(),
         password: password.value.trim(),
         analysis: analysis,
-        mac: NativeAPI.getMACAdress(),
+        mac: await NativeAPI.getMACAdresses(),
         cache: await NativeAPI.getCacheIndex(),
       });
     } catch (error) {
@@ -3215,7 +3215,7 @@ export class App {
         login: login.value.trim(),
         password: password.value.trim(),
         analysis: analysis,
-        mac: NativeAPI.getMACAdress(),
+        mac: await NativeAPI.getMACAdresses(),
         cache: await NativeAPI.getCacheIndex(),
       });
     } catch (error) {

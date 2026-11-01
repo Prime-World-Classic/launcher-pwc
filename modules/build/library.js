@@ -70,13 +70,18 @@ export class Library {
     this.setsSection = section('build-sets-section', Lang.text('sets'), this.setsList);
     // расходники — под сетами, в одной с ними колонке (в вертикальной раскладке колонка не видна)
     this.view = DOM({ style: 'build-talent-view' }, this.talentsSection, DOM({ style: 'build-sets-column' }, this.setsSection, ed.consumables.section));
-    for (const [part, list, label] of [[this.talentsSection, this.list, 'library'], [this.setsSection, this.setsList, 'sets']]) {
+    const quarter = (list) => list.clientHeight * 0.25;
+    for (const [part, list, label, step] of [
+      [this.talentsSection, this.list, 'library', quarter],
+      [this.setsSection, this.setsList, 'sets', quarter],
+      [ed.consumables.fold, ed.consumables.list, 'consumables', () => ed.consumables.rowHeight()],
+    ]) {
       this.attachScrollbar(part, list, Lang.text(label));
       for (const dir of [-1, 1]) {
         part.append(DOM({
           tag: 'button', type: 'button', style: ['build-scroll-arrow', dir < 0 ? 'build-scroll-arrow-up' : 'build-scroll-arrow-down'],
           ariaLabel: `${Lang.text(label)}: ${dir < 0 ? '↑' : '↓'}`,
-          event: ['click', () => list.scrollBy({ top: dir * list.clientHeight * 0.25, behavior: 'smooth' })],
+          event: ['click', () => list.scrollBy({ top: dir * step(list), behavior: 'smooth' })],
         }, dir < 0 ? '▲' : '▼'));
       }
     }
@@ -93,6 +98,7 @@ export class Library {
 
   applyLayout() {
     this.view?.classList.toggle('build-talent-view--row', Number(this.ed.setting('buildTalentViewLayout')) === 1);
+    this.view?.classList.toggle('build-talent-view--consumables-fold', !!this.ed.setting('buildConsumablesFold'));
   }
 
   // Своя полоса прокрутки: ползунок (перетаскивание, клавиши), клик по полосе
@@ -212,13 +218,24 @@ export class Library {
       if (raf) return;
       const step = () => {
         raf = 0;
-        const next = view.scrollTop + (target - view.scrollTop) * 0.22;
-        view.scrollTop = Math.abs(target - next) > 0.5 ? next : target;
-        if (Math.abs(target - next) > 0.5) raf = requestAnimationFrame(step);
-        else target = null;
+        const before = view.scrollTop;
+        view.scrollTop = before + (target - before) * 0.22;
+        // scrollTop округляется до пикселя: не сдвинулся — дальше не сдвинется, иначе цикл не кончается и перебивает ползунок
+        if (view.scrollTop !== before) {
+          raf = requestAnimationFrame(step);
+          return;
+        }
+        view.scrollTop = target;
+        target = null;
       };
       raf = requestAnimationFrame(step);
     }, { passive: false });
+    // ползунок, полоса и стрелки важнее докрутки колесом
+    this.setsSection.addEventListener('pointerdown', () => {
+      cancelAnimationFrame(raf);
+      raf = 0;
+      target = null;
+    }, true);
   }
 
   // --- Уровни, редкость, активные, поиск ----------------------------------------------------

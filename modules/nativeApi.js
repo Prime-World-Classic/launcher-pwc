@@ -6,6 +6,7 @@ import { Settings } from './settings.js';
 import { Lang } from './lang.js';
 import { MM } from './mm.js';
 import { CacheIndex } from './cacheIndex.js';
+import { NetAdapters } from './netAdapters.js';
 import { isTestManifest, readNwManifest } from './clientChannel.js';
 
 export class NativeAPI {
@@ -115,6 +116,10 @@ export class NativeAPI {
 
     // Индекс кэша собирается заранее — ко входу уже готов.
     NativeAPI.getCacheIndex();
+
+    // Сетевые карты Windows (какая встроенная, какая VPN/USB/виртуальная) —
+    // тоже заранее: getMACAdress отдаёт только адреса встроенных карт.
+    NetAdapters.load(NativeAPI.childProcess, NativeAPI.platform);
 
     window.addEventListener('error', (event) => {
       const msg = event?.error?.stack || event?.error?.toString?.() || String(event?.message || 'Unknown error');
@@ -296,8 +301,9 @@ export class NativeAPI {
 
         resolve(stdout);
 
+        // error.code — код выхода процесса, если он не 0 (crashReport.js различает по нему краш)
         if (callback) {
-          callback();
+          callback(error || null);
         }
       });
     });
@@ -1392,40 +1398,30 @@ export class NativeAPI {
     return await CacheIndex.get(NativeAPI);
   }
 
-  static getMACAdress() {
-    let result = new Array();
+  /**
+   * То же, но дождавшись ответа Windows о сетевых картах (не дольше 3 с, один
+   * раз за запуск): до него USB-карту с обычным именем («Ethernet 3») не
+   * отличить от встроенной. Для запросов, по которым игра связывает твинков.
+   */
+  static async getMACAdresses() {
+    if (NativeAPI.status && NetAdapters.adapters === null) {
+      await Promise.race([NetAdapters.load(NativeAPI.childProcess, NativeAPI.platform), new Promise((resolve) => setTimeout(resolve, 3000))]);
+    }
+    return NativeAPI.getMACAdress();
+  }
 
+  /** MAC встроенных сетевых карт (без VPN, виртуальных, USB) — см. netAdapters.js. */
+  static getMACAdress() {
     if (!NativeAPI.status) {
-      return result;
+      return new Array();
     }
 
     try {
-      let networkInterfaces = NativeAPI.os.networkInterfaces();
-
-      for (let key in networkInterfaces) {
-        if (['Radmin VPN'].includes(`${key}`)) {
-          continue;
-        }
-
-        for (let networkInterface of networkInterfaces[key]) {
-          if (networkInterface.internal) {
-            continue;
-          }
-
-          if (!('mac' in networkInterface) || !networkInterface.mac || networkInterface.mac == '00:00:00:00:00:00') {
-            continue;
-          }
-
-          if (!result.includes(`${networkInterface.mac}`)) {
-            result.push(`${networkInterface.mac}`);
-          }
-        }
-      }
+      return NetAdapters.pick(NativeAPI.os.networkInterfaces(), NetAdapters.adapters);
     } catch (error) {
       console.log(error);
+      return new Array();
     }
-
-    return result;
   }
 
   static getLocale() {

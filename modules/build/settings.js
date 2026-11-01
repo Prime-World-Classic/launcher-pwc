@@ -33,6 +33,7 @@ const OPTIONS = [
     ],
   },
   { key: 'buildSetHoverOnTalent', label: 'buildSettingsSetHoverOnTalent', default: true, values: onOff },
+  { key: 'buildConsumablesFold', label: 'buildSettingsConsumablesFold', default: false, values: onOff },
 ];
 
 // кнопка одна на все окна билда: при смене героя или билда остаётся на месте, без мигания
@@ -90,7 +91,7 @@ export class BuildSettings {
     Settings.settings[key] = value;
     this.save();
     if (key === 'buildRowHoverHighlight' && !value) this.ed.highlight.clearRow();
-    if (key === 'buildTalentViewLayout') this.ed.library.applyLayout();
+    if (key === 'buildTalentViewLayout' || key === 'buildConsumablesFold') this.ed.library.applyLayout();
     if (key === 'buildSetSortMode') this.ed.library.renderSets();
   }
 

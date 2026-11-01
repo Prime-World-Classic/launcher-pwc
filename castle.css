@@ -3169,11 +3169,11 @@ body > :has(> #wbuild) .castle-bottom-content {
   background-position: center;
   background-size: contain;
   background-image: url('img/quest/5.png');
-  font-size: 17cqw;
+  font-size: 15cqw;
   font-weight: 700;
   line-height: 21cqw;
   text-align: center;
-  color: rgba(255, 255, 255, 0.9);
+  color: #f5e9ad;
   text-shadow: 0 0.18cqh 0.22cqh rgba(0, 0, 0, 0.75);
   pointer-events: none;
 }

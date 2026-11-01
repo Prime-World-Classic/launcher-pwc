@@ -425,7 +425,7 @@ export class MM {
           hero: MM.activeSelectHero,
           version: App.PW_VERSION,
           mode: CastleNAVBAR.mode,
-          mac: NativeAPI.getMACAdress(),
+          mac: await NativeAPI.getMACAdresses(),
           cache: await NativeAPI.getCacheIndex(),
           v: 2,
         });
@@ -1634,12 +1634,14 @@ export class MM {
       const rankContainer = findOldPlayer.firstChild.querySelector('.rank');
       Rank.setRankReady(rankContainer);
 
-      if (data.banHeroId) {
-        findOldPlayer.firstChild.lastChild.style.backgroundImage = `url(content/hero/${data.banHeroId}/1.webp)`;
+      // не lastChild: при войсе последней в портрете стоит кнопка мута (Voice.decorateLobbyPlayer)
+      const banNode = findOldPlayer.querySelector('.mm-player-ban');
+      if (banNode && data.banHeroId) {
+        banNode.style.backgroundImage = `url(content/hero/${data.banHeroId}/1.webp)`;
 
-        findOldPlayer.firstChild.lastChild.style.display = 'block';
-      } else {
-        findOldPlayer.firstChild.lastChild.style.display = 'none';
+        banNode.style.display = 'block';
+      } else if (banNode) {
+        banNode.style.display = 'none';
       }
     }
 
@@ -1779,12 +1781,12 @@ export class MM {
   static eventBanHero(data) {
     if (MM.lobbyUsers?.[data.id]) MM.lobbyUsers[data.id].banhero = data.heroId;
     MM.refreshLobbyHeroAvailability();
-    let findPlayer = document.getElementById(`PLAYER${data.id}`);
+    const banNode = document.getElementById(`PLAYER${data.id}`)?.querySelector('.mm-player-ban');
 
-    if (findPlayer) {
-      findPlayer.firstChild.lastChild.style.backgroundImage = `url(content/hero/${data.heroId}/1.webp)`;
+    if (banNode) {
+      banNode.style.backgroundImage = `url(content/hero/${data.heroId}/1.webp)`;
 
-      findPlayer.firstChild.lastChild.style.display = 'block';
+      banNode.style.display = 'block';
     }
   }
 

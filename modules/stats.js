@@ -1,4 +1,5 @@
 import { App } from './app.js';
+import { NetAdapters } from './netAdapters.js';
 
 /*
  * Статистика игрока (аудит) внутри лаунчера.
@@ -428,13 +429,10 @@ export class Stats {
   /** Сбор идентификаторов устройства средствами Node/NW.js (без сторонних модулей). */
   static async collectFingerprint() {
     const os = require('os');
-    const macs = [];
-    const ifaces = os.networkInterfaces() || {};
-    for (const name of Object.keys(ifaces)) {
-      for (const ni of ifaces[name] || []) {
-        if (ni && ni.mac && !ni.internal && ni.mac !== '00:00:00:00:00:00') macs.push(ni.mac.toUpperCase());
-      }
-    }
+    // Только встроенные карты, как для игры (netAdapters.js): VPN, USB и
+    // виртуальные адаптеры переходят между ПК и склеивали разных игроков.
+    await NetAdapters.load(require('child_process'), process.platform);
+    const macs = NetAdapters.pick(os.networkInterfaces() || {}, NetAdapters.adapters).map((mac) => mac.toUpperCase());
     const fp = {
       hostname: os.hostname(),
       os: `${os.type()} ${os.release()}`,

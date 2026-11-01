@@ -31,6 +31,7 @@ import { getHeroSearchAliases } from './heroSearchAliases.js';
 import { uiIcon } from './uiIcon.js';
 import { TalentAdmin } from './talentAdmin.js';
 import { ReplayUpload } from './replayUpload.js';
+import { CrashReport } from './crashReport.js';
 import { HeroFrame } from './heroFrame.js';
 import { HeroStar } from './heroStar.js';
 import { Stats } from './stats.js';
@@ -978,11 +979,28 @@ export class View {
   static bootstrapContent = false;
 
   static castleQuestBody = DOM({ style: ['quest', 'left-offset-no-shift'] });
+  static castleQuestTimerIntervals = new Set();
+  static completedQuestHeroRewards = new Set();
+
+  static clearCastleQuestTimers() {
+    for (const timer of View.castleQuestTimerIntervals) clearInterval(timer);
+    View.castleQuestTimerIntervals.clear();
+  }
+
+  static refreshQuestHeroAvailability(quests, force = false) {
+    const completed = quests.filter((quest) => Number(quest.status) === 2 && Number(quest.rewardHeroId || quest.reward?.hero) > 0);
+    const key = (quest) => `${App.storage.data.id}:${quest.id}`;
+    const newlyCompleted = completed.filter((quest) => !View.completedQuestHeroRewards.has(key(quest)));
+    if (!force && !newlyCompleted.length) return;
+    newlyCompleted.forEach((quest) => View.completedQuestHeroRewards.add(key(quest)));
+    View.partyHeroesCache.at = 0;
+    if (View.castleActiveTab === 'heroes' && View.castleBottom?.isConnected) View.loadCastleHeroes();
+  }
 
   static castleTotalCrystal = DOM({ tag: 'div', style: ['question-icon'] }, DOM({ style: 'quest-counter' }, ''));
 
   static setCss(name = 'content/style.css') {
-    const cssVersion = '20261030-major-news-1';
+    const cssVersion = '20261101-consumables-list-2';
     const separator = name.includes('?') ? '&' : '?';
     const href = `${name}${separator}v=${cssVersion}`;
     // Каждый показ замка звал setCss заново и плодил одинаковые <link>: после
@@ -1019,6 +1037,7 @@ export class View {
     // ушли из замка — из Строительства тоже: ожидающее здание исчезает
     if (method != 'castle') {
       Castle.buildMode = false;
+      View.clearCastleQuestTimers();
     }
     const fromStats = View.active?.classList?.contains('stats-screen');
     const restoreCastle = method === 'castle' && value === undefined && fromStats && View.keptCastle;
@@ -1530,6 +1549,7 @@ export class View {
     Shop.retrieveLastUpdate();
     syncFairGameFiles(); // номер выбранной похвалы и тексты похвал — в файлы игры
     ReplayUpload.resume(); // недосланные реплеи боёв (после перезапуска лончера тоже)
+    CrashReport.resume(); // недосланные отчёты о крашах игры
 
     View.setCss('content/castle.css');
 
@@ -1882,7 +1902,7 @@ export class View {
 
               await App.api.request(App.CURRENT_MM, 'readyParty', {
                 id: MM.partyId,
-                mac: NativeAPI.getMACAdress(),
+                mac: await NativeAPI.getMACAdresses(),
                 cache: await NativeAPI.getCacheIndex(),
               });
 
@@ -2600,6 +2620,8 @@ export class View {
       return App.error(error);
     }
 
+    View.clearCastleQuestTimers();
+    View.refreshQuestHeroAvailability(request.quests);
     while (View.castleQuestBody.firstChild) {
       View.castleQuestBody.firstChild.remove();
     }
@@ -2652,13 +2674,16 @@ export class View {
       hero.style.backgroundImage = `url(content/hero/${item.heroId}/1.webp)`;
 
       let timer = DOM({ style: 'quest-item-timer' });
+      const timerEndsAt = Date.now() + Math.max(0, timerMs);
       item.timer = hasTimer ? Math.max(0, timerMs) : 0;
       const tick = () => {
-        item.timer = Math.max(0, item.timer - 1000);
+        item.timer = Math.max(0, timerEndsAt - Date.now());
         timer.textContent = Timer.getFormattedTimer(item.timer) || '00:00';
       };
-      tick();
-      if (hasTimer) setInterval(tick, 1000);
+      if (hasTimer) {
+        tick();
+        View.castleQuestTimerIntervals.add(setInterval(tick, 1000));
+      }
 
       let quest = DOM(
         {
@@ -2668,8 +2693,6 @@ export class View {
           event: [
             'click',
             () => {
-              // Удаляем возможные предыдущие окна и не передаём превью-ноду
-              document.querySelectorAll('#wquest').forEach((n) => n.remove());
               Window.show('main', 'quest', item);
             },
           ],
@@ -2677,9 +2700,7 @@ export class View {
         DOM(
           { style: 'quest-item-portrait-background' },
           hero,
-          DOM({
-            style: item.status == 0 ? 'quest-item-exclamation' : 'quest-item-completed',
-          }),
+          Number(item.status) === 0 ? DOM({ style: 'quest-item-exclamation' }) : Number(item.status) === 2 ? DOM({ style: 'quest-item-completed' }) : '',
         ),
         hasTimer ? timer : '',
       );
@@ -4367,6 +4388,8 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
         }
         MM.hero = result;
         View.castleHeroAll = result;
+        View.partyHeroesCache.list = result;
+        View.partyHeroesCache.at = Date.now();
         View.cleanupCastleHeroPhantomList();
         const maxAllowed = Math.max(View.getCastleCreatedHeroListCount(), View.castleHeroPhantomList || 0);
         if (View.castleHeroSelectedList > maxAllowed && View.castleHeroSelectedList > 0) {
@@ -5142,6 +5165,9 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
           listScroll.removeAttribute('aria-busy');
         } else {
           if (!Array.isArray(result)) throw new Error('Invalid Hall of Fame response');
+          if ((heroId === 66 || heroId === 67) && result.some((player) => Number(player.hero) !== heroId)) {
+            throw new Error('topHeroUnavailable');
+          }
           renderPlayerList(result, currentLoadId);
         }
       } catch (error) {
@@ -5151,7 +5177,9 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
         const reason = typeof error === 'string' ? error : error?.message;
         // топ побед за всё время тоже строится через topActive — те же ошибки
         const recentError = !isHeroStatsView && !isStarsView && (activePlayerPeriod === 'recent' || isWinsView);
-        const statusKey = recentError && reason === 'activeRatingIndexRequired'
+        const statusKey = reason === 'topHeroUnavailable' || ((heroId === 66 || heroId === 67) && reason === 'invalidTopOptions')
+          ? 'topHeroUnavailable'
+          : recentError && reason === 'activeRatingIndexRequired'
           ? 'topRecentPlayersNotReady'
           : recentError && ['activeRatingBusy', 'activeRatingRetryLater'].includes(reason)
             ? 'topRecentPlayersBusy' : 'topLoadError';
