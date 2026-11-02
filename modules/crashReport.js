@@ -32,7 +32,9 @@ import { ReplayUpload } from './replayUpload.js';
 // crash.begin → crash.chunk × N → crash.finish. От игрока ничего не нужно.
 // В crash.begin идёт и краткая сводка (summary): код исключения и стек именами
 // функций — по Bin\PW_Game.sym.xz (таблица имён, собирается вместе с exe:
-// Tools/WineClientBuild/make_symbols.py), если она от того же exe.
+// Tools/WineClientBuild/make_symbols.py), если она от того exe, что упал: отчёт могут
+// дослать уже после обновления игры, поэтому штамп exe берётся из дампа, а у отчёта
+// без дампа — из отметки лончера при выходе игры. Другой exe — вместо имён адреса.
 // На бой бэкенд берёт один архив: у остальных игроков того же боя отказ ещё
 // на begin ({skip}), а пока архив боя грузит другой — {retry}, повтор позже.
 //
@@ -207,7 +209,7 @@ export class CrashReport {
       return;
     }
 
-    const note = JSON.stringify({ exitCode: CrashReport.hex(code), fastfail: await CrashReport.fastfailBlock() }, null, 2);
+    const note = JSON.stringify({ exitCode: CrashReport.hex(code), exe: await CrashReport.installedExe(), fastfail: await CrashReport.fastfailBlock() }, null, 2);
     if (fatal.length) {
       // последний дамп — ближайший к выходу; ранние — от обработанных исключений
       await fs.promises.writeFile(NativeAPI.path.join(run.folderPath, `${fatal.at(-1)}.crash`), note);
@@ -462,11 +464,12 @@ export class CrashReport {
 
     const asyncReport = asyncData ? CrashReport.parseAsyncReport(asyncData.toString('latin1')) : null;
     const crash = dump.kind === 'exception' ? CrashReport.parseExceptionLog(exceptionText) : CrashReport.parseFastfail(String(note.fastfail || ''));
-    const symbols = asyncReport ? null : await CrashReport.loadSymbols().catch(() => null);
+    const exe = CrashReport.dumpExe(files.find((file) => file.name === dump.name)?.data) || note.exe || null;
+    const symbols = asyncReport ? null : await CrashReport.loadSymbols(exe).catch(() => null);
     const stack = crash.frames.map((rva) => CrashReport.symbolize(symbols, rva));
     const summary = asyncReport
       ? CrashReport.asyncSummary(asyncReport, await CrashReport.exeStamp(), CrashReport.fpHash(fastfailTail))
-      : CrashReport.summary(dump.kind, note.exitCode, crash, stack);
+      : CrashReport.summary(dump.kind, note.exitCode, crash, stack, exe);
 
     const watching = CrashReport.watchSession && dump.mtime >= CrashReport.watchSince - 60000;
     const meta = {
@@ -475,6 +478,7 @@ export class CrashReport {
       folder: dump.folder,
       crashTime: new Date(dump.crashTime || dump.mtime).toISOString(),
       exitCode: note.exitCode || '',
+      exe: exe ? exe.timestamp : '',
       session: (watching && CrashReport.watchSession) || (replay && replay.session) || '',
       replay: replay ? replay.name : '',
       summary,
@@ -534,20 +538,52 @@ export class CrashReport {
     return { code, detail, frames };
   }
 
-  // Таблица имён Bin\PW_Game.sym.xz, если она от установленного PW_Game.exe: {timestamp, rvas, names}
-  static async loadSymbols() {
+  // PW_Game.exe из таблицы модулей минидампа: {timestamp, size} как в peHeader; нет — null
+  static dumpExe(data) {
+    if (!data || data.length < 32 || data.toString('latin1', 0, 4) !== 'MDMP') return null;
+    try {
+      const count = data.readUInt32LE(8);
+      const directory = data.readUInt32LE(12);
+      if (directory + 12 * count > data.length) return null;
+      for (let i = 0; i < count; i++) {
+        if (data.readUInt32LE(directory + 12 * i) !== 4) continue;
+        const list = data.readUInt32LE(directory + 12 * i + 8);
+        const modules = data.readUInt32LE(list);
+        for (let m = 0; m < modules; m++) {
+          const entry = list + 4 + 108 * m;
+          const name = data.readUInt32LE(entry + 20);
+          const text = data.toString('utf16le', name + 4, name + 4 + data.readUInt32LE(name));
+          if (text.toLowerCase().endsWith('pw_game.exe')) {
+            return {
+              timestamp: data.readUInt32LE(entry + 16).toString(16).padStart(8, '0'),
+              size: data.readUInt32LE(entry + 8).toString(16),
+            };
+          }
+        }
+      }
+    } catch {}
+    return null;
+  }
+
+  // Заголовок установленного PW_Game.exe: {timestamp, size} | null
+  static async installedExe() {
+    return CrashReport.peHeader(await CrashReport.readHead(NativeAPI.path.join(process.cwd(), CrashReport.GAME_BIN, 'PW_Game.exe'), 4096));
+  }
+
+  // Таблица имён Bin\PW_Game.sym.xz, если и она, и установленный PW_Game.exe — от упавшего exe: {timestamp, rvas, names}
+  static async loadSymbols(crashed) {
+    if (!crashed) return null;
     const fs = NativeAPI.fileSystem;
     const bin = NativeAPI.path.join(process.cwd(), CrashReport.GAME_BIN);
     const symPath = NativeAPI.path.join(bin, 'PW_Game.sym.xz');
-    const exePath = NativeAPI.path.join(bin, 'PW_Game.exe');
     let stat;
     try {
       stat = await fs.promises.stat(symPath);
     } catch {
       return null;
     }
-    const exe = CrashReport.peHeader(await CrashReport.readHead(exePath, 4096));
-    if (!exe) return null;
+    const exe = await CrashReport.installedExe();
+    if (!exe || exe.timestamp !== crashed.timestamp || exe.size !== crashed.size) return null;
     const key = `${stat.mtimeMs}:${stat.size}:${exe.timestamp}:${exe.size}`;
     if (CrashReport.symbolsCache && CrashReport.symbolsCache.key === key) return CrashReport.symbolsCache.table;
 
@@ -626,7 +662,7 @@ export class CrashReport {
   }
 
   // Короткий текст для Telegram: что случилось и где
-  static summary(kind, exitCode, crash, stack) {
+  static summary(kind, exitCode, crash, stack, exe) {
     const lines = [];
     if (crash.code) {
       const text = CrashReport.CODE_TEXT[crash.code];
@@ -637,6 +673,7 @@ export class CrashReport {
       const text = CrashReport.CODE_TEXT[code];
       lines.push(`Игра закрылась без окна краша, код выхода ${code || '?'}${text && code !== crash.code ? ` (${text})` : ''}${kind === 'crash' ? ', дампа нет' : ''}`);
     }
+    if (exe) lines.push(`exe ${exe.timestamp}`);
     for (const frame of stack.slice(0, CrashReport.SUMMARY_FRAMES)) {
       lines.push(`  ${frame.length > 140 ? `${frame.slice(0, 137)}...` : frame}`);
     }
@@ -753,7 +790,7 @@ export class CrashReport {
   }
 
   static async exeStamp() {
-    const exe = CrashReport.peHeader(await CrashReport.readHead(NativeAPI.path.join(process.cwd(), CrashReport.GAME_BIN, 'PW_Game.exe'), 4096));
+    const exe = await CrashReport.installedExe();
     return exe ? exe.timestamp : '';
   }
 

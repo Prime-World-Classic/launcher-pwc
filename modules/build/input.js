@@ -12,8 +12,13 @@ const CLICK_MS = 200;
 const CLICK_DISTANCE = 6;
 const LIBRARY_CLICK_COOLDOWN_MS = 50;
 const SET_HOVER_DELAY_MS = 30;
+const DRAG_SCALE = 1.1;
+// на каком расстоянии от панели активных (в кнопках) талант начинает уменьшаться
+const BAR_SHRINK_SLOTS = 2.5;
 
 const inside = (rect, x, y) => x > rect.left && x < rect.right && y > rect.top && y < rect.bottom;
+// квадрат со стороной size и тем же центром, что у rect
+const centered = (rect, size) => ({ left: rect.left + (rect.width - size) / 2, top: rect.top + (rect.height - size) / 2, width: size, height: size });
 
 export class TalentInput {
   constructor(ed) {
@@ -212,6 +217,9 @@ export class TalentInput {
     const shift = { x: e.clientX - start.left, y: e.clientY - start.top };
     const drag = { node, talent, source, at: Date.now(), from: { x: e.clientX, y: e.clientY }, x: start.left, y: start.top, raf: 0 };
     this.drag = drag;
+    drag.scale = DRAG_SCALE;
+    drag.grip = { x: shift.x - start.width / 2, y: shift.y - start.height / 2 };
+    drag.approach = source.kind === 'field' && Number(talent.active) === 1 ? this.barApproach(node, e.clientX, e.clientY) : null;
     drag.row = source.kind !== 'active' ? document.getElementById(`bfr${talent.level}`) : null;
     drag.row?.classList.add('build-field-row--drag-source');
     // колонка и ряд таланта — над панелью активных и соседними рядами, пока талант летит
@@ -224,29 +232,55 @@ export class TalentInput {
       node.classList.add('build-talent-drag-smartcast');
     }
     Object.assign(node.style, { transformOrigin: 'center center', willChange: 'transform', transition: 'transform 0.1s ease', zIndex: '9999', position: 'fixed', left: `${start.left}px`, top: `${start.top}px` });
-    node.style.setProperty('transform', 'scale(1.1)', 'important');
+    node.style.setProperty('transform', `scale(${DRAG_SCALE})`, 'important');
 
     // Курсор двигает талант через transform, не чаще раза за кадр. Не через свойство translate: его
     // смену браузер не передаёт слою напрямую и каждый кадр заново собирает слои всего окна билда
     // (Layerize по ~800 талантам) — на слабых ПК перенос шёл рывками. Переход transform — только
     // первые 100 мс (талант «подпрыгивает» при захвате), дальше он не должен отставать от курсора.
     drag.move = (event) => {
-      drag.x = event.clientX - shift.x;
-      drag.y = event.clientY - shift.y;
+      drag.cursor = { x: event.clientX, y: event.clientY };
+      if (drag.approach) drag.scale = this.scaleNearBar(drag.approach, event.clientX, event.clientY);
+      // уменьшаясь, талант сжимается к точке захвата: курсор остаётся на иконке
+      const pull = 1 - drag.scale / DRAG_SCALE;
+      drag.x = event.clientX - shift.x + drag.grip.x * pull;
+      drag.y = event.clientY - shift.y + drag.grip.y * pull;
       drag.raf ||= requestAnimationFrame(() => {
         drag.raf = 0;
         if (!drag.instant && Date.now() - drag.at > 100) {
           drag.instant = true;
           node.style.transition = 'none';
         }
-        node.style.setProperty('transform', `translate(${drag.x - start.left}px, ${drag.y - start.top}px) scale(1.1)`, 'important');
-        this.showDividers(drag.x + shift.x, drag.y + shift.y);
+        node.style.setProperty('transform', `translate(${drag.x - start.left}px, ${drag.y - start.top}px) scale(${drag.scale})`, 'important');
+        this.showDividers(drag.cursor.x, drag.cursor.y);
       });
     };
     // бросок ловим на документе: курсор мог обогнать талант
     drag.up = (event) => this.drop(event);
     document.addEventListener('mousemove', drag.move);
     document.addEventListener('mouseup', drag.up);
+  }
+
+  // Что нужно, чтобы уменьшать активный талант у панели: панель за время переноса не двигается,
+  // поэтому размеры читаем один раз. Сравниваем картинки, а не блоки: на поле картинка меньше
+  // блока таланта (background-size в main.css), на панели занимает его целиком. Талант снизу поля
+  // уже близко к панели: отсчёт — от точки захвата, иначе он сжимался бы сразу, как только его подняли.
+  barApproach(node, x, y) {
+    const slot = this.ed.activeSlots.find((item) => item.clientWidth)?.clientWidth;
+    const size = parseFloat(getComputedStyle(node).backgroundSize.match(/^[\d.]+(?=px)/)?.[0]) || node.offsetWidth;
+    if (!slot || !size || slot >= size * DRAG_SCALE) return null;
+    const bar = this.ed.activeBarView.getBoundingClientRect();
+    const radius = Math.min(Math.max(this.barDistance(bar, x, y), slot), slot * BAR_SHRINK_SLOTS);
+    return { bar, slot, target: slot / size, radius };
+  }
+
+  barDistance(bar, x, y) {
+    return Math.hypot(Math.max(bar.left - x, 0, x - bar.right), Math.max(bar.top - y, 0, y - bar.bottom));
+  }
+
+  // вдали от панели — обычный размер переноса, над самой панелью — точно размер кнопки
+  scaleNearBar({ bar, target, radius }, x, y) {
+    return target + (DRAG_SCALE - target) * Math.min(this.barDistance(bar, x, y) / radius, 1);
   }
 
   // вернуть виду таланта обычное состояние
@@ -276,7 +310,7 @@ export class TalentInput {
     if (!drag) return;
     const { node, talent, source } = drag;
     node.style.transition = 'none';
-    node.style.setProperty('transform', 'scale(1.1)', 'important');
+    node.style.setProperty('transform', `scale(${drag.scale})`, 'important');
     node.style.left = `${drag.x}px`;
     node.style.top = `${drag.y}px`;
     const rect = node.getBoundingClientRect();
@@ -303,7 +337,11 @@ export class TalentInput {
       return slot ? Number(slot.dataset.index) : -1;
     };
     const key = source.kind === 'active' ? `a${talent.id}` : `t${talent.id}`;
-    const at = { drop: { key, rect } };
+    // копия летит от верхнего левого угла своего блока: у сжатого таланта берём блок той же
+    // величины вокруг его центра, иначе копия появлялась бы со сдвигом
+    const barRect = drag.approach ? centered(rect, drag.approach.slot) : rect;
+    const homeRect = drag.approach ? centered(rect, node.offsetWidth) : rect;
+    const at = { drop: { key, rect: homeRect } };
     let done = false;
 
     if (source.kind === 'library') {
@@ -316,7 +354,7 @@ export class TalentInput {
         const index = barSlot();
         // уже на панели — новая кнопка летит со старой, иначе — с точки броска
         const already = activeIndexOf(ed.active, source.slot) >= 0;
-        done = index >= 0 && ed.assignActive(source.slot, index, already ? {} : { drop: { key: `a${talent.id}`, rect } });
+        done = index >= 0 && ed.assignActive(source.slot, index, already ? {} : { drop: { key: `a${talent.id}`, rect: barRect } });
         // оригинал на поле возвращается без полёта: летит одна иконка
         if (done) return this.afterDrop(event, false);
       } else done = ed.remove(source.slot, at); // в библиотеку или мимо окна — снять
@@ -328,7 +366,7 @@ export class TalentInput {
       } else done = ed.clearActive(source.index, rect);
     }
     // ничего не поменялось — талант плавно возвращается на место
-    if (!done) animateMove(node, rect, 180);
+    if (!done) animateMove(node, homeRect, 180);
     const transfer = done && (source.kind === 'library' || ((source.kind === 'field') && !ed.inBuild(talent.id)));
     this.afterDrop(event, transfer, click && source.kind === 'library');
   }

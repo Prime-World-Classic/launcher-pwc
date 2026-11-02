@@ -9,6 +9,7 @@
 //   nativeTerrain()            «на родной земле» (переключатель лаунчера)
 //   isMale()
 //   talents()                  [{ id, refineRate }] талантов билда (переменные героя sender.vX)
+//   cooldownHero               герой для формулы отката, если она видит больше талантов, чем текст
 // state — { refineRate, level (ряд таланта, 0…5), bought, inBuild (талант стоит в билде — для наборов) }
 
 import { ClientData, ABILITY_TYPES } from './clientData.js';
@@ -204,7 +205,7 @@ export class TalentTooltip {
       case 'ManaCost':
         return this.evaluate(talent, refineRate, talent.manaCost);
       case 'Cooldown':
-        return this.evaluate(talent, refineRate, talent.cooldown);
+        return this.cooldown(talent, refineRate);
       case 'TalentDevPoints':
         return talent.devPoints;
       case 'NaftaCost':
@@ -227,6 +228,17 @@ export class TalentTooltip {
         this.unknown.add(`m${name}`);
         return 0;
     }
+  }
+
+  // Откат: формула видит таланты hero.cooldownHero, даже когда остальной текст — без улучшений
+  cooldown(talent, refineRate) {
+    if (!this.hero.cooldownHero) return this.evaluate(talent, refineRate, talent.cooldown);
+    if (!this.cooldownTooltip) {
+      this.cooldownTooltip = new TalentTooltip(this.talent, this.hero.cooldownHero, this.state, this.lang);
+      this.cooldownTooltip.others = this.others;
+      this.cooldownTooltip.unknown = this.unknown;
+    }
+    return this.cooldownTooltip.evaluate(talent, refineRate, talent.cooldown);
   }
 
   evaluate(talent, refineRate, formula, type) {
@@ -331,7 +343,7 @@ export class TalentTooltip {
     switch (path) {
       case 'talent.cooldown':
         // <cd> — лаунчер пересчитывает откат с бонусами билда
-        return `<cd>${formatValue(this.evaluate(t, this.state.refineRate, t.cooldown), params?.format)}</cd>`;
+        return `<cd>${formatValue(this.cooldown(t, this.state.refineRate), params?.format)}</cd>`;
       case 'talent.manaCost':
         return this.evaluate(t, this.state.refineRate, t.manaCost);
       case 'talent.refineRate':

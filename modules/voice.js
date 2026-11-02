@@ -121,6 +121,8 @@ export class Voice {
 
   static userMedia = null;
 
+  static micUnavailable = false;
+
   static localMediaPromise = null;
 
   static reacquireMicPromise = null;
@@ -707,7 +709,10 @@ export class Voice {
     if (!Voice.userMedia || !Voice.mic) {
       await Voice.initLocalMedia();
     }
-    if (!Voice.mic) return;
+    if (!Voice.mic) {
+      if (enabled) App.error(Lang.text('voiceMicUnavailable'));
+      return;
+    }
     if (Voice.mic.enabled === Boolean(enabled)) return;
     Voice.mic.enabled = Boolean(enabled);
     Voice.updateInfoPanel();
@@ -799,7 +804,7 @@ export class Voice {
     try {
       Voice.userMedia = await navigator.mediaDevices.getUserMedia(Voice.getMediaConstraints());
     } catch (error) {
-      return App.error(Lang.text('mediaDevicesError').replace('{error}', error));
+      return Voice.onMicUnavailable(error?.name || error);
     }
 
     let tracks = new Array();
@@ -807,38 +812,24 @@ export class Voice {
     try {
       tracks = Voice.userMedia.getTracks();
     } catch (error) {
-      return App.error(Lang.text('streamTracksError').replace('{error}', error));
+      return Voice.onMicUnavailable(error?.name || error);
     }
 
     if (!tracks.length) {
-      return App.error(Lang.text('mediaTracksLack'));
+      return Voice.onMicUnavailable('no-tracks');
     }
 
     if (tracks[0].kind != 'audio') {
-      return App.error(Lang.text('cantDefaultMic'));
+      return Voice.onMicUnavailable('not-audio');
     }
 
+    Voice.micUnavailable = false;
     Voice.rawMic = tracks[0];
     Voice.watchRawMic(Voice.rawMic);
 
     try {
-      Voice.processingContext = new AudioContext();
-      Voice.processingInput = Voice.processingContext.createMediaStreamSource(new MediaStream([Voice.rawMic]));
-      Voice.processingGain = Voice.processingContext.createGain();
-      Voice.processingGain.gain.value = 2.1;
-      Voice.processingCompressor = Voice.processingContext.createDynamicsCompressor();
-      Voice.processingCompressor.threshold.value = -30;
-      Voice.processingCompressor.knee.value = 20;
-      Voice.processingCompressor.ratio.value = 3.5;
-      Voice.processingCompressor.attack.value = 0.01;
-      Voice.processingCompressor.release.value = 0.22;
-      Voice.processingDestination = Voice.processingContext.createMediaStreamDestination();
-
-      Voice.processingInput.connect(Voice.processingGain);
-      Voice.processingGain.connect(Voice.processingCompressor);
-      Voice.processingCompressor.connect(Voice.processingDestination);
-
-      const processedTrack = Voice.processingDestination.stream.getAudioTracks()[0];
+      const processedTrack = Voice.ensureMicProcessing();
+      Voice.connectMicInput(Voice.rawMic);
       Voice.mic = processedTrack || Voice.rawMic;
     } catch (error) {
       console.log('Voice DSP init failed, fallback to raw mic:', error);
@@ -849,6 +840,57 @@ export class Voice {
       // В режиме рации микрофон включается только удержанием клавиши.
       Voice.mic.enabled = Voice.getInitialMicEnabled();
     }
+  }
+
+  // Без микрофона войс работает на приём: звонки матча идут сами по себе (и переподключаются),
+  // поэтому здесь без App.error — иначе в тамбуре ошибка на каждый звонок. Об этом говорит панель,
+  // а ошибку показывают только нажатия самого игрока (toggleEnabledMic, setMicEnabled).
+  // Цепочка обработки создаётся и без микрофона: собеседникам уходит её тихая дорожка, и
+  // подключённый позже микрофон слышно сразу, без перезвона.
+  static onMicUnavailable(reason) {
+    Voice.userMedia = null;
+    Voice.micUnavailable = true;
+    Voice.log('mic-unavailable', { error: String(reason) });
+    try {
+      Voice.ensureMicProcessing();
+    } catch (error) {
+      console.log('Voice DSP init failed, no silent track:', error);
+    }
+    Voice.listenDeviceChange();
+  }
+
+  // Дорожка для звонка: микрофон, а пока его нет — тихая дорожка той же цепочки обработки.
+  static getOutgoingTrack() {
+    return Voice.mic || Voice.processingDestination?.stream.getAudioTracks()[0] || null;
+  }
+
+  static ensureMicProcessing() {
+    if (!Voice.processingContext) {
+      Voice.processingContext = new AudioContext();
+      Voice.processingGain = Voice.processingContext.createGain();
+      Voice.processingGain.gain.value = 2.1;
+      Voice.processingCompressor = Voice.processingContext.createDynamicsCompressor();
+      Voice.processingCompressor.threshold.value = -30;
+      Voice.processingCompressor.knee.value = 20;
+      Voice.processingCompressor.ratio.value = 3.5;
+      Voice.processingCompressor.attack.value = 0.01;
+      Voice.processingCompressor.release.value = 0.22;
+      Voice.processingDestination = Voice.processingContext.createMediaStreamDestination();
+
+      Voice.processingGain.connect(Voice.processingCompressor);
+      Voice.processingCompressor.connect(Voice.processingDestination);
+    }
+    return Voice.processingDestination.stream.getAudioTracks()[0] || null;
+  }
+
+  static connectMicInput(track) {
+    try {
+      Voice.processingInput?.disconnect?.();
+    } catch {}
+    Voice.processingInput = Voice.processingContext.createMediaStreamSource(new MediaStream([track]));
+    Voice.processingInput.connect(Voice.processingGain);
+    // Созданный без микрофона контекст мог остаться приостановленным.
+    Voice.processingContext.resume?.()?.catch?.(() => {});
   }
 
   static getMediaConstraints() {
@@ -873,14 +915,19 @@ export class Voice {
       Voice.reacquireMic();
     });
 
-    if (!Voice.deviceChangeListening && navigator.mediaDevices?.addEventListener) {
-      Voice.deviceChangeListening = true;
-      navigator.mediaDevices.addEventListener('devicechange', () => {
-        if (Voice.userMedia && Voice.rawMic?.readyState === 'ended') {
-          Voice.reacquireMic();
-        }
-      });
-    }
+    Voice.listenDeviceChange();
+  }
+
+  static listenDeviceChange() {
+    if (Voice.deviceChangeListening || !navigator.mediaDevices?.addEventListener) return;
+    Voice.deviceChangeListening = true;
+    navigator.mediaDevices.addEventListener('devicechange', () => {
+      if (Voice.userMedia && Voice.rawMic?.readyState === 'ended') {
+        Voice.reacquireMic();
+      } else if (Voice.micUnavailable && Object.keys(Voice.manager).length) {
+        Voice.initLocalMedia().then(() => Voice.updateInfoPanel());
+      }
+    });
   }
 
   static reacquireMic() {
@@ -917,11 +964,7 @@ export class Voice {
     Voice.watchRawMic(track);
 
     if (Voice.processingContext && Voice.processingGain && Voice.mic !== oldRaw) {
-      try {
-        Voice.processingInput?.disconnect?.();
-      } catch {}
-      Voice.processingInput = Voice.processingContext.createMediaStreamSource(new MediaStream([track]));
-      Voice.processingInput.connect(Voice.processingGain);
+      Voice.connectMicInput(track);
     } else {
       // Без обработки собеседникам уходит сама дорожка микрофона — меняем её в отправителях.
       track.enabled = Voice.mic ? Voice.mic.enabled : Voice.getInitialMicEnabled();
@@ -976,7 +1019,7 @@ export class Voice {
     }
 
     if (!Voice.mic) {
-      return App.error(Lang.text('cantDefaultMic'));
+      return App.error(Lang.text('voiceMicUnavailable'));
     }
 
     Voice.mic.enabled = !Voice.mic.enabled;
@@ -1154,10 +1197,19 @@ export class Voice {
     // Подсказки по управлению — карточкой при наведении на панель («?» в углу — что они есть).
     let tutorial = '';
 
-    if (Voice.mic) {
+    if (Voice.mic || Voice.micUnavailable) {
       const dropKey = Voice.formatHotkey(Settings.settings?.voiceDropHotkey, 'Ctrl+K');
       const hintDivider = '<span class="voice-info-panel-hint-divider"></span>';
-      if (Voice.mic.enabled) {
+      if (!Voice.mic) {
+        tutorial =
+          Lang.text('voiceMicUnavailable') +
+          hintDivider +
+          `<strong>${dropKey}</strong>${Lang.text('hotkeyDropCallsSuffix')}` +
+          hintDivider +
+          Lang.text('hotkeyVolumeControl') +
+          hintDivider +
+          Lang.text('voicePeerVolumeHint');
+      } else if (Voice.mic.enabled) {
         tutorial =
           `<strong>${dropKey}</strong>${Lang.text('hotkeyDropCallsSuffix')}` +
           hintDivider +
@@ -1706,6 +1758,12 @@ export class Voice {
       App.say(Lang.text('callsDropped'));
     }
 
+    // Без микрофона от звонков осталась только цепочка с тихой дорожкой.
+    if (full && !Voice.mic) {
+      Voice.resetMicProcessing();
+      Voice.micUnavailable = false;
+    }
+
     if (Voice.mic) {
       if (full) {
         try {
@@ -2251,8 +2309,9 @@ export class Voice {
       });
     }
 
-    if (Voice.mic) {
-      this.peer.addTrack(Voice.mic);
+    const outgoingTrack = Voice.getOutgoingTrack();
+    if (outgoingTrack) {
+      this.peer.addTrack(outgoingTrack);
     }
 
     await this.applyIceServers();
@@ -2311,8 +2370,9 @@ export class Voice {
 
     await Voice.initLocalMedia();
 
-    if (Voice.mic) {
-      this.peer.addTrack(Voice.mic);
+    const outgoingTrack = Voice.getOutgoingTrack();
+    if (outgoingTrack) {
+      this.peer.addTrack(outgoingTrack);
     }
 
     await this.applyIceServers();

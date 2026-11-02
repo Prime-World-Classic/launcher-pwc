@@ -263,10 +263,10 @@ export class Tooltip {
   }
 
   // <cd>N</cd> -> «N ⟶ M», M — с учётом снижения отката героя и бонусов сетов (в скобках — без сетов).
-  // Это улучшения от других талантов: только в боевом режиме, иначе — откат самого таланта
+  // Считается всегда: вне боевого режима — по всему билду, в боевом — по изученным талантам
   applyCooldown(talent) {
     const nodes = this.view.querySelectorAll('cd');
-    if (!nodes.length || !this.ed.combat) return;
+    if (!nodes.length) return;
     const delta = Number.isFinite(Number(talent?.id)) ? Sets.cooldownDelta(talent.id, this.ed.effectiveBody()) : 0;
     const pct = Math.max(0, Math.min(TALENT_COOLDOWN_PCT_MAX, Number(this.ed.engine.total('speedtal')) || 0));
     if (pct <= 0 && delta === 0) return;

@@ -210,9 +210,16 @@ export class BuildClientTooltip {
     // таланты, чьи улучшения видны в подсказке (tal(), флаги улучшений, заточка для talconst);
     // окно билда отдаёт их только в боевом режиме, без поля — все таланты билда
     const upgrades = Build.upgradeTalents ? byPid(Build.upgradeTalents) : installed;
+    const upgradesView = (list) => ({
+      // даёт улучшения — для формул (tal("…"))
+      hasUpgrade: (pid) => list.has(pid),
+      // таланты с заточкой — для переменных героя (счётчики наборов, флаги улучшений)
+      talents: () => [...list.values()].map((talent) => ({ id: Number(talent.id), refineRate: BuildClientTooltip.refineRate(Build, talent) })),
+      talentRefineRate: (pid) => (list.has(pid) ? BuildClientTooltip.refineRate(Build, list.get(pid)) : null),
+    });
     const recommended = new Set(BuildClientTooltip.heroData?.recommended || []);
     const baseStat = (key) => (Number(Build.initialStats?.[key]) || 0) + (Number(Build.heroStatsFromPower?.[key]) || 0);
-    return {
+    const model = {
       stat(name) {
         if (name === 'NaftaLevel') return 0;
         if (name.startsWith('Base')) {
@@ -231,14 +238,11 @@ export class BuildClientTooltip {
       },
       // в билде — для наборов («собрано N»)
       hasTalent: (pid) => installed.has(pid),
-      // даёт улучшения — для формул (tal("…"))
-      hasUpgrade: (pid) => upgrades.has(pid),
-      // таланты с заточкой — для переменных героя (счётчики наборов, флаги улучшений)
-      talents: () => [...upgrades.values()].map((talent) => ({ id: Number(talent.id), refineRate: BuildClientTooltip.refineRate(Build, talent) })),
-      talentRefineRate: (pid) => (upgrades.has(pid) ? BuildClientTooltip.refineRate(Build, upgrades.get(pid)) : null),
       nativeTerrain: () => !!Build.applyRz,
       isMale: () => true,
     };
+    // откат считается всегда: его формула видит все таланты билда и вне боевого режима
+    return { ...model, ...upgradesView(upgrades), cooldownHero: { ...model, ...upgradesView(installed) } };
   }
 
   // HTML подсказки таланта (рамка, шрифт и стили игры) или null, если данных игры нет.

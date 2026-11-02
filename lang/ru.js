@@ -640,10 +640,7 @@ export const ru = {
     //Войс
     enableMic: 'Нажмите <strong>Ctrl+Z</strong> или на свой Ник, чтобы включить: {Voice.mic.label}',
     enableMicSuffix: ' или на свой Ник, чтобы включить: {Voice.mic.label}',
-    mediaDevicesError: 'Не можем получить доступ к медиа устройствам: {error}',
-    streamTracksError: 'Не можем получить дорожки потоков: {error}',
-    mediaTracksLack: 'Отсутствие медиа потоков',
-    cantDefaultMic: 'Не можем найти микрофон по умолчанию',
+    voiceMicUnavailable: 'Микрофон недоступен: собеседников слышно, а вас нет. Проверьте, подключён ли он и разрешён ли в настройках Windows',
     waitingResponse: 'ожидание ответа',
     voiceConnecting: 'соединение',
     voiceReconnectingAttempt: 'переподключение {attempt}',

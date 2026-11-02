@@ -632,10 +632,7 @@ export const en = {
 
     enableMic: 'Press <strong>Ctrl+Z</strong> or click your Nickname to enable: {Voice.mic.label}',
     enableMicSuffix: ' or click your Nickname to enable: {Voice.mic.label}',
-    mediaDevicesError: 'Cannot access media devices: {error}',
-    streamTracksError: 'Cannot get stream tracks: {error}',
-    mediaTracksLack: 'No media tracks available',
-    cantDefaultMic: 'Cannot find default microphone',
+    voiceMicUnavailable: 'Microphone unavailable: you can hear others, but they cannot hear you. Check that it is plugged in and allowed in Windows settings',
     waitingResponse: 'waiting for response',
     voiceConnecting: 'connecting',
     voiceReconnectingAttempt: 'reconnecting {attempt}',
