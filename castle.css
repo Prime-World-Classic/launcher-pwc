@@ -768,71 +768,86 @@ body {
   transform: scale(0.7);
 }
 
-.castle-button-play-m1 {
-  z-index: 3;
-  background-image: url('img/m1.png');
-  width: 4vh; /* Изменено с vw на vh */
+/* modes that are not selected sit in the sockets of the wings left and right of the party slots;
+   left (vh) is set by CastleNAVBAR.layoutModes, the selected mode is hidden (it is in the circle) */
+.castle-button-play-m1,
+.castle-button-play-m2,
+.castle-button-play-m3,
+.castle-button-play-m4,
+.castle-button-play-m5,
+.castle-button-play-m6 {
+  z-index: 2;
+  width: 4vh;
   aspect-ratio: 1/1;
-  top: 3.9vh; /* Изменено с vw на vh */
-  right: 14vh; /* Изменено с vw на vh */
+  top: 0.6vh;
   transform: scale(0.6);
-  display: none;
+}
+
+.castle-button-play-m1:hover,
+.castle-button-play-m2:hover,
+.castle-button-play-m3:hover,
+.castle-button-play-m4:hover,
+.castle-button-play-m5:hover,
+.castle-button-play-m6:hover {
+  z-index: 8;
+}
+
+.castle-button-play-m1 {
+  background-image: url('img/m1.png');
 }
 
 .castle-button-play-m2 {
-  z-index: 1;
   background-image: url('img/m2.png');
-  width: 4vh; /* Изменено с vw на vh */
-  aspect-ratio: 1/1;
-  top: 3.9vh; /* Изменено с vw на vh */
-  right: 10.6vh; /* Изменено с vw на vh */
-  transform: scale(0.6);
-  display: none;
 }
 
 .castle-button-play-m3 {
-  z-index: 1;
   background-image: url('img/m3.png');
-  width: 4vh; /* Изменено с vw на vh */
-  aspect-ratio: 1/1;
-  top: 3.9vh; /* Изменено с vw на vh */
-  left: 3.78vh; /* Изменено с vw на vh */
-  transform: scale(0.6);
-  display: none;
 }
 
 .castle-button-play-m4 {
-  z-index: 1;
   background-image: url('img/m4.png');
-  width: 4vh; /* Изменено с vw на vh */
-  aspect-ratio: 1/1;
-  top: 3.9vh; /* Изменено с vw на vh */
-  left: 7.2vh; /* Изменено с vw на vh */
-  transform: scale(0.6);
-  display: none;
 }
 
 .castle-button-play-m5 {
-  z-index: 1;
   background-image: url('img/m5_gold.png');
-  width: 4vh;
-  aspect-ratio: 1/1;
-  top: 3.9vh;
-  left: 10.6vh;
-  transform: scale(0.6);
-  display: none;
 }
 
 .castle-button-play-m6 {
-  z-index: 1;
   background-image: url('img/m6.png');
   background-size: 130%;
-  width: 4vh;
-  aspect-ratio: 1/1;
-  top: 3.9vh;
-  left: 13.78vh;
-  transform: scale(0.6);
-  display: none;
+}
+
+/* wing: piece of the b8 strip with N sockets, cut as two halves (left end and right end of the
+   strip) that meet at the middle, so any N keeps both rounded ends; the socket next to the circle
+   is covered by the party slot pill (b5/b4); left and width are set from JS */
+.castle-button-play-wing {
+  position: absolute;
+  z-index: 0;
+  top: 0.45vh;
+  height: 4.3vh;
+  pointer-events: none;
+}
+
+.castle-button-play-wing::before,
+.castle-button-play-wing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: url('img/b8.png') no-repeat;
+  background-size: auto 100%;
+}
+
+.castle-button-play-wing::before {
+  left: 0;
+  width: calc(50% + 0.05vh);
+  background-position: left center;
+}
+
+.castle-button-play-wing::after {
+  right: 0;
+  width: 50%;
+  background-position: right center;
 }
 
 .castle-button-play-m1:after,
@@ -1018,6 +1033,52 @@ body {
 
 .castle-button-play:has(.castle-button-play-8:hover) .castle-button-play-2 {
   filter: brightness(1.24) saturate(1.08);
+}
+
+/* selected mode circle: title and description on hover, same look and place as the modes in the
+   wings (they are scaled 0.6, the circle is not, so sizes here are 0.6 of theirs); not while the
+   queue badge shows its own tooltip */
+.castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover)) {
+  z-index: 8;
+}
+
+.castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover))::before {
+  content: var(--filter-text-title, '');
+  position: absolute;
+  z-index: 2;
+  top: 4.94vh;
+  left: 50%;
+  width: 21cqh;
+  transform: translateX(-50%);
+  color: rgb(220, 182, 70);
+  font: 0.78cqh / 1.2 'DejaVuSans', sans-serif;
+  text-align: center;
+  text-shadow: rgba(0, 0, 0, 0.9) 0 0.07cqh 0.11cqh;
+  pointer-events: none;
+}
+
+.castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover))::after {
+  content: var(--filter-text-hover, '');
+  display: flex;
+  position: absolute;
+  z-index: 1;
+  top: 4.77vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 21cqh;
+  background: rgba(14, 31, 33, 0.85);
+  border: 0.11cqh solid rgba(90, 133, 130, 0.62);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 1.23cqh 0.6cqh 0.39cqh;
+  border-radius: 0.6cqh;
+  font: 0.75cqh / 1.3 'DejaVuSans', sans-serif;
+  white-space: pre;
+  text-wrap: balance;
+  text-align: center;
+  box-shadow:
+    inset 0 0 0.27cqh rgba(138, 194, 188, 0.15),
+    0 0.27cqh 0.75cqh rgba(0, 0, 0, 0.48);
+  pointer-events: none;
 }
 
 

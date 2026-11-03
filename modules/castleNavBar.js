@@ -12,8 +12,6 @@ export class CastleNAVBAR {
 
   static stateDefaultMode = 0;
 
-  static modeMenuCloseTimer = null;
-
   // Число игроков в режимах (id режима бэкенда → { limit, oneteam }), подставляется
   // в описания вместо {team}/{players}. limit правят из веб-админки, поэтому берём
   // его из бэкенда (mm.modeTeams); пока ответа нет — значения по умолчанию бэкенда.
@@ -61,6 +59,9 @@ export class CastleNAVBAR {
     for (let modeId = 0; modeId < 6; modeId++) {
       CastleNAVBAR.setModeTooltip(CastleNAVBAR.body.children[11 + modeId], `gm${modeId + 1}`, `gm${modeId + 1}_hover`);
     }
+
+    // круг выбранного режима над «В бой»
+    CastleNAVBAR.setModeTooltip(CastleNAVBAR.body.children[9], `gm${CastleNAVBAR.mode + 1}`, `gm${CastleNAVBAR.mode + 1}_hover`);
   }
 
   // Перечитывает число игроков не чаще раза в минуту (при открытии списка режимов).
@@ -160,24 +161,17 @@ export class CastleNAVBAR {
             
         }
         */
-    // Список режимов открывается при наведении на кнопку режима и закрывается,
-    // когда курсор ушёл и с кнопки, и с панели (с задержкой, чтобы успеть перевести мышь).
-    CastleNAVBAR.body.children[9].onclick = () => {
-      CastleNAVBAR.openModeMenu();
-    };
-
-    for (const index of [9, 10, 11, 12, 13, 14, 15, 16]) {
+    // Все режимы видны всегда: выбранный — в круге над «В бой», остальные — в крыльях
+    // слева и справа от слотов пати (layoutModes). Число игроков в подсказках
+    // обновляем при наведении на режим.
+    for (const index of [9, 11, 12, 13, 14, 15, 16]) {
       CastleNAVBAR.body.children[index].addEventListener('mouseenter', () => {
-        if (index === 9) {
-          CastleNAVBAR.openModeMenu();
-        } else {
-          clearTimeout(CastleNAVBAR.modeMenuCloseTimer);
-        }
-      });
-      CastleNAVBAR.body.children[index].addEventListener('mouseleave', () => {
-        CastleNAVBAR.closeModeMenuSoon();
+        CastleNAVBAR.loadModeTeams();
       });
     }
+
+    CastleNAVBAR.wings = [DOM({ style: 'castle-button-play-wing' }), DOM({ style: 'castle-button-play-wing' })];
+    CastleNAVBAR.body.append(...CastleNAVBAR.wings);
 
     // бейдж на правом верхнем «плече» круга режима: сколько игроков ищут бой в выбранном режиме
     CastleNAVBAR.queuePlate = DOM({ style: 'castle-button-play-queue', data: { tooltip: Lang.text('mmQueueTooltip') } });
@@ -232,6 +226,8 @@ export class CastleNAVBAR {
     karmaButton.append(DOM({ tag: 'div' }), karmaTooltip);
 
     CastleNAVBAR.renderQueue();
+
+    CastleNAVBAR.layoutModes();
 
     return CastleNAVBAR.body.children[5];
   }
@@ -337,64 +333,48 @@ export class CastleNAVBAR {
     CastleNAVBAR.body.children[18].style.display = 'none';
   }
 
-  static isModeMenuOpen() {
-    return CastleNAVBAR.body.children[10].style.display === 'block';
-  }
+  // Геометрия крыльев в vh (в системе .castle-button-play шириной 15vh, до scale(1.9)).
+  // Крыло — кусок полосы img/b8.png (2597×532, лунки по 421.4 px, крайние центры
+  // в 255 px от краёв) высотой 4.3vh. Слот пати (шлем) — крайняя к кругу лунка того же
+  // крыла: центры шлемов 4.7 и 10.3vh, внутренний конец полосы уходит под круг.
+  static WING = {
+    scale: 4.3 / 532,
+    end: 255,
+    pitch: 421.4,
+    slotLeft: 4.7,
+    slotRight: 10.3,
+  };
 
-  static openModeMenu() {
-    clearTimeout(CastleNAVBAR.modeMenuCloseTimer);
+  // Невыбранные режимы по порядку: первая половина (большая при нечётном числе) —
+  // в левое крыло, остальные — в правое; шлем пати — в лунке у круга.
+  static layoutModes() {
+    const { scale, end, pitch, slotLeft, slotRight } = CastleNAVBAR.WING;
+    const others = [0, 1, 2, 3, 4, 5].filter((modeId) => modeId !== CastleNAVBAR.mode);
+    const leftCount = Math.ceil(others.length / 2);
+    const sides = [others.slice(0, leftCount), others.slice(leftCount)];
 
-    CastleNAVBAR.loadModeTeams();
+    sides.forEach((modes, side) => {
+      const wing = CastleNAVBAR.wings[side];
+      const width = (2 * end + modes.length * pitch) * scale;
+      const wingLeft = side ? slotRight - end * scale : slotLeft + end * scale - width;
+      // слева шлем в последней лунке, справа — в первой
+      const firstSlot = side ? 1 : 0;
 
-    if (!CastleNAVBAR.isModeMenuOpen()) {
-      CastleNAVBAR.viewMode();
-    }
-  }
+      wing.style.left = `${wingLeft}vh`;
+      wing.style.width = `${width}vh`;
 
-  static closeModeMenuSoon() {
-    clearTimeout(CastleNAVBAR.modeMenuCloseTimer);
+      modes.forEach((modeId, index) => {
+        const element = CastleNAVBAR.body.children[11 + modeId];
 
-    CastleNAVBAR.modeMenuCloseTimer = setTimeout(() => {
-      if (CastleNAVBAR.isModeMenuOpen()) {
-        CastleNAVBAR.viewMode();
-      }
-    }, 250);
-  }
+        // кнопка режима — квадрат 4vh, сжатый до 0.6 вокруг центра лунки
+        element.style.left = `${wingLeft + (end + (firstSlot + index) * pitch) * scale - 2}vh`;
+        element.style.display = 'block';
+      });
+    });
 
-  static viewMode() {
-    if (CastleNAVBAR.body.children[10].style.display === 'block') {
-      CastleNAVBAR.body.children[5].style.display = 'flex';
+    CastleNAVBAR.body.children[11 + CastleNAVBAR.mode].style.display = 'none';
 
-      CastleNAVBAR.body.children[10].style.display = 'none';
-
-      CastleNAVBAR.body.children[11].style.display = 'none';
-
-      CastleNAVBAR.body.children[12].style.display = 'none';
-
-      CastleNAVBAR.body.children[13].style.display = 'none';
-
-      CastleNAVBAR.body.children[14].style.display = 'none';
-
-      CastleNAVBAR.body.children[15].style.display = 'none';
-
-      CastleNAVBAR.body.children[16].style.display = 'none';
-    } else {
-      CastleNAVBAR.body.children[5].style.display = 'none';
-
-      CastleNAVBAR.body.children[10].style.display = 'block';
-
-      CastleNAVBAR.body.children[11].style.display = 'block';
-
-      CastleNAVBAR.body.children[12].style.display = 'block';
-
-      CastleNAVBAR.body.children[13].style.display = 'block';
-
-      CastleNAVBAR.body.children[14].style.display = 'block';
-
-      CastleNAVBAR.body.children[15].style.display = 'block';
-
-      CastleNAVBAR.body.children[16].style.display = 'block';
-    }
+    CastleNAVBAR.applyModeTooltips();
   }
 
   static setMode(type, options = {}) {
@@ -405,26 +385,12 @@ export class CastleNAVBAR {
 
     CastleNAVBAR.renderQueue();
 
-    CastleNAVBAR.body.children[5].style.display = 'flex'; //починил кнопку
-
     let background = window.getComputedStyle(CastleNAVBAR.body.children[`1${type}`], null).getPropertyValue('background-image');
 
     CastleNAVBAR.body.children[6].style.backgroundImage = background;
 
-    CastleNAVBAR.body.children[10].style.display = 'none';
+    CastleNAVBAR.layoutModes();
 
-    CastleNAVBAR.body.children[11].style.display = 'none';
-
-    CastleNAVBAR.body.children[12].style.display = 'none';
-
-    CastleNAVBAR.body.children[13].style.display = 'none';
-
-    CastleNAVBAR.body.children[14].style.display = 'none';
-
-    CastleNAVBAR.body.children[15].style.display = 'none';
-
-    CastleNAVBAR.body.children[16].style.display = 'none';
-	
 	window.dispatchEvent(new CustomEvent('CastleModeChanged', { detail: { mode: CastleNAVBAR.mode } }));
 	
 	const inParty = Number(MM.partyMembersCount || 1) > 1;
@@ -456,7 +422,7 @@ export class CastleNAVBAR {
   }
 
   // Бейджи «в поиске»: на кнопке выбранного режима (только если кто-то ищет)
-  // и у каждого режима в раскрытом списке (ноль — приглушённый).
+  // и у каждого режима в крыльях (ноль — приглушённый).
   static renderQueue() {
     if (!CastleNAVBAR.body) {
       return;
@@ -476,7 +442,7 @@ export class CastleNAVBAR {
       badge.dataset.tooltip = `${Lang.text(`gm${CastleNAVBAR.mode + 1}`)}\n${Lang.text('mmQueueSearching').replace('{n}', players)}${parties ? `\n${Lang.text('mmQueueParties').replace('{n}', parties)}` : ''}`;
     }
 
-    // бейджи у каждого режима в раскрытом списке (ноль — приглушённый)
+    // бейджи у каждого режима в крыльях (ноль — приглушённый)
     for (let modeId = 0; modeId < 6; modeId++) {
       const element = CastleNAVBAR.body.children[11 + modeId].firstChild;
 
