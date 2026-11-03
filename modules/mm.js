@@ -357,6 +357,11 @@ export class MM {
       return;
     }
 
+    // бан поиска: кнопка серая с отсчётом, на нажатие — причина
+    if (!MM.active && CastleNAVBAR.searchBanLeft()) {
+      return App.error(CastleNAVBAR.searchBanText());
+    }
+
     if (NativeAPI.status) {
       await MM.gameStartCheck();
     } else {
@@ -447,6 +452,9 @@ export class MM {
         }
       } catch (error) {
         MM.searchActive(false);
+
+        // отказ мог быть из-за бана (в том числе у участника пати) — покажем отсчёт
+        CastleNAVBAR.refreshSearchBan();
 
         return App.error(error);
       }

@@ -1731,6 +1731,8 @@ export class View {
     MM.partyMembersCount = Object.keys(data?.users || {}).length || 1;
     if (data && ('mode' in data) && !options?.preserveMode) {
       CastleNAVBAR.setMode(Number(data.mode) + 1, { syncParty: false });
+    } else {
+      CastleNAVBAR.refreshSearchBan();
     }
 
     MM.activeSelectHero = Number(data.users[myId]?.hero) || 0;

@@ -26,6 +26,89 @@ export class CastleNAVBAR {
 
   static modeTeamsLoadedAt = 0;
 
+  // Бан поиска (mm.searchBan): за неподтверждённый «бой найден» или АФК в тамбуре.
+  // Бэкенд отдаёт остаток в секундах, дальше отсчитываем сами: кнопка «В бой!»
+  // серая и показывает м:сс. searchBanInfo — { reason: 'ready'|'tambour', nickname }.
+  static searchBanUntil = 0;
+
+  static searchBanInfo = null;
+
+  static searchBanTimer = 0;
+
+  static fightLabel() {
+    return App.CURRENT_MM == 'mmtest' ? Lang.text('fight') + ' test' : Lang.text('fight');
+  }
+
+  static searchBanLeft() {
+    return Math.max(0, Math.ceil((CastleNAVBAR.searchBanUntil - Date.now()) / 1000));
+  }
+
+  static searchBanText() {
+    const info = CastleNAVBAR.searchBanInfo || {};
+
+    const text = Lang.text(info.reason == 'tambour' ? 'searchBanTambour' : 'searchBanReady');
+
+    return info.nickname ? text.replace('{nickname}', info.nickname) : text.replace(/\s*\(\{nickname\}\)/, '');
+  }
+
+  // Подпись и вид кнопки «В бой!», пока поиск не идёт (в поиске — «Отмена», см. play).
+  static renderFightButton() {
+    const button = CastleNAVBAR.body?.children[5];
+
+    if (!button || CastleNAVBAR.state) {
+      return;
+    }
+
+    const left = CastleNAVBAR.searchBanLeft();
+
+    if (!left) {
+      button.innerText = CastleNAVBAR.fightLabel();
+      button.style.filter = '';
+      button.dataset.tooltip = Lang.text('fightButtonTooltip');
+      return;
+    }
+
+    button.innerText = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    button.style.filter = 'grayscale(85%) brightness(0.8)';
+    button.dataset.tooltip = CastleNAVBAR.searchBanText();
+  }
+
+  static setSearchBan(data) {
+    const seconds = Math.max(0, Number(data?.seconds) || 0);
+
+    CastleNAVBAR.searchBanInfo = data || null;
+    CastleNAVBAR.searchBanUntil = seconds ? Date.now() + seconds * 1000 : 0;
+
+    clearInterval(CastleNAVBAR.searchBanTimer);
+    CastleNAVBAR.searchBanTimer = 0;
+
+    if (seconds) {
+      CastleNAVBAR.searchBanTimer = setInterval(() => {
+        if (CastleNAVBAR.searchBanLeft()) {
+          CastleNAVBAR.renderFightButton();
+          return;
+        }
+
+        clearInterval(CastleNAVBAR.searchBanTimer);
+        CastleNAVBAR.searchBanTimer = 0;
+        CastleNAVBAR.renderFightButton();
+
+        // у другого участника пати может остаться свой бан (тамбур) — спросим ещё раз
+        CastleNAVBAR.refreshSearchBan();
+      }, 1000);
+    }
+
+    CastleNAVBAR.renderFightButton();
+  }
+
+  static async refreshSearchBan() {
+    try {
+      CastleNAVBAR.setSearchBan(await App.api.request(App.CURRENT_MM, 'searchBan', { mode: CastleNAVBAR.mode }));
+    } catch (e) {
+      // бэкенд без searchBan (ещё не выкачен) — кнопка как раньше, бан проверит start
+    }
+  }
+
   static plural(value, forms) {
     const list = String(forms).split('|'),
       n = Math.abs(parseInt(value, 10)) || 0;
@@ -143,8 +226,7 @@ export class CastleNAVBAR {
       ));
     }
 
-    CastleNAVBAR.body.children[5].innerText = App.CURRENT_MM == 'mmtest' ? Lang.text('fight') + ' test' : Lang.text('fight');
-    CastleNAVBAR.body.children[5].dataset.tooltip = Lang.text('fightButtonTooltip');
+    CastleNAVBAR.renderFightButton();
     /*
         CastleNAVBAR.body.children[5].onclick = () => {
             
@@ -316,7 +398,7 @@ export class CastleNAVBAR {
 
     CastleNAVBAR.body.children[0].style.display = 'none';
 
-    CastleNAVBAR.body.children[5].innerText = App.CURRENT_MM == 'mmtest' ? Lang.text('fight') + ' test' : Lang.text('fight');
+    CastleNAVBAR.renderFightButton();
 
     //CastleNAVBAR.body.children[5].style.fontSize = '1.4vw';
 
@@ -392,6 +474,9 @@ export class CastleNAVBAR {
     CastleNAVBAR.layoutModes();
 
 	window.dispatchEvent(new CustomEvent('CastleModeChanged', { detail: { mode: CastleNAVBAR.mode } }));
+
+	// бан за АФК в тамбуре действует только в режимах с тамбуром
+	CastleNAVBAR.refreshSearchBan();
 	
 	const inParty = Number(MM.partyMembersCount || 1) > 1;
 	if(syncParty && inParty && MM.partyId && (String(MM.partyId) === String(App.storage?.data?.id))){

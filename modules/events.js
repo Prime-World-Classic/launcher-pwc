@@ -431,7 +431,10 @@ export class Events {
     setTimeout(() => {
       MM.searchActive(false);
     }, 1000);
-    
+
+    // не подтвердил «бой найден» — бан поиска, на кнопке «В бой!» отсчёт
+    CastleNAVBAR.refreshSearchBan();
+
     if ((data && Number(data.noWarning) === 1) || data?.noWarning === true) {
       return;
     }
