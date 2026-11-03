@@ -4,6 +4,7 @@ import { Api } from './api.js';
 import { View } from './view.js';
 import { CastleFarm } from './castleFarm.js';
 import { CastleNAVBAR } from './castleNavBar.js';
+import { CastleCinematic } from './castleCinematic.js';
 import { Events } from './events.js';
 import { Voice } from './voice.js';
 import { Chat } from './chat.js';
@@ -264,7 +265,13 @@ export class App {
           Sound.play(SOUNDS_LIBRARY.CLICK_CLOSE, { id: 'ui-close', volume: Castle.GetVolume(Castle.AUDIO_SOUNDS) });
           return;
         }
-        // 3. Экран «Статистика» (аудит) — Esc работает как его крестик: назад в замок.
+        // 3. Кинематографичный вид замка: Esc возвращает интерфейс, а не открывает меню.
+        if (CastleCinematic.active) {
+          CastleCinematic.exit();
+          Sound.play(SOUNDS_LIBRARY.CLICK_CLOSE, { id: 'ui-close', volume: Castle.GetVolume(Castle.AUDIO_SOUNDS) });
+          return;
+        }
+        // 4. Экран «Статистика» (аудит) — Esc работает как его крестик: назад в замок.
         // Открытое окно аудита (репорт, харизма…) закрывает сам аудит, экран остаётся.
         if (View.active?.classList?.contains('stats-screen')) {
           if (handledInside || Stats.hasOpenWindow()) return;
@@ -272,7 +279,7 @@ export class App {
           Sound.play(SOUNDS_LIBRARY.CLICK_CLOSE, { id: 'ui-close', volume: Castle.GetVolume(Castle.AUDIO_SOUNDS) });
           return;
         }
-        // 4. Если окон нет - открываем настройки
+        // 5. Если окон нет - открываем настройки
         else {
           if (typeof Window !== 'undefined' && Window.show) {
             Window.show('main', 'menu');
@@ -387,6 +394,12 @@ export class App {
       }
     }
     Castle.dayTimeOverride = Castle.dayModeTime[params.get('previewTime') === 'night' ? 'night' : 'day'];
+    // DEV-хук только для ?previewCastle=1 (localhost): камерой нужно позировать со стороны
+    // стенда/консоли — модули ES-скоупа странице иначе недоступны.
+    window.__castlePreview = Castle;
+    // в preview-ветке View.castle() не строится, а замок тот же — наблюдение за бездействием
+    // (кинематографичный вид) поднимаем вручную
+    CastleCinematic.start();
     const loading = DOM({ style: 'castle-preview-status', role: 'status' }, 'Загрузка замка...');
     View.active.append(loading);
     try {

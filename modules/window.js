@@ -5,6 +5,7 @@ import { View } from './view.js';
 import { App } from './app.js';
 import { NativeAPI } from './nativeApi.js';
 import { Castle } from './castle.js';
+import { CastleCinematic } from './castleCinematic.js';
 import { Settings } from './settings.js';
 import { Sound } from './sound.js';
 import { Splash } from './splash.js';
@@ -166,6 +167,10 @@ export class Window {
     Window.windows[category] = template;
 
     Window.windowOrder.unshift(category);
+
+    // Любое окно (приглашение в бой, входящий звонок, окно здания) — кинематографичный вид
+    // замка снимаем сразу: окна лежат внутри #castle-body и гасли бы вместе с интерфейсом.
+    CastleCinematic.exit();
 
     const host = method === 'allyBuild' ? MM.view : View.active;
     host.append(template);

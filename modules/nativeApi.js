@@ -7,7 +7,7 @@ import { Lang } from './lang.js';
 import { MM } from './mm.js';
 import { CacheIndex } from './cacheIndex.js';
 import { NetAdapters } from './netAdapters.js';
-import { isTestManifest, readNwManifest } from './clientChannel.js';
+import { isTestManifest, isDebugManifest, manifestName, readNwManifest } from './clientChannel.js';
 
 export class NativeAPI {
   static status = false;
@@ -1003,6 +1003,15 @@ export class NativeAPI {
     if (!NativeAPI.status) {
       return false;
     }
+    // Отладочная оболочка (package.json.name со словом «Debug»): NanoUpdater не запускаем вовсе —
+    // он делает reset --hard в репо каналов и затирает локальные правки content. Поведение как у
+    // Steam-сборки без апдейтера: лончер просто стартует, «вышло обновление» не требует.
+    if (isDebugManifest()) {
+      PWGame.isUpToDate = true;
+      PWGame.isValidated = true;
+      NativeAPI.logUpdate('skip-debug-manifest', manifestName());
+      return true;
+    }
     if (NativeAPI.updateInProgress) {
       return true;
     }
@@ -1308,6 +1317,9 @@ export class NativeAPI {
 
   static async checkContentUpdate() {
     if (NativeAPI.restartInProgress || NativeAPI.updateInProgress) return;
+    // Отладочная оболочка («Debug» в имени манифеста): за ревизиями каналов не следим —
+    // найденная ревизия всё равно не должна ничего привезти (NativeAPI.update выключен).
+    if (isDebugManifest()) return;
     // Без апдейтера (Steam/dev) рестарт ничего не обновит — не проверяем
     const updaterPath = NativeAPI.platform == 'linux' ? PWGame.PATH_UPDATE_LINUX : PWGame.PATH_UPDATE;
     try {

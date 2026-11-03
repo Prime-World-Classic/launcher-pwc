@@ -580,6 +580,45 @@ body {
   height: 0.1cqh;
 }
 
+/* Кинематографичный вид замка (CastleCinematic): 15 с бездействия — интерфейс гаснет, в кадре
+   остаётся только рендер canvas. Гаснет АНИМАЦИЕЙ, поэтому возврат мгновенный: любое действие
+   игрока снимает класс, анимация исчезает вместе с ней, opacity сразу становится своим.
+   Окна лончера живут внутри #castle-body (Window.show, View.adoptOrphanWindows) — гаснут этим же
+   правилом; Window.show к тому же снимает режим до открытия окна. #castle-background-img не
+   трогаем: это небо сцены под холстом. */
+@keyframes castle-cinematic-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+body.castle-cinematic #castle-body > :not(#castle-game-surface):not(#castle-background-img) {
+  animation: castle-cinematic-fade 900ms ease-in forwards;
+  pointer-events: none;
+}
+
+/* Вне замка лончер держит свои панели (быстрые вкладки, новости, войс, плашка обновления,
+   админ-статистика). Списком, а не «всё, кроме #castle-body»: зацепило бы игровой экран
+   (Game.*, <dialog> фермы) и всплывающие сообщения об ошибках. */
+body.castle-cinematic > .launcher-notifications-quick-tab,
+body.castle-cinematic > .launcher-hall-of-fame-quick-tab,
+body.castle-cinematic > .launcher-minigames-quick,
+body.castle-cinematic > .launcher-restart-quick-tab,
+body.castle-cinematic > .launcher-notifications-toast-root,
+body.castle-cinematic > .launcher-notifications-panel,
+body.castle-cinematic > .launcher-notifications-panel-backdrop,
+body.castle-cinematic > .launcher-news-reader-overlay,
+body.castle-cinematic > .voice-info-panel,
+body.castle-cinematic > .update-indicator,
+body.castle-cinematic > #ADMStat {
+  animation: castle-cinematic-fade 900ms ease-in forwards;
+  pointer-events: none;
+}
+
+body.castle-cinematic {
+  cursor: none;
+}
+
 .button-outline:hover {
   filter: drop-shadow(-0.1cqh 0.1cqh 0cqh rgba(221, 255, 0, 0.5)) drop-shadow(0.1cqh -0.1cqh 0cqh rgba(221, 255, 0, 0.5));
   transition: 300ms;

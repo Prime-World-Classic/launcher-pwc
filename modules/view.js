@@ -1,6 +1,7 @@
 import { DOM } from './dom.js';
 import { Lang } from './lang.js';
 import { CastleNAVBAR } from './castleNavBar.js';
+import { CastleCinematic } from './castleCinematic.js';
 import { Window } from './window.js';
 import { Rank } from './rank.js';
 import { Division } from './division.js';
@@ -1000,7 +1001,7 @@ export class View {
   static castleTotalCrystal = DOM({ tag: 'div', style: ['question-icon'] }, DOM({ style: 'quest-counter' }, ''));
 
   static setCss(name = 'content/style.css') {
-    const cssVersion = '20261103-mode-wings-6';
+    const cssVersion = '20261103-castle-cinematic-1';
     const separator = name.includes('?') ? '&' : '?';
     const href = `${name}${separator}v=${cssVersion}`;
     // Каждый показ замка звал setCss заново и плодил одинаковые <link>: после
@@ -1038,6 +1039,8 @@ export class View {
     if (method != 'castle') {
       Castle.buildMode = false;
       View.clearCastleQuestTimers();
+      // кинематографичный вид — режим замка: на другом экране наблюдение за бездействием не нужно
+      CastleCinematic.stop();
     }
     const fromStats = View.active?.classList?.contains('stats-screen');
     const restoreCastle = method === 'castle' && value === undefined && fromStats && View.keptCastle;
@@ -1630,6 +1633,9 @@ export class View {
     setTimeout(() => {
       Chat.scroll();
     }, 1500);
+
+    // с этого момента можно считать бездействие: сам режим включится по таймеру (CastleCinematic)
+    CastleCinematic.start();
 
     return body;
   }
