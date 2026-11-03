@@ -1,12 +1,14 @@
 // «Кинематографичный вид» замка. Отдельной кнопки нет: если 15 с нет движения мыши и нажатий
 // клавиш (замок при этом рисуется, и открытых окон нет), интерфейс плавно гаснет — остаётся
-// только рендер canvas, а камера медленно уходит в постановочный кадр. Любое действие игрока
-// возвращает интерфейс мгновенно (камера доезжает до своего вида уже сама, плавно).
+// только рендер canvas, а камера уходит в постановочный кадр. Любое действие игрока возвращает
+// интерфейс мгновенно (камера доезжает до своего вида уже сама).
 //
-// Класс висит на body, а не на #castle-body: экран замка пересобирается (View.show('castle')),
-// а часть интерфейса живёт вне замка (быстрые вкладки, войс, новости, плашка обновления).
-// Наблюдение за бездействием ставит View.castle() (start) и снимает View.show (stop); окно,
-// открытое во время режима, тоже снимает режим (Window.show → exit).
+// Движение камеры — СВОЁ, не штатная анимация движка: tick ведёт одну таймлайн-позу с
+// ease-in-out (плавный набор скорости и такое же торможение), а штатную скорость зума на время
+// режима обнуляет. Класс висит на body, а не на #castle-body: экран замка пересобирается
+// (View.show('castle')), а часть интерфейса живёт вне замка (быстрые вкладки, войс, новости,
+// плашка обновления). Наблюдение за бездействием ставит View.castle() (start) и снимает
+// View.show (stop); окно, открытое во время режима, тоже снимает режим (Window.show → exit).
 
 import { Castle } from './castle.js';
 
@@ -31,20 +33,23 @@ export const CASTLE_CINEMATIC_SHOTS = {
   ],
 };
 
+// ease-in-out по кубике: старт и торможение без рывка
+export function castleCinematicEase(p) {
+  return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+}
+
 export class CastleCinematic {
   static AFK_MS = 15000;
 
   // сколько живём в одном кадре, прежде чем камера поедет к следующему
   static DWELL_MS = 16000;
 
-  // постоянная времени панорамы (секунды): вход — медленно, возврат — быстро
-  static TAU_IN = 3.0;
+  // длительности перелёта камеры: вход в кадр, кадр→кадр, возврат к виду игрока
+  static MOVE_IN_MS = 4500;
 
-  // Castle.cameraAnimationSpeed на время режима: медленнее штатного (4.0), но ступень зума
-  // всё равно доезжает за ~1.2 с — лесенка из пяти ступеней выглядит одним плавным наездом
-  static CINEMATIC_SPEED = 2.5;
+  static MOVE_MS = 4000;
 
-  static TAU_OUT = 0.6;
+  static MOVE_OUT_MS = 1200;
 
   static ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'wheel', 'keydown', 'touchstart'];
 
@@ -72,14 +77,11 @@ export class CastleCinematic {
 
   static shotAt = 0;
 
-  // поза игрока до входа: куда возвращаем камеру при выходе
+  // поза игрока до входа (куда возвращаем) и её же штатные настройки камеры; живёт до конца возврата
   static saved = null;
 
-  static panTarget = null;
-
-  static zoomTarget = null;
-
-  static prevFrameMs = 0;
+  // активный перелёт: { from, to, panFrom, panTo, t0, ms }
+  static move = null;
 
   // --- наблюдение за бездействием (живёт, пока открыт замок) ---
 
@@ -106,8 +108,11 @@ export class CastleCinematic {
     if (CastleCinematic.active) {
       CastleCinematic.exit();
     } else if (CastleCinematic.returning && (event.type === 'wheel' || event.type === 'mousedown')) {
-      // игрок сам взялся за камеру — тащить её к сохранённой позе уже не нужно
-      CastleCinematic.cancelReturn();
+      // игрок сам взялся за камеру: возврат снимаем, а его колесо прокручиваем уже сами —
+      // движок в полёте камеры его игнорирует (ранний выход в Castle.zoom)
+      const step = event.type === 'wheel' ? event : null;
+      CastleCinematic.finishReturn();
+      if (step) Castle.zoom(step);
     }
   }
 
@@ -135,117 +140,112 @@ export class CastleCinematic {
     CastleCinematic.returning = false;
     document.body.classList.add(CASTLE_CINEMATIC_CLASS);
 
-    CastleCinematic.saved = {
-      value: Castle.targetFixedValue,
-      pan: [Castle.camDeltaPos[0], Castle.camDeltaPos[1]],
-      speed: Castle.cameraAnimationSpeed,
-      limits: Castle.camDeltaPosMinMax,
-    };
-    // движок сам лерпит fov/наклон/высоту к targetFixedValue — на время режима медленнее
-    Castle.cameraAnimationSpeed = CastleCinematic.CINEMATIC_SPEED;
+    // поза игрока сохраняется один раз: возврат, прерванный повторным входом, не должен
+    // записать промежуточную позу
+    if (!CastleCinematic.saved) {
+      CastleCinematic.saved = {
+        value: Castle.currentFixedValue,
+        pan: [Castle.camDeltaPos[0], Castle.camDeltaPos[1]],
+        speed: Castle.cameraAnimationSpeed,
+        limits: Castle.camDeltaPosMinMax,
+      };
+    }
+    // штатная анимация зума (экспоненциальное сглаживание current→target) на время режима
+    // выключена: позой на каждом кадре управляет tick
+    Castle.cameraAnimationSpeed = 0;
     Castle.camDeltaPosMinMax = CastleCinematic.PAN_LIMITS;
 
     CastleCinematic.shotIndex = 0;
     CastleCinematic.shotAt = Date.now();
-    CastleCinematic.pointAt(CastleCinematic.shots()[0]);
-
-    CastleCinematic.prevFrameMs = 0;
-    if (!CastleCinematic.raf) CastleCinematic.raf = requestAnimationFrame(CastleCinematic.tick);
+    CastleCinematic.startMove(CastleCinematic.shots()[0], CastleCinematic.MOVE_IN_MS);
   }
 
   static exit() {
     if (!CastleCinematic.active) return;
     CastleCinematic.active = false;
     document.body.classList.remove(CASTLE_CINEMATIC_CLASS);
-
-    const saved = CastleCinematic.saved;
-    CastleCinematic.saved = null;
-    if (!saved) return;
-
-    Castle.cameraAnimationSpeed = saved.speed;
-    Castle.camDeltaPosMinMax = saved.limits;
+    if (!CastleCinematic.saved) return;
     CastleCinematic.returning = true;
-    CastleCinematic.zoomTarget = saved.value;
-    CastleCinematic.panTarget = saved.pan;
-    if (!CastleCinematic.raf) {
-      CastleCinematic.prevFrameMs = 0;
-      CastleCinematic.raf = requestAnimationFrame(CastleCinematic.tick);
-    }
+    CastleCinematic.startMove({ value: CastleCinematic.saved.value, pan: CastleCinematic.saved.pan }, CastleCinematic.MOVE_OUT_MS);
   }
 
-  static cancelReturn() {
+  // вернуть движку управление камерой и зафиксировать ступень: пока
+  // |currentFixedValue - targetFixedValue| > 0.04, Castle.zoom() игнорирует колесо
+  static finishReturn() {
     CastleCinematic.returning = false;
-    CastleCinematic.panTarget = null;
-    CastleCinematic.zoomTarget = null;
+    CastleCinematic.move = null;
+    const saved = CastleCinematic.saved;
+    CastleCinematic.saved = null;
+    if (saved) {
+      Castle.cameraAnimationSpeed = saved.speed;
+      Castle.camDeltaPosMinMax = saved.limits;
+    }
+    CastleCinematic.settleStep();
+  }
+
+  static settleStep() {
+    const value = Math.round(Castle.currentFixedValue);
+    Castle.initialFixedValue = value;
+    Castle.targetFixedValue = value;
+    Castle.currentFixedValue = value;
   }
 
   static shots() {
     return CASTLE_CINEMATIC_SHOTS[Castle.currentSceneName] || CASTLE_CINEMATIC_SHOTS.doct;
   }
 
-  static pointAt(shot) {
-    CastleCinematic.panTarget = shot.pan;
-    CastleCinematic.zoomTarget = shot.value;
+  static startMove(shot, ms) {
+    CastleCinematic.move = {
+      from: Castle.currentFixedValue,
+      to: shot.value,
+      panFrom: [Castle.camDeltaPos[0], Castle.camDeltaPos[1]],
+      panTo: shot.pan,
+      t0: Date.now(),
+      ms,
+    };
+    if (!CastleCinematic.raf) CastleCinematic.raf = requestAnimationFrame(CastleCinematic.tick);
   }
 
-  // Движок лерпит зум только для шага ±1 (camLerp = |initial - current|), поэтому постановочный
-  // переход — лесенкой, по одной ступени за раз, не начиная следующий шаг, пока едет предыдущий.
-  static stepZoomTo(value) {
-    const want = Math.round(value);
-    const here = Math.round(Castle.targetFixedValue);
-    if (want === here) return false;
-    if (Math.abs(Castle.currentFixedValue - Castle.targetFixedValue) > 0.05) return true;
-    Castle.initialFixedValue = Castle.currentFixedValue;
-    Castle.targetFixedValue = Castle.clamp(here + (want > here ? 1 : -1), Castle.MIN_FIXED_VALUE, Castle.fixedFovValues.length - 1);
-    return true;
-  }
-
-  // Один rAF-цикл на всё: догоняем панораму, меняем кадр по таймеру, после выхода дотормаживаем
-  // возврат и гасим цикл.
+  // Один rAF-цикл на всё: ведёт перелёт камеры, меняет кадр по таймеру, по окончании возврата
+  // отдаёт камеру движку.
   static tick() {
     CastleCinematic.raf = 0;
     const now = Date.now();
-    const dt = CastleCinematic.prevFrameMs ? Math.min((now - CastleCinematic.prevFrameMs) / 1000, 0.1) : 0.016;
-    CastleCinematic.prevFrameMs = now;
 
     if (CastleCinematic.active) {
       const shots = CastleCinematic.shots();
       if (shots.length > 1 && now - CastleCinematic.shotAt > CastleCinematic.DWELL_MS) {
         CastleCinematic.shotAt = now;
         CastleCinematic.shotIndex = (CastleCinematic.shotIndex + 1) % shots.length;
-        CastleCinematic.pointAt(shots[CastleCinematic.shotIndex]);
+        CastleCinematic.startMove(shots[CastleCinematic.shotIndex], CastleCinematic.MOVE_MS);
       }
     }
 
-    let moving = false;
-
-    const panTarget = CastleCinematic.panTarget;
-    if (panTarget) {
-      const tau = CastleCinematic.active ? CastleCinematic.TAU_IN : CastleCinematic.TAU_OUT;
-      const k = 1 - Math.exp(-dt / tau);
+    const move = CastleCinematic.move;
+    if (move) {
+      const p = Castle.clamp((now - move.t0) / move.ms, 0, 1);
+      const e = castleCinematicEase(p);
+      // Движок берёт fov/наклон/высоту как lerp(fov[round(initial)], fov[round(target)],
+      // |initial - current|) и корректен только при |initial - current| <= 1. Поэтому концы
+      // задаём целыми индексами пресетов (от и куда), а current ставим на e рядом с «от»:
+      // интерполяция идёт напрямую между двумя кадрами, без пролёта через промежуточные
+      // ступени таблицы (у неё fov не монотонен: 45→25→55→35).
+      const from = Math.round(move.from);
+      const to = Math.round(move.to);
+      Castle.initialFixedValue = from;
+      Castle.targetFixedValue = to;
+      Castle.currentFixedValue = from + (to >= from ? 1 : -1) * e;
       for (const axis of [0, 1]) {
-        const delta = panTarget[axis] - Castle.camDeltaPos[axis];
-        if (Math.abs(delta) > 0.2) {
-          Castle.camDeltaPos[axis] += delta * k;
-          moving = true;
-        } else {
-          Castle.camDeltaPos[axis] = panTarget[axis];
-        }
+        Castle.camDeltaPos[axis] = move.panFrom[axis] + (move.panTo[axis] - move.panFrom[axis]) * e;
+      }
+      if (p >= 1) {
+        CastleCinematic.move = null;
+        // «куда» фиксируем только в конце: до этого current живёт рядом с «от»
+        Castle.currentFixedValue = Castle.initialFixedValue = Castle.targetFixedValue = to;
+        if (CastleCinematic.returning) CastleCinematic.finishReturn();
       }
     }
 
-    if (CastleCinematic.stepZoomTo(CastleCinematic.zoomTarget ?? Castle.targetFixedValue)) moving = true;
-    if (Math.abs(Castle.currentFixedValue - Castle.targetFixedValue) > 0.01) moving = true;
-
-    if (CastleCinematic.active) {
-      CastleCinematic.raf = requestAnimationFrame(CastleCinematic.tick);
-    } else if (moving) {
-      CastleCinematic.raf = requestAnimationFrame(CastleCinematic.tick);
-    } else {
-      CastleCinematic.prevFrameMs = 0;
-      CastleCinematic.returning = false;
-      CastleCinematic.panTarget = null;
-      CastleCinematic.zoomTarget = null;
-    }
+    if (CastleCinematic.active || CastleCinematic.move) CastleCinematic.raf = requestAnimationFrame(CastleCinematic.tick);
   }
 }
