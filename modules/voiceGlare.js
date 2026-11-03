@@ -14,3 +14,13 @@ export function shouldYieldToIncomingCall(selfId, callerId, existingPeer) {
   }
   return self > caller;
 }
+
+// Новый звонок при переподключении значит, что своё прежнее соединение собеседник уже закрыл.
+// Если наша запись не соединена и не ждёт ответа на свой offer, она мертва. Раньше такой звонок
+// игнорировался, и связь не возвращалась, пока запись не закроется сама.
+export function shouldReplaceDeadCall(existingPeer, isReconnect) {
+  if (!isReconnect) {
+    return false;
+  }
+  return existingPeer?.signalingState === 'stable' && existingPeer?.connectionState !== 'connected';
+}

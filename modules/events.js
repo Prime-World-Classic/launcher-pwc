@@ -6,7 +6,7 @@ import { Rank } from './rank.js';
 import { App } from './app.js';
 import { Voice } from './voice.js';
 import { VoiceGameBridge } from './voiceGameBridge.js';
-import { shouldYieldToIncomingCall } from './voiceGlare.js';
+import { shouldReplaceDeadCall, shouldYieldToIncomingCall } from './voiceGlare.js';
 import { Chat } from './chat.js';
 import { NativeAPI } from './nativeApi.js';
 import { MM } from './mm.js';
@@ -526,11 +526,14 @@ export class Events {
       // Cross-calls may arrive while we already have an active/pending connection.
       // Ignore duplicate incoming invite, except glare where we must yield (see voiceGlare.js).
       const existingState = { state: existing.peer.connectionState, signaling: existing.peer.signalingState };
-      if (!shouldYieldToIncomingCall(App.storage?.data?.id, data?.id, existing.peer)) {
+      if (!existing.offerStarting && shouldReplaceDeadCall(existing.peer, isReconnect)) {
+        logIn('replace-dead', existingState);
+      } else if (shouldYieldToIncomingCall(App.storage?.data?.id, data?.id, existing.peer)) {
+        logIn('glare-yield', existingState);
+      } else {
         logIn('ignored-existing', existingState);
         return;
       }
-      logIn('glare-yield', existingState);
       existing.close({ keepReconnect: true });
     }
     const forceAutoAccept = Voice.consumeMergeAutoAccept(data?.id);

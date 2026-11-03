@@ -196,7 +196,14 @@ export class Voice {
 
   static reconnectPlanMs = [2000, 5000, 10000, 15000, 20000];
 
+  // Срок переподключения вне матча. С союзником в матче попытки идут до конца матча (isMatchVoicePeer).
   static reconnectMaxDurationMs = 15 * 60 * 1000;
+
+  // Запись собеседника, которая столько не может соединиться, считается зависшей: её заменит новый звонок.
+  static reconnectBusyMaxMs = 45 * 1000;
+
+  // Сколько ждать звонка союзника, который должен позвонить первым, прежде чем позвонить ему самим.
+  static matchCalleeWaitMs = 20 * 1000;
 
   static reconnectDisconnectedGraceMs = 3000;
 
@@ -393,6 +400,14 @@ export class Voice {
     return Boolean(MM.isInTambur || MM.isInBattle);
   }
 
+  // Союзник текущего матча: звонок этого матча или звонок друзей, который шёл с ним ещё до матча.
+  // Связь с ним восстанавливают обе стороны и без ограничения по времени, пока матч не закончится.
+  static isMatchVoicePeer(id, key) {
+    if (!Voice.isInMatch() && !Voice.isBattleSuspendActive()) return false;
+    const callKey = String(key || '');
+    return (callKey !== '' && callKey === String(MM.id || '')) || Voice.isBattleFriendAlly(id);
+  }
+
   static isMutedAllTarget(id) {
     if (!Voice.isMutedAll() || Voice.mutedAllUnmuted.has(Number(id))) return false;
     const target = Voice.manager[Number(id)];
@@ -550,6 +565,20 @@ export class Voice {
     return Voice.reconnectJobs.get(token) || null;
   }
 
+  static hasReconnectJob(id) {
+    const targetId = Number(id);
+    return Array.from(Voice.reconnectJobs.values()).some((job) => job.id === targetId);
+  }
+
+  // Матч закончился или отменён: звонить союзникам по его ключу больше незачем.
+  static stopMatchReconnectJobs(exceptKey = '') {
+    for (const job of Array.from(Voice.reconnectJobs.values())) {
+      if (job.key !== 'friend' && job.key !== exceptKey) {
+        Voice.stopReconnectJob(job.id, job.key);
+      }
+    }
+  }
+
   static getInfoPanelBody() {
     return Voice.infoPanel?.querySelector?.('.voice-info-panel-body') || null;
   }
@@ -600,6 +629,7 @@ export class Voice {
       important: Boolean(important),
       attempt: 0,
       startedAt: Date.now(),
+      busySince: 0,
       timer: null,
       activeCallAttempt: false,
     };
@@ -608,6 +638,9 @@ export class Voice {
     const run = async () => {
       const current = Voice.reconnectJobs.get(token);
       if (!current) return;
+      if (Voice.isMatchVoicePeer(current.id, current.key)) {
+        current.startedAt = Date.now();
+      }
       if (Date.now() - current.startedAt > Voice.reconnectMaxDurationMs) {
         Voice.log('reconnect-expired', { id: current.id });
         Voice.stopReconnectJob(current.id, current.key);
@@ -615,11 +648,23 @@ export class Voice {
       }
       const existing = Voice.manager[current.id];
       if (existing && existing.peer && existing.peer.connectionState !== 'closed') {
-        const delayBusy = Voice.reconnectPlanMs[Math.min(current.attempt, Voice.reconnectPlanMs.length - 1)];
-        Voice.log('reconnect-busy', { id: current.id, state: existing.peer.connectionState, signaling: existing.peer.signalingState });
-        current.timer = setTimeout(run, delayBusy);
-        return;
+        // Соединение уже есть, возможно под другим ключом (звонок друзей с союзником по матчу).
+        if (existing.peer.connectionState === 'connected') {
+          Voice.stopReconnectJob(current.id, current.key);
+          return;
+        }
+        current.busySince = current.busySince || Date.now();
+        if (Date.now() - current.busySince <= Voice.reconnectBusyMaxMs) {
+          const delayBusy = Voice.reconnectPlanMs[Math.min(current.attempt, Voice.reconnectPlanMs.length - 1)];
+          Voice.log('reconnect-busy', { id: current.id, state: existing.peer.connectionState, signaling: existing.peer.signalingState });
+          current.timer = setTimeout(run, delayBusy);
+          return;
+        }
+        // Принятый звонок сам по себе не закрывается: без этого задача ждала бы его вечно.
+        Voice.log('reconnect-stale', { id: current.id, state: existing.peer.connectionState, signaling: existing.peer.signalingState });
+        existing.close({ keepReconnect: true });
       }
+      current.busySince = 0;
       let voice = null;
       try {
         current.activeCallAttempt = true;
@@ -1682,6 +1727,7 @@ export class Voice {
     Voice.battleSuspendedAt = 0;
     Voice.battleKeepCalls = false;
     Voice.battleFriendAllies.clear();
+    Voice.stopMatchReconnectJobs();
     if (!Voice.battleSuspendedPeers.size) {
       return;
     }
@@ -1702,6 +1748,17 @@ export class Voice {
 
   static async remoteDrop(id) {
     Voice.log('remote-drop', { id: Number(id), hadEntry: Boolean(Voice.manager[id]) });
+    // В бою трубку руками не положить: VDrop значит, что союзник потерял связь с сервером или
+    // перезапустил лаунчер. Он может вернуться, поэтому продолжаем звонить.
+    const entry = Voice.manager[id];
+    if (MM.isInBattle && (entry ? Voice.isMatchVoicePeer(id, entry.key) : Voice.hasReconnectJob(id))) {
+      if (entry) {
+        Voice.setMutedByPeer(id, false);
+        Voice.ensureReconnectJob(entry.id, entry.key, entry.name, entry.important, Voice.reconnectDisconnectedGraceMs);
+        await entry.close({ keepReconnect: true });
+      }
+      return;
+    }
     // The peer hung up (or paused for battle): stop re-calling them even between attempts,
     // when there is no live entry to close. If we are in battle, don't restore them afterwards
     // either (e.g. they closed the launcher while our battle was going on).
@@ -1972,12 +2029,14 @@ export class Voice {
       }
 
       const target = Voice.manager[id];
-      const silenced = target && Voice.isPeerSilenced(id);
-      Voice.decorateLobbyPlayer(player, target && {
+      // Между попытками переподключения записи нет, но кнопка мута должна остаться.
+      const inVoice = target || Voice.hasReconnectJob(id);
+      const silenced = inVoice && Voice.isPeerSilenced(id);
+      Voice.decorateLobbyPlayer(player, inVoice && {
         icon: silenced ? 'sound-off' : 'sound-on',
         muted: silenced,
         mutedBy: Voice.isMutedByPeer(id),
-        connecting: target.peer?.connectionState !== 'connected',
+        connecting: target?.peer?.connectionState !== 'connected',
         volume: Voice.getPeerVolumePercent(id),
         tip: Lang.text('voiceLobbyPeerTip').replace('{percent}', String(Voice.getPeerVolumePercent(id))) +
           (Voice.isMutedByPeer(id) ? `\n${Lang.text('voiceLobbyMutedByTip')}` : ''),
@@ -2000,6 +2059,8 @@ export class Voice {
     // союзников, с которыми звонок друзей шёл ещё до матча.
     Voice.resetMutedAllForMatch(users.map((user) => user.id));
 
+    Voice.stopMatchReconnectJobs(String(key || ''));
+
     // Панель покажет сам звонок (call/accept): в лобби может быть некому звонить.
     let start = false;
 
@@ -2010,7 +2071,10 @@ export class Voice {
         continue;
       }
 
+      // Этот союзник звонит нам сам. Если его звонок не дойдёт, позвоним ему после ожидания.
       if (!start) {
+        Voice.ensureReconnectJob(user.id, key, user.name, false, Voice.matchCalleeWaitMs);
+
         continue;
       }
 
@@ -2022,7 +2086,8 @@ export class Voice {
         await voice.call();
       } catch (error) {
         console.log('Voice.association call failed:', user.id, error);
-        voice?.close();
+        Voice.ensureReconnectJob(user.id, key, user.name, false, Voice.reconnectDisconnectedGraceMs);
+        voice?.close({ keepReconnect: true });
       }
     }
   }
@@ -2148,7 +2213,7 @@ export class Voice {
       return (
         this.allowAutoReconnect &&
         Voice.shouldAutoReconnectKey(this.key) &&
-        this.isCaller &&
+        (this.isCaller || Voice.isMatchVoicePeer(this.id, this.key)) &&
         !this.reconnectScheduled &&
         (this.key !== 'friend' || this.hasEverConnected)
       );
@@ -2296,6 +2361,9 @@ export class Voice {
     }
     Voice.showInfoPanel(!isReconnect);
 
+    // Пока offer готовится, запись выглядит как зависшая (см. shouldReplaceDeadCall).
+    this.offerStarting = true;
+
     await Voice.initLocalMedia();
 
     // Звонок другу, начатый самим игроком, сразу с включённым микрофоном (не при переподключении
@@ -2323,8 +2391,15 @@ export class Voice {
 
     await this.peer.setLocalDescription(offer);
 
+    this.offerStarting = false;
+
     this.timer = setTimeout(() => {
       this.timer = null;
+
+      // Союзнику в матче звоним, пока не ответит: первый звонок мог просто не дойти.
+      if (Voice.isMatchVoicePeer(this.id, this.key)) {
+        Voice.ensureReconnectJob(this.id, this.key, this.name, this.important, Voice.reconnectPlanMs[0]);
+      }
 
       // Unanswered reconnect attempt: keep the job so it retries per reconnectPlanMs.
       Voice.log('call-timeout', { id: Number(this.id), job: Boolean(Voice.getReconnectJob(this.id, this.key)) });

@@ -157,7 +157,7 @@ export class VoiceGameBridge {
 
         case 'mute': {
           const id = Number(parts[1]);
-          if (id in Voice.manager) {
+          if (id in Voice.manager || Voice.hasReconnectJob(id)) {
             Voice.togglePeerMuted(id);
           }
           break;
@@ -174,7 +174,7 @@ export class VoiceGameBridge {
         case 'vol': {
           const id = Number(parts[1]);
           const delta = Math.round(Number(parts[2]) || 0);
-          if (id in Voice.manager && delta) {
+          if ((id in Voice.manager || Voice.hasReconnectJob(id)) && delta) {
             Voice.setPeerVolumePercent(id, Voice.getPeerVolumePercent(id) + delta);
           }
           break;
@@ -453,6 +453,19 @@ export class VoiceGameBridge {
       if (peerMic === 0) flags |= 32;
 
       lines.push(`p ${id} ${flags} ${Voice.getPeerVolumePercent(id)} ${VoiceGameBridge.cleanName(peer.name || `id${id}`)}`);
+    }
+
+    // Между попытками переподключения записи нет: без этой строки игра покажет наушники
+    // «не в войсе» и уберёт кнопку мута, хотя соединение восстанавливается.
+    // В present не добавляем: при новом соединении состояние микрофона надо переслать заново.
+    const reconnecting = new Set();
+    for (const job of Voice.reconnectJobs.values()) {
+      if (job.id in Voice.manager || reconnecting.has(job.id)) continue;
+      reconnecting.add(job.id);
+      let flags = 8;
+      if (Voice.isPeerSilenced(job.id)) flags |= 2;
+      if (Voice.isMutedByPeer(job.id)) flags |= 4;
+      lines.push(`p ${job.id} ${flags} ${Voice.getPeerVolumePercent(job.id)} ${VoiceGameBridge.cleanName(job.name || `id${job.id}`)}`);
     }
 
     VoiceGameBridge.pruneMeters(alive);
