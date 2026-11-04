@@ -401,6 +401,21 @@
       ]
     },
     {
+      "name": "shader_pos_color_water_reflect",
+      "layout": [
+        {
+          "name": "vertPosition",
+          "count": 3,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertColor",
+          "count": 4,
+          "sizeElem": 1
+        }
+      ]
+    },
+    {
       "name": "grid_shader_color_pos_uv",
       "layout": [
         {
@@ -4789,7 +4804,7 @@
         {
           "mesh": "doct/blend_7_01.bin",
           "indexCount": 12807,
-          "shader": "shader_pos_color",
+          "shader": "shader_pos_color_water_reflect",
           "texture": "blend4362",
           "uvScale": [0.001, 0.001, 0.001, 0.001],
           "tintColor": [0.1, 0.3, 0.4, 1.2],
