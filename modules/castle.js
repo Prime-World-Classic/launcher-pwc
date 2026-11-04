@@ -1995,6 +1995,7 @@ export class Castle {
         weather: obj.weather,
         weather2: obj.weather2,
         weather3: obj.weather3,
+        weather4: obj.weather4,
         texture: obj.texture,
         texture_2: obj.texture_2,
         texture_3: obj.texture_3,
@@ -2049,6 +2050,7 @@ export class Castle {
           weather: obj.weather,
           weather2: obj.weather2,
           weather3: obj.weather3,
+          weather4: obj.weather4,
           texture: obj.texture,
           texture_2: obj.texture_2,
           texture_3: obj.texture_3,
@@ -2303,6 +2305,7 @@ export class Castle {
       weather: u('weather'),
       weather2: u('weather2'),
       weather3: u('weather3'),
+      weather4: u('weather4'),
       mWorld: u('mWorld'),
       bones: u('bones'),
       smDebugColor: u('smDebugColor'),
@@ -3357,13 +3360,14 @@ export class Castle {
 
     gl.uniform2fv(l.uvScroll, uvScroll ? uvScroll : Castle.ZEROS2);
 
-    // Погодный оверлей (CastleWeather): скорость/хвост/плотность/слои — только у программ, где
-    // эти uniform-ы объявлены (шейдер с #define SNOW); у остальных l.weather === null, вызовов нет.
+    // Погодный оверлей (CastleWeather): фаза/слои/плоскость квада — только у программ, где эти
+    // uniform-ы объявлены (шейдер с #define SNOW); у остальных l.weather === null, вызовов нет.
     if (l.weather) {
       const wobj = Castle.currentDrawObject;
       gl.uniform4fv(l.weather, (wobj && wobj.weather) || Castle.ZEROS4);
       gl.uniform4fv(l.weather2, (wobj && wobj.weather2) || Castle.ZEROS4);
       gl.uniform4fv(l.weather3, (wobj && wobj.weather3) || Castle.ZEROS4);
+      gl.uniform4fv(l.weather4, (wobj && wobj.weather4) || Castle.ZEROS4);
     }
 
     // матрицы — общие рабочие массивы (uniformMatrix4fv копирует значение), новые на каждый объект не нужны

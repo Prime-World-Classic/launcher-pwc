@@ -147,6 +147,15 @@ void main()
   
   vec4 worldPos = mWorld * vec4(animatedVertPosition, 1.0);
   gl_Position = mViewProj * worldPos;
+#ifdef SNOW
+// Мировые метры точки квада в базисе его плоскости: колонки 0 и 1 mWorld — это полуширина и
+// полувысота квада в мире, деление на их длины оставляет в векторе только мировые оси.
+// Дальше шейдер погоды строит из них мировую координату узора, поэтому пан камеры не тащит
+// осадки за собой.
+  vec3 snowE1 = mWorld[0].xyz;
+  vec3 snowE2 = mWorld[1].xyz;
+  fragPlanePos = vec2(dot(worldPos.xyz, snowE1) / length(snowE1), dot(worldPos.xyz, snowE2) / length(snowE2));
+#endif
 #ifdef VS_NORMAL
   vec4 worldNormal = mWorld * vec4(normalize(skinnedNormal), 0.0);
   fragNormal = (worldNormal.xyz);

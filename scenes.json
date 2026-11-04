@@ -4881,12 +4881,13 @@
           "texture": "white-flare",
           "strip": true,
           "blend": ["SRC_ALPHA", "ONE_MINUS_SRC_ALPHA"],
-          "tintColor": [0.95, 0.97, 1.0, 0.9],
+          "tintColor": [0.95, 0.97, 1.0, 0.675],
           "uvScale": [1, 1, 1, 1],
           "uvScroll": [0, 1],
-          "weather": [1.4, 0, 2.6, 0.6],
-          "weather2": [0.25, 0.042, 3, 45],
-          "weather3": [1.7777, 0.5, 6, 0.35],
+          "weather": [0, 0, 3.1, 0.6],
+          "weather2": [0.021, 3, 45, 10],
+          "weather3": [6, 0.35, 0, 0],
+          "weather4": [0, -1, 0.42, 0],
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         }
       ]
@@ -10764,12 +10765,13 @@
           "texture": "white-flare",
           "strip": true,
           "blend": ["SRC_ALPHA", "ONE_MINUS_SRC_ALPHA"],
-          "tintColor": [0.95, 0.97, 1.0, 0.9],
+          "tintColor": [0.95, 0.97, 1.0, 0.675],
           "uvScale": [1, 1, 1, 1],
           "uvScroll": [0, 1],
-          "weather": [1.4, 0, 2.6, 0.6],
-          "weather2": [0.25, 0.042, 3, 45],
-          "weather3": [1.7777, 0.5, 6, 0.35],
+          "weather": [0, 0, 3.1, 0.6],
+          "weather2": [0.021, 3, 45, 10],
+          "weather3": [6, 0.35, 0, 0],
+          "weather4": [0, -1, 0.42, 0],
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         }
       ]
