@@ -5,31 +5,44 @@
 //
 // Движение камеры — СВОЁ, не штатная анимация движка: tick ведёт одну таймлайн-позу с
 // ease-in-out (плавный набор скорости и такое же торможение), а штатную скорость зума на время
-// режима обнуляет. Класс висит на body, а не на #castle-body: экран замка пересобирается
-// (View.show('castle')), а часть интерфейса живёт вне замка (быстрые вкладки, войс, новости,
-// плашка обновления). Наблюдение за бездействием ставит View.castle() (start) и снимает
-// View.show (stop); окно, открытое во время режима, тоже снимает режим (Window.show → exit).
+// режима обнуляет. Обход сцены (yaw) делает Castle.camYaw/camPivot (castle.js). Класс висит на
+// body, а не на #castle-body: экран замка пересобирается (View.show('castle')), а часть
+// интерфейса живёт вне замка (быстрые вкладки, войс, новости, плашка обновления). Наблюдение за
+// бездействием ставит View.castle() (start) и снимает View.show (stop); окно, открытое во время
+// режима, тоже снимает режим (Window.show → exit).
 
 import { Castle } from './castle.js';
 
 export const CASTLE_CINEMATIC_CLASS = 'castle-cinematic';
 
+// Точка, вокруг которой камера обходит сцену: пересечение оси зрения с землёй при штатной
+// позе (мировые X/Z в системе Castle.updateMainCam). Одна для обеих фракций — камера общая.
+export const CASTLE_CINEMATIC_PIVOT = [1200, 1350];
+
 // Постановочные кадры. value — ступень зума (индекс в Castle.fixedFovValues /
 // fixedRotationTiltValues / fixedCameraHeightValues, 1..6): ступени 4-6 — приподнятая камера
 // с наклоном, только они дают «постановочный» вид; 1-3 — штатная верхняя перспектива, в кадр
-// на ней вылезает светлая подложка замка. pan — сдвиг камеры в тех же координатах, что и
-// штатное перетаскивание (Castle.camDeltaPos). Кадры подобраны скриншотами реального рендера
-// (?previewCastle=1 + --use-angle=vulkan), днём и ночью.
+// на ней вылезает светлая подложка замка. yaw — обход вокруг pivot в градусах, pan — сдвиг
+// камеры в тех же координатах, что и штатное перетаскивание (Castle.camDeltaPos).
+// Кадры подобраны скриншотами реального рендера (?previewCastle=1 + --use-angle=vulkan),
+// днём и ночью; за ±135° у doct в кадр начинает вылезать край сцены — потому диапазон
+// [-90°, +135°].
 export const CASTLE_CINEMATIC_SHOTS = {
   doct: [
-    { value: 6, pan: [-45, -25] }, // пояс построек крупно: мельница слева, кузницы справа
-    { value: 5, pan: [-45, 10] }, // общий план: замок на облаках, луна в правом верхнем углу
-    { value: 6, pan: [20, -25] }, // правый край: дома, шестерни, огонь кузни
+    { value: 5, yaw: 0, pan: [0, 0] }, // фасад: гора за стеной, весь замок
+    { value: 6, yaw: 45, pan: [0, 0] }, // крупно: мельница, дома, шестерни
+    { value: 4, yaw: 90, pan: [0, 0] }, // мост и ров, широко
+    { value: 5, yaw: -45, pan: [0, 0] }, // закатная стена с башнями
+    { value: 6, yaw: -90, pan: [0, 0] }, // башни в упор, закатное небо
+    { value: 4, yaw: 135, pan: [0, 0] }, // донжон и мост, широкий охват
   ],
   ad: [
-    { value: 6, pan: [20, -25] }, // поселение и орёл на фоне стены водопадов
-    { value: 4, pan: [-45, 10] }, // общий план: водопады, листья, небо
-    { value: 6, pan: [0, -30] }, // центр поселения крупно
+    { value: 5, yaw: 0, pan: [0, 0] }, // водопад и радуга над поселением
+    { value: 6, yaw: 45, pan: [0, 0] }, // пагода и сакуры крупно
+    { value: 5, yaw: 90, pan: [0, 0] }, // скалы и водопад сбоку
+    { value: 6, yaw: -45, pan: [0, 0] }, // радуга и поселение в упор
+    { value: 4, yaw: -90, pan: [0, 0] }, // широко: водопады и облака
+    { value: 4, yaw: 20, pan: [0, 0] }, // общий план через всё поселение
   ],
 };
 
@@ -42,19 +55,18 @@ export class CastleCinematic {
   static AFK_MS = 15000;
 
   // сколько живём в одном кадре, прежде чем камера поедет к следующему
-  static DWELL_MS = 16000;
+  static DWELL_MS = 32000;
 
   // длительности перелёта камеры: вход в кадр, кадр→кадр, возврат к виду игрока
-  static MOVE_IN_MS = 4500;
+  static MOVE_IN_MS = 9000;
 
-  static MOVE_MS = 4000;
+  static MOVE_MS = 8000;
 
-  static MOVE_OUT_MS = 1200;
+  static MOVE_OUT_MS = 2400;
 
   static ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'wheel', 'keydown', 'touchstart'];
 
-  // расширенный на время режима диапазон панорамы (штатный — Castle.camDeltaPosMinMax):
-  // постановочные кадры стоят дальше, чем игрок дотягивает перетаскиванием
+  // расширенный на время режима диапазон панорамы (штатный — Castle.camDeltaPosMinMax)
   static PAN_LIMITS = [
     [-150, 90],
     [-150, 90],
@@ -77,10 +89,12 @@ export class CastleCinematic {
 
   static shotAt = 0;
 
-  // поза игрока до входа (куда возвращаем) и её же штатные настройки камеры; живёт до конца возврата
+  // поза игрока до входа (куда возвращаем) и её же штатные настройки камеры;
+  // живёт до конца возврата
   static saved = null;
 
-  // активный перелёт: { from, to, panFrom, panTo, t0, ms }
+  // активный перелёт: { from, to, panFrom, panTo, yawFrom, yawTo, t0, ms }
+  // (panFrom/panTo и yawFrom/yawTo могут отсутствовать — тогда компонент не ведём)
   static move = null;
 
   // --- наблюдение за бездействием (живёт, пока открыт замок) ---
@@ -108,11 +122,11 @@ export class CastleCinematic {
     if (CastleCinematic.active) {
       CastleCinematic.exit();
     } else if (CastleCinematic.returning && (event.type === 'wheel' || event.type === 'mousedown')) {
-      // игрок сам взялся за камеру: возврат снимаем, а его колесо прокручиваем уже сами —
-      // движок в полёте камеры его игнорирует (ранний выход в Castle.zoom)
-      const step = event.type === 'wheel' ? event : null;
-      CastleCinematic.finishReturn();
-      if (step) Castle.zoom(step);
+      // игрок сам взялся за камеру: зум и панораму отдаём ему сразу, а угол обхода
+      // всё равно доезжает до нуля — иначе вид останется повёрнутым навсегда
+      const wheel = event.type === 'wheel' ? event : null;
+      CastleCinematic.yieldCamera();
+      if (wheel) Castle.zoom(wheel);
     }
   }
 
@@ -146,6 +160,7 @@ export class CastleCinematic {
       CastleCinematic.saved = {
         value: Castle.currentFixedValue,
         pan: [Castle.camDeltaPos[0], Castle.camDeltaPos[1]],
+        yaw: Castle.camYaw,
         speed: Castle.cameraAnimationSpeed,
         limits: Castle.camDeltaPosMinMax,
       };
@@ -154,6 +169,7 @@ export class CastleCinematic {
     // выключена: позой на каждом кадре управляет tick
     Castle.cameraAnimationSpeed = 0;
     Castle.camDeltaPosMinMax = CastleCinematic.PAN_LIMITS;
+    Castle.camPivot = CASTLE_CINEMATIC_PIVOT;
 
     CastleCinematic.shotIndex = 0;
     CastleCinematic.shotAt = Date.now();
@@ -166,10 +182,31 @@ export class CastleCinematic {
     document.body.classList.remove(CASTLE_CINEMATIC_CLASS);
     if (!CastleCinematic.saved) return;
     CastleCinematic.returning = true;
-    CastleCinematic.startMove({ value: CastleCinematic.saved.value, pan: CastleCinematic.saved.pan }, CastleCinematic.MOVE_OUT_MS);
+    CastleCinematic.startMove(CastleCinematic.saved, CastleCinematic.MOVE_OUT_MS);
   }
 
-  // вернуть движку управление камерой и зафиксировать ступень: пока
+  // отменить возврат зума/панорамы, но довести угол обхода до нуля
+  static yieldCamera() {
+    const move = CastleCinematic.move;
+    const yaw = Castle.camYaw;
+    CastleCinematic.settleStep();
+    CastleCinematic.returning = false;
+    const saved = CastleCinematic.saved;
+    CastleCinematic.saved = null;
+    if (saved) {
+      Castle.cameraAnimationSpeed = saved.speed;
+      Castle.camDeltaPosMinMax = saved.limits;
+    }
+    CastleCinematic.move = {
+      yawFrom: yaw,
+      yawTo: 0,
+      t0: Date.now(),
+      ms: CastleCinematic.MOVE_OUT_MS,
+    };
+    if (!CastleCinematic.raf) CastleCinematic.raf = requestAnimationFrame(CastleCinematic.tick);
+  }
+
+  // вернуть движку управление зумом и зафиксировать ступень: пока
   // |currentFixedValue - targetFixedValue| > 0.04, Castle.zoom() игнорирует колесо
   static finishReturn() {
     CastleCinematic.returning = false;
@@ -200,6 +237,8 @@ export class CastleCinematic {
       to: shot.value,
       panFrom: [Castle.camDeltaPos[0], Castle.camDeltaPos[1]],
       panTo: shot.pan,
+      yawFrom: Castle.camYaw,
+      yawTo: ((shot.yaw || 0) * Math.PI) / 180,
       t0: Date.now(),
       ms,
     };
@@ -229,19 +268,29 @@ export class CastleCinematic {
       // |initial - current|) и корректен только при |initial - current| <= 1. Поэтому концы
       // задаём целыми индексами пресетов (от и куда), а current ставим на e рядом с «от»:
       // интерполяция идёт напрямую между двумя кадрами, без пролёта через промежуточные
-      // ступени таблицы (у неё fov не монотонен: 45→25→55→35).
-      const from = Math.round(move.from);
-      const to = Math.round(move.to);
-      Castle.initialFixedValue = from;
-      Castle.targetFixedValue = to;
-      Castle.currentFixedValue = from + (to >= from ? 1 : -1) * e;
-      for (const axis of [0, 1]) {
-        Castle.camDeltaPos[axis] = move.panFrom[axis] + (move.panTo[axis] - move.panFrom[axis]) * e;
+      // ступени (у таблицы fov не монотонен: 45→25→55→35).
+      if (move.to != null) {
+        const from = Math.round(move.from);
+        const to = Math.round(move.to);
+        Castle.initialFixedValue = from;
+        Castle.targetFixedValue = to;
+        Castle.currentFixedValue = from + (to >= from ? 1 : -1) * e;
+      }
+      if (move.panTo) {
+        for (const axis of [0, 1]) {
+          Castle.camDeltaPos[axis] = move.panFrom[axis] + (move.panTo[axis] - move.panFrom[axis]) * e;
+        }
+      }
+      if (move.yawTo != null) {
+        Castle.camYaw = move.yawFrom + (move.yawTo - move.yawFrom) * e;
       }
       if (p >= 1) {
+        if (move.to != null) {
+          const to = Math.round(move.to);
+          Castle.currentFixedValue = Castle.initialFixedValue = Castle.targetFixedValue = to;
+        }
+        if (move.yawTo != null) Castle.camYaw = move.yawTo;
         CastleCinematic.move = null;
-        // «куда» фиксируем только в конце: до этого current живёт рядом с «от»
-        Castle.currentFixedValue = Castle.initialFixedValue = Castle.targetFixedValue = to;
         if (CastleCinematic.returning) CastleCinematic.finishReturn();
       }
     }

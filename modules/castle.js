@@ -166,6 +166,14 @@ export class Castle {
 
   static camDeltaPos = [0.0, 0.0];
 
+  // кинематографичный обход: угол вокруг camPivot (рад) и сам pivot (мировые X/Z);
+  // 0 / [0,0] — штатная камера
+  static camYaw = 0;
+
+  static camPivot = [0, 0];
+
+  static camOrbitMatr = mat4.create();
+
   // было [-50, 10]: область сдвига расширена на 50% в каждую сторону от центра (-20)
   static camDeltaPosMinMax = [
     [-65, 25],
@@ -3032,6 +3040,23 @@ export class Castle {
     mat4.translate(Castle.viewMatrix, Castle.viewMatrix, camPos);
 
     mat4.multiply(Castle.viewMatrix2, Castle.flipMatr, Castle.viewMatrix);
+
+    // Кинематографичный обход сцены (CastleCinematic): доворот камеры вокруг точки сцены
+    // camPivot. Камера C' = M(pivot, yaw) * C, значит вид V' = V * M^-1 — так точка прицела
+    // остаётся в центре кадра при любом угле. camYaw = 0 — ветка не выполняется, штатная
+    // камера не меняется. Остальное (viewProjMatr, viewProjInv, пузыри зданий) выводится
+    // из viewMatrix2, поэтому само едет за поворотом.
+    if (Castle.camYaw) {
+      mat4.identity(Castle.camOrbitMatr);
+
+      mat4.translate(Castle.camOrbitMatr, Castle.camOrbitMatr, [Castle.camPivot[0], 0, Castle.camPivot[1]]);
+
+      mat4.rotateY(Castle.camOrbitMatr, Castle.camOrbitMatr, -Castle.camYaw);
+
+      mat4.translate(Castle.camOrbitMatr, Castle.camOrbitMatr, [-Castle.camPivot[0], 0, -Castle.camPivot[1]]);
+
+      mat4.multiply(Castle.viewMatrix2, Castle.viewMatrix2, Castle.camOrbitMatr);
+    }
 
     mat4.multiply(Castle.viewProjMatr, Castle.projMatrix, Castle.viewMatrix2);
 
