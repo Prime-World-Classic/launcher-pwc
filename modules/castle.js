@@ -109,7 +109,12 @@ export class Castle {
 
   static zNear = 10.0;
 
-  static zFar = 4500.0;
+  // Дальняя плоскость обязана переживать самый далёкий угол неба: скайбокс (меши sky_*, центр
+  // (1442,-500,1504), полусторона ~3000) в максимальном удалении от камеры даёт 5235 м, а при
+  // обходе камеры вокруг pivot (CASTLE_CINEMATIC_PIVOT, радиус ~280) и панораме — до ~5700.
+  // При 4500 небо и горы за ним срезались плоскостью отсечения, и в верхней части кадра
+  // (особенно в переходе между кадрами) появлялся бледный клин цвета очистки.
+  static zFar = 6200.0;
 
   static canvasWidth;
 
@@ -174,6 +179,11 @@ export class Castle {
   static camPivot = [0, 0];
 
   static camOrbitMatr = mat4.create();
+
+  // наклон и высота постановочного кадра (CastleCinematic); null — штатная ступень
+  static cinematicTilt = null;
+
+  static cinematicHeight = null;
 
   // было [-50, 10]: область сдвига расширена на 50% в каждую сторону от центра (-20)
   static camDeltaPosMinMax = [
@@ -1860,9 +1870,27 @@ export class Castle {
     }
   }
 
+  // Погода (дождь/снег) затемняет и обесцвечивает свет сцены. Вызывается ПОСЛЕ того, как
+  // посчитан штатный свет (или база «день без цикла»), и всегда от базы — иначе множение
+  // накопилось бы по кадрам. Сила — по фейду смены слота, поэтому погода «нарастает» и
+  // «сходит» вместе с самими осадками.
+  static applyWeatherLight(sunBase, ambientBase) {
+    const wet = CastleWeather.strength();
+    if (wet <= 0) {
+      Castle.sunLight = sunBase;
+      Castle.ambientLight = ambientBase;
+      return;
+    }
+    const [sun, amb] = CastleWeather.tintLight(wet, sunBase, ambientBase);
+    Castle.sunLight = sun;
+    Castle.ambientLight = amb;
+  }
+
   static updateDayNight() {
     if (!Castle.dayNightEnabled) {
       if (Castle.dayNightActive) Castle.disableDayNight();
+      // день без цикла: солнце белое, фон нейтральный — но под дождём и они темнеют
+      Castle.applyWeatherLight([1, 1, 1, 1], [1, 1, 1, 0.001]);
       return;
     }
     const axes = Castle.getCamAxes();
@@ -1921,6 +1949,8 @@ export class Castle {
     Castle.sunLight = [sun[0], sun[1], sun[2], exposure];
     // ночной фон голубоватый, дневной нейтральный
     Castle.ambientLight = [0.62 + 0.38 * daylight, 0.72 + 0.28 * daylight, 1.0, 0.0004];
+    // осадки: тучи гасят прямое солнце, тон становится мрачнее и бледнее
+    Castle.applyWeatherLight(Castle.sunLight, Castle.ambientLight);
     // огни зданий загораются на закате, пока солнце ещё не ушло, и гаснут после рассвета
     CastleLighting.nightLevel = 1 - Castle.smoothstep(-0.08, 0.2, altitude);
 
@@ -2306,6 +2336,11 @@ export class Castle {
       weather2: u('weather2'),
       weather3: u('weather3'),
       weather4: u('weather4'),
+      wind: u('wind'),
+      windBase: u('windBase'),
+      windDir: u('windDir'),
+      camPos: u('camPos'),
+      nightStars: u('nightStars'),
       mWorld: u('mWorld'),
       bones: u('bones'),
       smDebugColor: u('smDebugColor'),
@@ -2598,6 +2633,62 @@ export class Castle {
     return texture;
   }
 
+  // Ветер покачивания деревьев и кустов (шейдеры *_wind, блок VS_WIND в shader.vs.glsl).
+  // amp — ДОЛЯ высоты объекта: у дерева в ~220 условных единиц макушка ходит на amp*высоту.
+  // 0.05 ≈ 2,5 м у дерева в 50 единиц — заметно, но не «пляшущий лес» (замер кадра:
+  // 0.018 почти не видно, 0.15 уже перекашивает крону). speed — как быстро меняется фаза во
+  // времени (период ~7 с), freq — как быстро она меняется с расстоянием (вдоль ветра).
+  static windAmp = 0.05;
+
+  static windSpeed = 0.9;
+
+  static windFreq = 0.012;
+
+  // степень профиля высоты: 1 — наклон пропорционален высоте, больше — низ жёстче
+  static windProfile = 1.7;
+
+  // мировое направление ветра (XZ, единичное)
+  static windDirXY = [0.88, 0.47];
+
+  // Ночное небо и отражение неба в воде (shader_pos_uv_sky, shader_pos_water_reflect).
+  // starBrightness — множитель звёзд; waterReflect — сила отражения неба в воде (у скользящих
+  // лучей она растёт сама, см. fresnel в шейдере).
+  static starBrightness = 1.0;
+
+  static waterReflect = 0.5;
+
+  // мировая позиция камеры кадра (из invert(viewMatrix2), см. updateMainCam)
+  static camMat = mat4.create();
+
+  static camWorld = [0, 0, 0];
+
+  // Состояние ветра на кадр. Порывы — медленные синусы: крона набирает ход и отходит, но
+  // не дрожит. Под осадками ветер сильнее (та же погода, что затемняет свет, гонит и ветер).
+  static windState() {
+    const t = Castle.currentTime;
+    const gust = 0.72 + 0.28 * Math.sin(t * 0.23) + 0.16 * Math.sin(t * 0.071 + 2.1);
+    const wet = 1 + 0.5 * CastleWeather.strength();
+    return { amp: Castle.windAmp * gust * wet, speed: Castle.windSpeed, freq: Castle.windFreq, profile: Castle.windProfile, dir: Castle.windDirXY };
+  }
+
+  // Нижняя граница и высота объекта в МИРЕ — профиль покачивания (windBase в шейдере).
+  // Мировой Y вершины = вторая строка transform (он хранится построчно, как в шейдере);
+  // считаем по восьми углам локального bbox.
+  static windBaseOf(obj, bboxMin, bboxMax) {
+    const t = obj.transform || Castle.DEFAULT_TRANSFORM;
+    let lo = Infinity,
+      hi = -Infinity;
+    for (let corner = 0; corner < 8; corner++) {
+      const p = [corner & 1 ? bboxMax[0] : bboxMin[0], corner & 2 ? bboxMax[1] : bboxMin[1], corner & 4 ? bboxMax[2] : bboxMin[2]];
+      const wy = t[4] * p[0] + t[5] * p[1] + t[6] * p[2] + t[7];
+      if (wy < lo) lo = wy;
+      if (wy > hi) hi = wy;
+    }
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) return null;
+    const h = Math.max(hi - lo, 1);
+    return [lo, 1 / h, h];
+  }
+
   // Меш из загруженного файла: буфер вершин в GPU, границы, средний цвет вершин
   static uploadMesh(scene, shaderNames, sceneObjectsContainer, objectId, meshData) {
     let vertices = Castle.gl.createBuffer();
@@ -2663,6 +2754,7 @@ export class Castle {
       bboxMin: bboxMin,
       bboxMax: bboxMax,
       avgColor: avgColor,
+      windBase: Castle.windBaseOf(sceneObjectsContainer[objectId], bboxMin, bboxMax),
     };
     // вершины рельефа, деревьев и кустов — для карты высот светлячков (CastleFireflies)
     CastleFireflies.keepGroundPositions(sceneObjectsContainer[objectId], meshFloat, vertStride, posOffset);
@@ -2748,6 +2840,14 @@ export class Castle {
 
     Castle.cameraHeight = Castle.lerp(targetCHVs[0], targetCHVs[1], camLerp);
 
+    // Постановочный наклон/высота кинематографичного кадра (CastleCinematic): ступень зума
+    // задаёт fov, а наклон и высоту кадр может требовать свои — только ими можно убрать из
+    // верхней части кадра дугу неба (верхний край цилиндрической панорамы на текстуре sky_*).
+    // null — штатная ступень, обычный вид игрока не меняется.
+    if (Castle.cinematicTilt !== null) Castle.rotationTilt = Castle.cinematicTilt;
+
+    if (Castle.cinematicHeight !== null) Castle.cameraHeight = Castle.cinematicHeight;
+
     let buildingsToDraw = [];
 
     for (let building of Castle.placedBuildings) {
@@ -2786,10 +2886,12 @@ export class Castle {
 
     Castle.updateMainCam();
 
-    Castle.updateDayNight();
-
-    // погода: квад прижимается к камере, uniform-ы и переход снега в дождь считаются каждый кадр
+    // Погода считается ДО света: наклон квада берётся из готовой камеры этого кадра, а
+    // Castle.updateDayNight затемняет солнце и фон по уже посчитанному fade (tintLight).
+    // Яркость самих частиц (NIGHT_FLOOR по Castle.daylight) при этом отстаёт на кадр — незаметно.
     CastleWeather.update(Castle);
+
+    Castle.updateDayNight();
 
     let outlinedBuilding = -1;
     Castle.outlinedBuilding = null;
@@ -3101,6 +3203,14 @@ export class Castle {
 
     mat4.invert(Castle.viewProjInv, Castle.viewProjMatr); // viewProj -> world
 
+    // Мировая позиция камеры — для звёзд и отражения (направление «из глаза в мир»). БЕРЁТСЯ ИЗ
+    // invert(viewMatrix2): локальный camPos выше — перевод в ЛОКАльной системе вида (матрицы
+    // домножаются справа), знак у него обратный мировой позиции.
+    mat4.invert(Castle.camMat, Castle.viewMatrix2);
+    Castle.camWorld[0] = Castle.camMat[12];
+    Castle.camWorld[1] = Castle.camMat[13];
+    Castle.camWorld[2] = Castle.camMat[14];
+
     Castle.cursorBasis = [
       ((Castle.cursorPosition[0] - Castle.canvasWidth / 2) / Castle.canvasWidth) * 2,
       -(((Castle.cursorPosition[1] - Castle.canvasHeight / 2) / Castle.canvasHeight) * 2),
@@ -3152,6 +3262,21 @@ export class Castle {
 
     gl.uniform4f(l.time, Castle.currentTime, 0, 0, 0);
 
+    // Ветер покачивания деревьев (шейдеры *_wind): общий для кадра, как и time. Ставится только
+    // у программ, где он объявлен (l.wind === null у остальных — вызовов нет).
+    if (l.wind) {
+      const w = Castle.windState();
+      gl.uniform4f(l.wind, w.amp, w.speed, w.freq, w.profile);
+      gl.uniform2f(l.windDir, w.dir[0], w.dir[1]);
+    }
+
+    // Ночное небо и отражение в воде (shader_pos_uv_sky, shader_pos_water_reflect): мировая
+    // позиция камеры и ночный уровень. Ставится только там, где uniform-ы объявлены.
+    if (l.camPos) {
+      gl.uniform4f(l.camPos, Castle.camWorld[0], Castle.camWorld[1], Castle.camWorld[2], 1);
+      gl.uniform4f(l.nightStars, CastleLighting.nightLevel, Castle.starBrightness, Castle.waterReflect, 0);
+    }
+
     gl.uniform4f(l.shadowDebug, Castle.shadowDebugMode, 0, 0, 0);
   }
 
@@ -3162,6 +3287,13 @@ export class Castle {
     Castle.gl.uniformMatrix4fv(l.mViewProj, false, Castle.lightViewProjMatrix);
 
     Castle.gl.uniform4f(l.time, Castle.currentTime, 0, 0, 0);
+
+    // ветер нужен и проходу карты теней: иначе тень дерева стоит, а само оно качается
+    if (l.wind) {
+      const w = Castle.windState();
+      Castle.gl.uniform4f(l.wind, w.amp, w.speed, w.freq, w.profile);
+      Castle.gl.uniform2f(l.windDir, w.dir[0], w.dir[1]);
+    }
   }
 
   static getBlendFunc(blendString) {
@@ -3357,6 +3489,13 @@ export class Castle {
     gl.uniform4fv(l.startFreq, startFreqValue ? startFreqValue : Castle.ZEROS4);
     gl.uniform4fv(l.endAmp, endAmpValue ? endAmpValue : Castle.ZEROS4);
     gl.uniform4fv(l.animDirVertFreq, animDir ? animDir : Castle.ZEROS4);
+
+    // Покачивание на ветру: нижняя граница и высота объекта (windBase) — свои у каждого меша,
+    // нет данных — invHeight=0, профиль обнуляется, объект стоит.
+    if (l.windBase) {
+      const wb = Castle.currentDrawObject && Castle.currentDrawObject.meshData && Castle.currentDrawObject.meshData.windBase;
+      gl.uniform4f(l.windBase, wb ? wb[0] : 0, wb ? wb[1] : 0, wb ? wb[2] : 0, 0);
+    }
 
     gl.uniform2fv(l.uvScroll, uvScroll ? uvScroll : Castle.ZEROS2);
 

@@ -57,6 +57,14 @@ uniform vec4 endAmp;
 uniform vec4 animDirVertFreq;
 uniform vec4 time;
 
+// Покачивание на ветру (шейдеры *_wind: деревья и кусты). Вершины мешей сцены — мировые
+// координаты, поэтому и фаза, и смещение берутся в мире.
+#ifdef VS_WIND
+uniform vec4 wind; // x: амплитуда макушки (доля высоты объекта), y: скорость (рад/с), z: частота по позиции (1/м), w: степень профиля высоты
+uniform vec4 windBase; // x: мировой Y низа объекта, y: 1/высота объекта, z: высота объекта, w: резерв
+uniform vec2 windDir; // мировое направление ветра (XZ, единичное)
+#endif
+
 // Pizdos. Ebaniy webgl cannot convert half to float natively
 // Also there's no bitwise operations so I had to use floats only
 vec2 half_to_float(vec2 h)
@@ -146,6 +154,25 @@ void main()
 // Transforms
   
   vec4 worldPos = mWorld * vec4(animatedVertPosition, 1.0);
+#ifdef VS_WIND
+// Ветер: ствол у земли стоит, макушка ходит. Профиль — (высота/высота объекта)^w, поэтому
+// у высокого дерева амплитуда в метрах больше, чем у куста, а внутри одного дерева она
+// меняется только с высотой.
+// Фаза берётся от мировой позиции вдоль направления ветра: соседние деревья качаются
+// РАЗНОВРЕМЕННО (иначе весь лес дышит как один объект), но у кроны одного дерева фаза
+// почти одинаковая — иначе крона «ползёт» по вершинам.
+  float windH = clamp((worldPos.y - windBase.x) * windBase.y, 0.0, 1.0);
+  windH = pow(windH, max(wind.w, 1.0));
+  float windPh = dot(worldPos.xz, windDir) * wind.z + time.x * wind.y;
+  // два хода с несоразмерными частотами — неровность («порывы») без шума и без ветвлений
+  float windS = sin(windPh) * 0.75 + sin(windPh * 0.41 + 2.1) * 0.25;
+  worldPos.xz += windDir * (windS * wind.x * windBase.z * windH);
+#endif
+#if defined(SKY_STARS) || defined(WATER_REFLECT)
+// Мировая позиция фрагмента нужна, чтобы построить НАПРАВЛЕНИЕ на точку неба (звёзды и
+// отражение привязаны к миру, а не к экрану).
+  fragWorldPos = worldPos.xyz;
+#endif
   gl_Position = mViewProj * worldPos;
 #ifdef SNOW
 // Мировые метры точки квада в базисе его плоскости: колонки 0 и 1 mWorld — это полуширина и

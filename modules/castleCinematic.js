@@ -27,22 +27,33 @@ export const CASTLE_CINEMATIC_PIVOT = [1200, 1350];
 // Кадры подобраны скриншотами реального рендера (?previewCastle=1 + --use-angle=vulkan),
 // днём и ночью; за ±135° у doct в кадр начинает вылезать край сцены — потому диапазон
 // [-90°, +135°].
+//
+// tilt — наклон камеры в радианах, СВОЙ у кадра (Castle.cinematicTilt), а не наклон ступени
+// зума из Castle.fixedRotationTiltValues. Нужен он вот для чего: небо замка — шесть граней
+// скайбокса (sky_01…sky_06) с ЦИЛИНДРИЧЕСКОЙ панорамой на текстуре, и у этой панорамы есть
+// верхний край — дуга, выше неё небо однотонное. При штатном наклоне ступеней 4-6 (−0.8…−0.9)
+// верхняя граница цилиндра лежит ровно в верхней части кадра и видна и днём, и (гораздо
+// сильнее) ночью. Наклон «меньше по модулю» = камера смотрит ниже: дуга уходит за верхнюю
+// кромку кадра, а её место занимают горы/скалы заднего плана. Подобрано измерением
+// (лучи верхней кромки кадра → грань скайбокса → v на текстуре против v_arc(u), измеренной
+// с самой текстуры) для всех двенадцати кадров; у каждого — своё, с запасом ~3° от порога,
+// при котором дуга уходит за кадр:
 export const CASTLE_CINEMATIC_SHOTS = {
   doct: [
-    { value: 5, yaw: 0, pan: [0, 0] }, // фасад: донжон в центре, снежные горы за стеной
-    { value: 6, yaw: 45, pan: [0, 0] }, // крупно: юго-восточная стена, мельница, дома
-    { value: 5, yaw: 90, pan: [0, 25] }, // мост через ров и восточная башня
-    { value: 5, yaw: -90, pan: [0, 10] }, // закат: западная стена, облака, вода
-    { value: 6, yaw: 135, pan: [0, 20] }, // ворота и подъёмный мост в упор
-    { value: 4, yaw: -20, pan: [0, 15] }, // широкий охват: поселение, скалы, горы
+    { value: 5, yaw: 0, pan: [0, 0], tilt: -0.75 }, // фасад: донжон в центре, снежные горы за стеной
+    { value: 6, yaw: 45, pan: [0, 0], tilt: -0.8 }, // крупно: юго-восточная стена, мельница, дома
+    { value: 5, yaw: 90, pan: [0, 25], tilt: -0.7 }, // мост через ров и восточная башня
+    { value: 5, yaw: -90, pan: [0, 10], tilt: -0.75 }, // закат: западная стена, облака, вода
+    { value: 6, yaw: 135, pan: [0, 20], tilt: -0.75 }, // ворота и подъёмный мост в упор
+    { value: 4, yaw: -20, pan: [0, 15], tilt: -0.65 }, // широкий охват: поселение, скалы, горы
   ],
   ad: [
-    { value: 5, yaw: 0, pan: [0, 0] }, // водопад и радуга над поселением
-    { value: 6, yaw: 45, pan: [0, 0] }, // крупно: пагода на утёсе и сакуры
-    { value: 4, yaw: 90, pan: [0, 0] }, // широко: скалы, водопады, поселения сбоку
-    { value: 5, yaw: 135, pan: [0, 0] }, // пагода на утёсе, синее небо и луна
-    { value: 5, yaw: -45, pan: [0, 25] }, // радуга аркой над всем поселением
-    { value: 4, yaw: -20, pan: [0, 15] }, // широко: водопады и лучи света слева
+    { value: 5, yaw: 0, pan: [0, 0], tilt: -0.8 }, // водопад и радуга над поселением
+    { value: 6, yaw: 45, pan: [0, 0], tilt: -0.85 }, // крупно: пагода на утёсе и сакуры
+    { value: 4, yaw: 90, pan: [0, 0], tilt: -0.55 }, // широко: скалы, водопады, поселения сбоку
+    { value: 5, yaw: 135, pan: [0, 0], tilt: -0.6 }, // пагода на утёсе, синее небо и луна
+    { value: 5, yaw: -45, pan: [0, 25], tilt: -0.8 }, // радуга аркой над всем поселением
+    { value: 4, yaw: -20, pan: [0, 15], tilt: -0.7 }, // широко: водопады и лучи света слева
   ],
 };
 
@@ -104,8 +115,8 @@ export class CastleCinematic {
   // живёт до конца возврата
   static saved = null;
 
-  // активный перелёт: { from, to, panFrom, panTo, yawFrom, yawTo, t0, ms }
-  // (panFrom/panTo и yawFrom/yawTo могут отсутствовать — тогда компонент не ведём)
+  // активный перелёт: { from, to, panFrom, panTo, yawFrom, yawTo, tiltFrom, tiltTo, t0, ms }
+  // (panFrom/panTo, yawFrom/yawTo и tiltFrom/tiltTo могут отсутствовать — тогда компонент не ведём)
   static move = null;
 
   // --- наблюдение за бездействием (живёт, пока открыт замок) ---
@@ -181,6 +192,10 @@ export class CastleCinematic {
     Castle.cameraAnimationSpeed = 0;
     Castle.camDeltaPosMinMax = CastleCinematic.PAN_LIMITS;
     Castle.camPivot = CASTLE_CINEMATIC_PIVOT;
+    // наклон переходим на свой не рывком, а с текущего — иначе первый же кадр перелёта
+    // подпрыгнет на величину разницы между наклоном ступени и наклоном кадра
+    Castle.cinematicTilt = CastleCinematic.currentTilt();
+    Castle.cinematicHeight = CastleCinematic.currentHeight();
 
     CastleCinematic.shotIndex = 0;
     CastleCinematic.shotAt = Date.now();
@@ -208,6 +223,8 @@ export class CastleCinematic {
       Castle.cameraAnimationSpeed = saved.speed;
       Castle.camDeltaPosMinMax = saved.limits;
     }
+    Castle.cinematicTilt = null;
+    Castle.cinematicHeight = null;
     CastleCinematic.move = {
       yawFrom: yaw,
       yawTo: 0,
@@ -229,6 +246,9 @@ export class CastleCinematic {
       Castle.camDeltaPosMinMax = saved.limits;
     }
     CastleCinematic.settleStep();
+    // наклон и высота больше не постановочные: движок берёт их из ступени зума
+    Castle.cinematicTilt = null;
+    Castle.cinematicHeight = null;
   }
 
   static settleStep() {
@@ -240,6 +260,36 @@ export class CastleCinematic {
 
   static shots() {
     return CASTLE_CINEMATIC_SHOTS[Castle.currentSceneName] || CASTLE_CINEMATIC_SHOTS.doct;
+  }
+
+  // наклон штатной ступени зума (то, что даёт движок без постановочного кадра)
+  static stepTilt(value) {
+    const table = Castle.fixedRotationTiltValues || [0, 0, 0, 0, -0.8, -0.9, -0.8];
+    return table[Castle.clamp(Math.round(value), 0, table.length - 1)];
+  }
+
+  // наклон кадра: свой (shot.tilt) или ступени, если кадр его не задаёт
+  static shotTilt(shot) {
+    return shot && shot.tilt !== undefined && shot.tilt !== null ? shot.tilt : CastleCinematic.stepTilt(shot && shot.value);
+  }
+
+  // высота штатной ступени зума
+  static stepHeight(value) {
+    const table = Castle.fixedCameraHeightValues || [0, 0, 0, 0, 350, 350, 350];
+    return table[Castle.clamp(Math.round(value), 0, table.length - 1)];
+  }
+
+  static shotHeight(shot) {
+    return shot && shot.height !== undefined && shot.height !== null ? shot.height : CastleCinematic.stepHeight(shot && shot.value);
+  }
+
+  // фактический наклон камеры сейчас: постановочный, если он задан, иначе штатный
+  static currentTilt() {
+    return Castle.cinematicTilt === null || Castle.cinematicTilt === undefined ? Castle.rotationTilt : Castle.cinematicTilt;
+  }
+
+  static currentHeight() {
+    return Castle.cinematicHeight === null || Castle.cinematicHeight === undefined ? Castle.cameraHeight : Castle.cinematicHeight;
   }
 
   static yawLimits() {
@@ -254,6 +304,10 @@ export class CastleCinematic {
       panTo: shot.pan,
       yawFrom: Castle.camYaw,
       yawTo: ((shot.yaw || 0) * Math.PI) / 180,
+      tiltFrom: CastleCinematic.currentTilt(),
+      tiltTo: CastleCinematic.shotTilt(shot),
+      heightFrom: CastleCinematic.currentHeight(),
+      heightTo: CastleCinematic.shotHeight(shot),
       t0: Date.now(),
       ms,
     };
@@ -299,12 +353,21 @@ export class CastleCinematic {
       if (move.yawTo != null) {
         Castle.camYaw = move.yawFrom + (move.yawTo - move.yawFrom) * e;
       }
+      // наклон кадра ведётся по той же кривой, что fov/пан/угол: отдельный экспотейн ему не нужен
+      if (move.tiltTo != null) {
+        Castle.cinematicTilt = move.tiltFrom + (move.tiltTo - move.tiltFrom) * e;
+      }
+      if (move.heightTo != null) {
+        Castle.cinematicHeight = move.heightFrom + (move.heightTo - move.heightFrom) * e;
+      }
       if (p >= 1) {
         if (move.to != null) {
           const to = Math.round(move.to);
           Castle.currentFixedValue = Castle.initialFixedValue = Castle.targetFixedValue = to;
         }
         if (move.yawTo != null) Castle.camYaw = move.yawTo;
+        if (move.tiltTo != null) Castle.cinematicTilt = move.tiltTo;
+        if (move.heightTo != null) Castle.cinematicHeight = move.heightTo;
         CastleCinematic.move = null;
         if (CastleCinematic.returning) CastleCinematic.finishReturn();
       }

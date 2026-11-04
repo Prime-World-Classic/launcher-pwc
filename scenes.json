@@ -11,6 +11,16 @@
       ]
     },
     {
+      "name": "shader_pos_water_reflect",
+      "layout": [
+        {
+          "name": "vertPosition",
+          "count": 3,
+          "sizeElem": 4
+        }
+      ]
+    },
+    {
       "name": "shader_pos_norm_uv",
       "layout": [
         {
@@ -131,6 +141,26 @@
       ]
     },
     {
+      "name": "shader_pos_norm_uv_ak_wind",
+      "layout": [
+        {
+          "name": "vertPosition",
+          "count": 3,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertNormal",
+          "count": 3,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertTexCoord",
+          "count": 2,
+          "sizeElem": 4
+        }
+      ]
+    },
+    {
       "name": "shader_pos_norm_uv16",
       "layout": [
         {
@@ -152,6 +182,26 @@
     },
     {
       "name": "shader_pos_norm_uv16_ak",
+      "layout": [
+        {
+          "name": "vertPosition",
+          "count": 3,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertNormal",
+          "count": 3,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertTexCoord",
+          "count": 2,
+          "sizeElem": 2
+        }
+      ]
+    },
+    {
+      "name": "shader_pos_norm_uv16_ak_wind",
       "layout": [
         {
           "name": "vertPosition",
@@ -461,6 +511,31 @@
       ]
     },
     {
+      "name": "shader_pos_norm_uv16_uv_ak_wind",
+      "layout": [
+        {
+          "name": "vertPosition",
+          "count": 3,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertNormal",
+          "count": 3,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertTexCoord",
+          "count": 2,
+          "sizeElem": 2
+        },
+        {
+          "name": "vertTexCoord2",
+          "count": 2,
+          "sizeElem": 4
+        }
+      ]
+    },
+    {
       "name": "shader_pos_norm_uv16_uv",
       "layout": [
         {
@@ -591,7 +666,67 @@
       ]
     },
     {
+      "name": "shader_pos_norm_uv2_ak_wind",
+      "layout": [
+        {
+          "name": "vertPosition",
+          "count": 3,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertNormal",
+          "count": 3,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertTexCoord",
+          "count": 2,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertTexCoord2",
+          "count": 2,
+          "sizeElem": 4
+        }
+      ]
+    },
+    {
+      "name": "shader_pos_color_uv_hills",
+      "layout": [
+        {
+          "name": "vertPosition",
+          "count": 3,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertColor",
+          "count": 4,
+          "sizeElem": 1
+        },
+        {
+          "name": "vertTexCoord",
+          "count": 2,
+          "sizeElem": 4
+        }
+      ]
+    },
+    {
       "name": "shader_pos_uv",
+      "layout": [
+        {
+          "name": "vertPosition",
+          "count": 3,
+          "sizeElem": 4
+        },
+        {
+          "name": "vertTexCoord",
+          "count": 2,
+          "sizeElem": 4
+        }
+      ]
+    },
+    {
+      "name": "shader_pos_uv_sky",
       "layout": [
         {
           "name": "vertPosition",
@@ -4128,14 +4263,14 @@
         {
           "mesh": "doct/trees_8_01.bin",
           "indexCount": 39975,
-          "shader": "shader_pos_norm_uv16_ak",
+          "shader": "shader_pos_norm_uv16_ak_wind",
           "texture": "doct4050",
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         },
         {
           "mesh": "doct/trees_8_02.bin",
           "indexCount": 1689,
-          "shader": "shader_pos_norm_uv16_ak",
+          "shader": "shader_pos_norm_uv16_ak_wind",
           "texture": "doct4050",
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         },
@@ -4417,7 +4552,7 @@
         {
           "mesh": "doct/trees_10_01.bin",
           "indexCount": 32547,
-          "shader": "shader_pos_norm_uv16_uv_ak",
+          "shader": "shader_pos_norm_uv16_uv_ak_wind",
           "texture": "doct4050",
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         },
@@ -4431,7 +4566,7 @@
         {
           "mesh": "doct/trees_10_02.bin",
           "indexCount": 87915,
-          "shader": "shader_pos_norm_uv16_uv_ak",
+          "shader": "shader_pos_norm_uv16_uv_ak_wind",
           "texture": "doct4050",
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         },
@@ -4465,9 +4600,16 @@
           "texture": "doct4219"
         },
         {
+          "mesh": "doct/terrain_far_01.bin",
+          "indexCount": 3840,
+          "shader": "shader_pos_color_uv_hills",
+          "texture": "doct4179",
+          "tintColor": [0.8, 0.86, 1.0, 1]
+        },
+        {
           "mesh": "sky_01.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_doct_01",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -4475,7 +4617,7 @@
         {
           "mesh": "sky_02.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_doct_02",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -4483,7 +4625,7 @@
         {
           "mesh": "sky_03.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_doct_03",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -4491,7 +4633,7 @@
         {
           "mesh": "sky_04.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_doct_04",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -4499,7 +4641,7 @@
         {
           "mesh": "sky_05.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_doct_05",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -4507,7 +4649,7 @@
         {
           "mesh": "sky_06.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_doct_06",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -8792,74 +8934,74 @@
         {
           "mesh": "ad/bushes_8_01.bin",
           "indexCount": 552,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "bushes"
         },
         {
           "mesh": "ad/bushes_8_02.bin",
           "indexCount": 1248,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "bushes",
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         },
         {
           "mesh": "ad/bushes_8_03.bin",
           "indexCount": 522,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "bushes"
         },
         {
           "mesh": "ad/bushes_8_04.bin",
           "indexCount": 708,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "bushes"
         },
         {
           "mesh": "ad/bushes_8_05.bin",
           "indexCount": 474,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "bushes"
         },
         {
           "mesh": "ad/trees_8_01.bin",
           "indexCount": 3564,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "trees"
         },
         {
           "mesh": "ad/trees_8_02.bin",
           "indexCount": 6219,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "trees"
         },
         {
           "mesh": "ad/trees_8_03.bin",
           "indexCount": 6519,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "trees"
         },
         {
           "mesh": "ad/trees_8_04.bin",
           "indexCount": 9558,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "trees"
         },
         {
           "mesh": "ad/trees_8_05.bin",
           "indexCount": 14022,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "trees"
         },
         {
           "mesh": "ad/trees_8_06.bin",
           "indexCount": 4140,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "trees"
         },
         {
           "mesh": "ad/trees_8_07.bin",
           "indexCount": 2754,
-          "shader": "shader_pos_norm_uv_ak",
+          "shader": "shader_pos_norm_uv_ak_wind",
           "texture": "trees"
         },
         {
@@ -9406,28 +9548,28 @@
         {
           "mesh": "ad/trees_10_01.bin",
           "indexCount": 16668,
-          "shader": "shader_pos_norm_uv16_uv_ak",
+          "shader": "shader_pos_norm_uv16_uv_ak_wind",
           "texture": "trees",
           "transform": [1, 0, 0, 0, 0, 1, 0, 2, 0, 0, 1, 0, 0, 0, 0, 1]
         },
         {
           "mesh": "ad/trees_10_02.bin",
           "indexCount": 1140,
-          "shader": "shader_pos_norm_uv16_uv_ak",
+          "shader": "shader_pos_norm_uv16_uv_ak_wind",
           "texture": "trees",
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         },
         {
           "mesh": "ad/trees_10_04.bin",
           "indexCount": 5748,
-          "shader": "shader_pos_norm_uv16_uv_ak",
+          "shader": "shader_pos_norm_uv16_uv_ak_wind",
           "texture": "trees",
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         },
         {
           "mesh": "ad/trees_10_05.bin",
           "indexCount": 54,
-          "shader": "shader_pos_norm_uv16_uv_ak",
+          "shader": "shader_pos_norm_uv16_uv_ak_wind",
           "texture": "trees",
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         },
@@ -9441,7 +9583,7 @@
         {
           "mesh": "ad/trees_10_06.bin",
           "indexCount": 37362,
-          "shader": "shader_pos_norm_uv2_ak",
+          "shader": "shader_pos_norm_uv2_ak_wind",
           "texture": "trees"
         },
         {
@@ -9468,13 +9610,13 @@
         {
           "mesh": "ad/trees_10_07.bin",
           "indexCount": 21831,
-          "shader": "shader_pos_norm_uv2_ak",
+          "shader": "shader_pos_norm_uv2_ak_wind",
           "texture": "trees"
         },
         {
           "mesh": "ad/trees_10_08.bin",
           "indexCount": 22413,
-          "shader": "shader_pos_norm_uv2_ak",
+          "shader": "shader_pos_norm_uv2_ak_wind",
           "texture": "trees"
         },
         {
@@ -9560,9 +9702,16 @@
           "transform": [0.71, -0.71, 0, 1166, 0, 0, 1, 37, -0.71, -0.71, 0, 1308, 0, 0, 0, 1]
         },
         {
+          "mesh": "ad/terrain_far_01.bin",
+          "indexCount": 3840,
+          "shader": "shader_pos_color_uv_hills",
+          "texture": "terrain_03",
+          "tintColor": [0.82, 0.94, 0.92, 1]
+        },
+        {
           "mesh": "sky_01.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_ad_01",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -9570,7 +9719,7 @@
         {
           "mesh": "sky_02.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_ad_02",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -9578,7 +9727,7 @@
         {
           "mesh": "sky_03.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_ad_03",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -9586,7 +9735,7 @@
         {
           "mesh": "sky_04.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_ad_04",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -9594,7 +9743,7 @@
         {
           "mesh": "sky_05.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_ad_05",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -9602,7 +9751,7 @@
         {
           "mesh": "sky_06.bin",
           "indexCount": 6,
-          "shader": "shader_pos_uv",
+          "shader": "shader_pos_uv_sky",
           "texture": "sky_ad_06",
           "tintColor": [0.8, 0.8, 0.8, 1],
           "transform": [-2857.23, 0, -914.43, 1442, 0, 3000, 0, -500, 914.43, 0, -2857.23, 1504, 0, 0, 0, 1]
@@ -9633,7 +9782,7 @@
         {
           "mesh": "ad/water_3_01.bin",
           "indexCount": 2214,
-          "shader": "shader_pos",
+          "shader": "shader_pos_water_reflect",
           "texture": "water02",
           "blend": ["ONE", "ONE"],
           "uvScale": [0.03, 1, 1, 1],
@@ -9644,7 +9793,7 @@
         {
           "mesh": "ad/water_3_02.bin",
           "indexCount": 159,
-          "shader": "shader_pos",
+          "shader": "shader_pos_water_reflect",
           "texture": "water02",
           "blend": ["ONE", "ONE"],
           "uvScale": [0.03, 1, 1, 1],
@@ -9655,7 +9804,7 @@
         {
           "mesh": "ad/water_3_03.bin",
           "indexCount": 4017,
-          "shader": "shader_pos",
+          "shader": "shader_pos_water_reflect",
           "texture": "water02",
           "blend": ["ONE", "ONE"],
           "uvScale": [0.03, 1, 1, 1],
@@ -9666,7 +9815,7 @@
         {
           "mesh": "ad/water_3_04.bin",
           "indexCount": 999,
-          "shader": "shader_pos",
+          "shader": "shader_pos_water_reflect",
           "texture": "water02",
           "blend": ["ONE", "ONE"],
           "uvScale": [0.03, 1, 1, 1],
