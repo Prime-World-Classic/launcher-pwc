@@ -48,9 +48,6 @@ varying vec4 v_projectedTexcoord;
 #ifdef PS_GRID
 varying vec2 posXZ;
 #endif
-#ifdef SNOW
-varying float posDepth;
-#endif
 
 uniform mat4 mWorld;
 uniform mat4 mViewProj;
@@ -170,8 +167,5 @@ void main()
 
 #ifdef PS_GRID
 posXZ = vertPosition.xz;
-#endif
-#ifdef SNOW
-posDepth = gl_Position.w;
 #endif
 }

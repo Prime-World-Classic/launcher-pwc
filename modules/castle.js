@@ -25,6 +25,7 @@ import { redrawShadowRect, rotatingShadowRect } from './castleSkin.js';
 import { CastlePets } from './castlePets.js';
 import { CastleLighting } from './castleLighting.js';
 import { CastleFireflies } from './castleFireflies.js';
+import { CastleWeather } from './castleWeather.js';
 import { CastleSceneFade, FrameBudget, forEachLimited, yieldFrame } from './castleSceneFade.js';
 
 export class Castle {
@@ -1660,6 +1661,7 @@ export class Castle {
   static ambientLight = [1, 1, 1, 0.001];
   static lighting = CastleLighting; // для отладки из консоли: Castle.lighting.debugMarkers = true
   static fireflies = CastleFireflies;
+  static weather = CastleWeather; // для отладки из консоли: Castle.weather.setMode('rain')
   static glowNightFloor = 1.0; // яркость свечений ночью (множитель освещения, днём на солнце ~1.6)
   static deferredPass = false;
   static sceneTextureAvg = [];
@@ -1990,6 +1992,9 @@ export class Castle {
         tintColor: obj.tintColor,
         uvScale: obj.uvScale,
         uvScroll: obj.uvScroll,
+        weather: obj.weather,
+        weather2: obj.weather2,
+        weather3: obj.weather3,
         texture: obj.texture,
         texture_2: obj.texture_2,
         texture_3: obj.texture_3,
@@ -2041,6 +2046,9 @@ export class Castle {
           tintColor: obj.tintColor,
           uvScale: obj.uvScale,
           uvScroll: obj.uvScroll,
+          weather: obj.weather,
+          weather2: obj.weather2,
+          weather3: obj.weather3,
           texture: obj.texture,
           texture_2: obj.texture_2,
           texture_3: obj.texture_3,
@@ -2093,6 +2101,8 @@ export class Castle {
     CastleLighting.buildTemplates(Castle);
     // места светлячков (по карте высот из buildScene)
     CastleFireflies.spawn(Castle);
+    // объекты погоды текущей сцены (fullscreen-квады weather_*.bin)
+    CastleWeather.bind(Castle);
 
     Castle.updateGridTranslation();
     // иконки ресурсов фермы в углу и на карточках — свои у каждой фракции
@@ -2290,6 +2300,9 @@ export class Castle {
       endAmp: u('endAmp'),
       animDirVertFreq: u('animDirVertFreq'),
       uvScroll: u('uvScroll'),
+      weather: u('weather'),
+      weather2: u('weather2'),
+      weather3: u('weather3'),
       mWorld: u('mWorld'),
       bones: u('bones'),
       smDebugColor: u('smDebugColor'),
@@ -2771,6 +2784,9 @@ export class Castle {
     Castle.updateMainCam();
 
     Castle.updateDayNight();
+
+    // погода: квад прижимается к камере, uniform-ы и переход снега в дождь считаются каждый кадр
+    CastleWeather.update(Castle);
 
     let outlinedBuilding = -1;
     Castle.outlinedBuilding = null;
@@ -3340,6 +3356,15 @@ export class Castle {
     gl.uniform4fv(l.animDirVertFreq, animDir ? animDir : Castle.ZEROS4);
 
     gl.uniform2fv(l.uvScroll, uvScroll ? uvScroll : Castle.ZEROS2);
+
+    // Погодный оверлей (CastleWeather): скорость/хвост/плотность/слои — только у программ, где
+    // эти uniform-ы объявлены (шейдер с #define SNOW); у остальных l.weather === null, вызовов нет.
+    if (l.weather) {
+      const wobj = Castle.currentDrawObject;
+      gl.uniform4fv(l.weather, (wobj && wobj.weather) || Castle.ZEROS4);
+      gl.uniform4fv(l.weather2, (wobj && wobj.weather2) || Castle.ZEROS4);
+      gl.uniform4fv(l.weather3, (wobj && wobj.weather3) || Castle.ZEROS4);
+    }
 
     // матрицы — общие рабочие массивы (uniformMatrix4fv копирует значение), новые на каждый объект не нужны
     const worldMatrix = Castle._mWorld;

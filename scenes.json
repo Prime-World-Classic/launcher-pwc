@@ -4873,6 +4873,21 @@
           "tintColor": [0.99, 0.99, 0.99, 0.3],
           "blend": ["SRC_ALPHA", "ONE"],
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+        },
+        {
+          "mesh": "weather_01.bin",
+          "indexCount": 4,
+          "shader": "shader_pos_color_uv_falloff_snow",
+          "texture": "white-flare",
+          "strip": true,
+          "blend": ["SRC_ALPHA", "ONE_MINUS_SRC_ALPHA"],
+          "tintColor": [0.95, 0.97, 1.0, 0.9],
+          "uvScale": [1, 1, 1, 1],
+          "uvScroll": [0, 1],
+          "weather": [1.4, 0, 2.6, 0.6],
+          "weather2": [0.25, 0.042, 3, 45],
+          "weather3": [1.7777, 0.5, 6, 0.35],
+          "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         }
       ]
     },
@@ -10741,6 +10756,21 @@
           "transform": [
             -20.93209, 0.0, 8.0981, 1274.54407, 0.0, 3.63404, 0.0, 392.28159, -8.09811, 0.0, -20.93207, 1481.92737, 0.0, 0.0, 0.0, 1.0
           ]
+        },
+        {
+          "mesh": "weather_01.bin",
+          "indexCount": 4,
+          "shader": "shader_pos_color_uv_falloff_snow",
+          "texture": "white-flare",
+          "strip": true,
+          "blend": ["SRC_ALPHA", "ONE_MINUS_SRC_ALPHA"],
+          "tintColor": [0.95, 0.97, 1.0, 0.9],
+          "uvScale": [1, 1, 1, 1],
+          "uvScroll": [0, 1],
+          "weather": [1.4, 0, 2.6, 0.6],
+          "weather2": [0.25, 0.042, 3, 45],
+          "weather3": [1.7777, 0.5, 6, 0.35],
+          "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         }
       ]
     }

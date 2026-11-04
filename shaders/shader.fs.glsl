@@ -79,9 +79,6 @@ float gridCellId(vec2 cellIdx) {
   return floor(v.r * 255.0 + 0.5) + floor(v.g * 255.0 + 0.5) * 256.0;
 }
 #endif
-#ifdef SNOW
-varying float posDepth;
-#endif
 
 uniform mat4 mViewProj;
 uniform vec4 tintColor;
@@ -269,8 +266,9 @@ void main()
     FRAG_COLOR.xyz = mix(FRAG_COLOR.xyz, shadowDebugTint, 0.7 * clamp(sunLight.r, 0.0, 1.0));
   }
 #ifdef SNOW
-  snow(FRAG_COLOR, fragTexCoord * uvScale.zw);
-  FRAG_COLOR.w *= posDepth * 0.002;
+  // Погодный fullscreen-оверлей (CastleWeather): snow() пересобирает цвет целиком — текстура,
+  // свет и тонмаппинг у этого объекта не участвуют, цвет и прозрачность берутся из tintColor.
+  snow(FRAG_COLOR, fragTexCoord, tintColor);
 #endif
   // Exposure
   // FRAG_COLOR.xyz *= pow(2.0, 0.0); // -0.5
