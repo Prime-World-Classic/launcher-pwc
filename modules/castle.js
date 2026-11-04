@@ -1958,6 +1958,10 @@ export class Castle {
     let shaderNames = [],
       texNames = [];
 
+    // имена шейдеров, у которых есть анимируемые объекты — им собирается отдельная программа
+    // с блоком vertex-animation (VS_VERTANIM), остальным — без блока
+    let animShaderNames = new Set();
+
     let sceneMeshesToLoadCount = -1; // Initial value. Scene must have objects
 
     let result = await HTTP.request('content/scenes.json');
@@ -1995,7 +1999,7 @@ export class Castle {
         indexCount: obj.indexCount,
       });
 
-      Castle.loadObjectResources(shaderNames, texNames, obj);
+      Castle.loadObjectResources(shaderNames, texNames, obj, animShaderNames);
 
       sceneMeshesToLoadCount--; // Decrement after each loaded object
     }
@@ -2046,14 +2050,14 @@ export class Castle {
           indexCount: obj.indexCount,
         });
 
-        Castle.loadObjectResources(shaderNames, texNames, obj);
+        Castle.loadObjectResources(shaderNames, texNames, obj, animShaderNames);
       }
 
       sceneMeshesToLoadCount--;
     }
 
     const budget = new FrameBudget(budgetMs);
-    await Castle.loadResources(scene, shaderNames, texNames, budget);
+    await Castle.loadResources(scene, shaderNames, texNames, budget, animShaderNames);
     // карта высот рельефа для светлячков — до подмены сцены, порциями
     await CastleFireflies.buildHeightField(scene, () => budget.slice());
 
@@ -2195,10 +2199,13 @@ export class Castle {
       if (texture) gl.deleteTexture(texture);
     }
     for (const shader of scene.sceneShaders || []) {
-      for (const program of [shader?.PSO, shader?.PSO_SM, shader?.PSO_GB]) {
-        if (!program?.prog) continue;
-        gl.deleteProgram(program.prog);
-        delete Castle.uniformLocationCache[program.progId];
+      // у анимируемых шейдеров своя копия программ (shader.anim) — её тоже надо освободить
+      for (const set of [shader, shader?.anim]) {
+        for (const program of [set?.PSO, set?.PSO_SM, set?.PSO_GB]) {
+          if (!program?.prog) continue;
+          gl.deleteProgram(program.prog);
+          delete Castle.uniformLocationCache[program.progId];
+        }
       }
     }
     // Отрисовка только включает атрибуты (enableVertexAttribArray) и не выключает. После удаления
@@ -2211,8 +2218,16 @@ export class Castle {
 
   static sceneLoading = false;
 
-  static loadObjectResources(shaderNames, texNames, obj) {
+  // Есть ли у объекта анимация вершин (startFreq/endAmp/animDir приходят из scenes.json,
+  // в рантайме их никто не назначает — решение статично на весь объект)
+  static hasVertexAnimation(obj) {
+    return !!(obj.startFreq || obj.endAmp || obj.animDir);
+  }
+
+  static loadObjectResources(shaderNames, texNames, obj, animShaderNames) {
     shaderNames.push(obj.shader);
+
+    if (animShaderNames && Castle.hasVertexAnimation(obj)) animShaderNames.add(obj.shader);
 
     texNames.push(obj.texture);
 
@@ -2292,7 +2307,7 @@ export class Castle {
 
   // Шейдеры, текстуры и меши сцены. Файлы грузятся параллельно, работа на главном потоке
   // (загрузка в GPU, разбор мешей) идёт порциями по budget, шейдеры компилируются в фоне.
-  static async loadResources(scene, notUniqeShaderNames, notUniqeTexNames, budget) {
+  static async loadResources(scene, notUniqeShaderNames, notUniqeTexNames, budget, animShaderNames) {
     const gl = Castle.gl;
     let shaderNames = [...new Set(notUniqeShaderNames)];
     let texNames = [...new Set(notUniqeTexNames)];
@@ -2331,7 +2346,7 @@ export class Castle {
     ]);
 
     // компиляция идёт, пока грузятся текстуры и меши
-    const shadersReady = Castle.compileSceneShaders(scene, shaderNames, definesTexts, vsText, fsText, budget);
+    const shadersReady = Castle.compileSceneShaders(scene, shaderNames, definesTexts, vsText, fsText, budget, animShaderNames);
 
     const texturesReady = forEachLimited(texNames, 8, async (name, i) => {
       let image = await PreloadImages.loadAsync(`content/textures/${name}.webp`);
@@ -2366,7 +2381,7 @@ export class Castle {
   // Программы шейдеров сцены: цвет, карта теней и G-buffer (если есть отложенное освещение).
   // С KHR_parallel_shader_compile драйвер компилирует их в своих потоках, а мы только опрашиваем
   // готовность раз в кадр; без расширения — по одной программе за порцию бюджета.
-  static async compileSceneShaders(scene, shaderNames, definesTexts, vsText, fsText, budget) {
+  static async compileSceneShaders(scene, shaderNames, definesTexts, vsText, fsText, budget, animShaderNames) {
     const gl = Castle.gl;
     const parallel = gl.getExtension('KHR_parallel_shader_compile');
     const fd = scene.factionDef;
@@ -2391,14 +2406,22 @@ export class Castle {
       programGB: p.programGB ? Castle.finishProgram(p.programGB) : null,
     });
 
-    const jobs = shaderNames.map((name, i) => {
+    const jobs = [];
+    for (let i = 0; i < shaderNames.length; ++i) {
       let definesText = definesTexts[i];
       // Скиннинг (VS_SKIN) — размер массива костей. Если шейдер со скиннингом не собрался (например, не хватило
       // uniform-векторов: нужно 3 на кость), собираем без VS_SKIN — такие объекты стоят в позе привязки.
       const skinned = /#define VS_SKIN\b/.test(definesText);
       if (skinned) definesText += `\n#define SKIN_MAX_BONES ${Castle.SKIN_MAX_BONES}\n`;
-      return { name, definesText, skinned, started: null };
-    });
+      // базовая программа — БЕЗ блока vertex-animation (он нужен не всем объектам шейдера,
+      // а ломает позицию всем, у кого анимации нет)
+      jobs.push({ i, name: shaderNames[i], definesText, skinned, started: null });
+      // вторая программа того же шейдера — с блоком, только если в сцене есть анимируемые
+      // объекты этого шейдера (в текущем контенте — 11 объектов: флаги Доктов и птицы)
+      if (animShaderNames && animShaderNames.has(shaderNames[i])) {
+        jobs.push({ i, name: shaderNames[i], definesText: definesText + '\n#define VS_VERTANIM\n', skinned, anim: true, started: null });
+      }
+    }
 
     if (parallel) {
       for (const job of jobs) job.started = startPrograms(job.definesText);
@@ -2412,8 +2435,8 @@ export class Castle {
       }
     }
 
-    for (let i = 0; i < jobs.length; ++i) {
-      const job = jobs[i];
+    for (let j = 0; j < jobs.length; ++j) {
+      const job = jobs[j];
       if (!job.started) {
         await budget.slice();
         job.started = startPrograms(job.definesText);
@@ -2426,13 +2449,17 @@ export class Castle {
         ({ programColor, programSM, programGB } = finishPrograms(startPrograms(job.definesText.replace(/#define VS_SKIN\b/, ''))));
       }
 
-      scene.sceneShaders[i] = {
+      const programs = {
         PSO: programColor,
         PSO_SM: programSM,
         PSO_GB: programGB && programGB !== 1 ? programGB : null,
         attributes: scene.scenesJson.shaderLayouts.find((value) => value.name === job.name).layout,
         vertStride: 0,
       };
+      // анимируемая копия кладётся в тот же слот (объекты одного шейдера различаются признаком
+      // анимации, а не индексом программы)
+      if (job.anim) scene.sceneShaders[job.i].anim = programs;
+      else scene.sceneShaders[job.i] = programs;
     }
   }
 
@@ -2908,6 +2935,16 @@ export class Castle {
     requestAnimationFrame(Castle.loop);
   }
 
+  // Программы объекта: с блоком vertex-animation — только те, у кого в сцене задан
+  // startFreq/endAmp/animDir; остальные берут базовую программу без блока. Признак
+  // анимации запоминается на объекте — вызов в горячем пути (≈4000 рисунков за кадр).
+  static shaderPrograms(obj) {
+    const s = Castle.sceneShaders[obj.shaderId];
+    if (!s || !s.anim) return s;
+    if (obj.vertAnim === undefined) obj.vertAnim = Castle.hasVertexAnimation(obj);
+    return obj.vertAnim ? s.anim : s;
+  }
+
   static prepareAndDrawObject(obj, isSMPass, rotation, translation, tintOverride, scaleOverride) {
     if (!Castle.filter.test(obj.meshName)) {
       return;
@@ -2917,7 +2954,7 @@ export class Castle {
     let associatedTexture2 = obj.texture2Id;
     let associatedTexture3 = obj.texture3Id;
     let associatedTexture4 = obj.texture4Id;
-    let associatedShader = Castle.sceneShaders[obj.shaderId];
+    let associatedShader = Castle.shaderPrograms(obj);
 
     let textures = [
       Castle.sceneTextures[associatedTexture],
@@ -2939,7 +2976,7 @@ export class Castle {
       meshData.vertices,
       meshData.indexCount,
       meshData.vertStride,
-      Castle.sceneShaders[obj.shaderId].attributes,
+      associatedShader.attributes,
       obj.strip,
       obj.transform,
       isSMPass,

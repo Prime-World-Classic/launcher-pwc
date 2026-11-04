@@ -130,12 +130,21 @@ void main()
 #endif
 // Vertex animation
   vec3 animatedVertPosition = skinnedPosition;
+// Блок компилируется только для программы с VS_VERTANIM (объекты с startFreq/endAmp/animDir
+// из scenes.json). Для объекта без анимации он НЕ даёт «умножения на ноль»: вес
+// minimum_distance(0, 0, vertPosition) равен длине вершины (у мешей в абсолютных координатах
+// — тысячи единиц), и gl_Position такой вершины в кадр не попадает — объект не рисует ни одного
+// пикселя при корректном draw-call (замер: статика doct — 1.1% покрытия кадра, без блока —
+// 82.8%; адорния — те же водопад/хайленд/террайн). Защита деления (l2+1.0) и t=0 не помогают,
+// помогает только отсутствие блока.
+#ifdef VS_VERTANIM
 // 1. Weight animation
   float weight = minimum_distance(startFreq.xyz, endAmp.xyz, vertPosition);
 // 2. Wave animation
   float animation = sin((fract((vertPosition.x + vertPosition.y + vertPosition.z) * animDirVertFreq.w) + time.x) * startFreq.w) * endAmp.w * weight;
 // 3. Add up animated value
   animatedVertPosition += (animDirVertFreq.xyz * animation);
+#endif
 
 // Transforms
   

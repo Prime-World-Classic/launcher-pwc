@@ -335,6 +335,62 @@ export class App {
     else if (CastleFarm.isFarm(initialWindow) || initialWindow === CastleFarm.STORAGE) CastleFarm.openInfo(initialWindow);
   }
 
+  // TEMP-стенд (снять): отчёт о GL-контексте, шейдерах и позе камеры — для сверки контуров
+  // (nwjs нативный / Wine / tiny10). Поза задаётся ?previewPose=ступень,x,y.
+  static async castlePreviewProbe(Castle, params) {
+    const gl = Castle.gl;
+    const pose = params.get('previewPose');
+    if (pose) {
+      const [v, x, y] = pose.split(',').map(Number);
+      Castle.cameraAnimationSpeed = 0;
+      Castle.camDeltaPosMinMax = [[-999, 999], [-999, 999]];
+      Castle.initialFixedValue = v;
+      Castle.targetFixedValue = v;
+      Castle.currentFixedValue = v;
+      Castle.camDeltaPos = [x, y];
+    }
+    const CL = (await import('./castleLighting.js')).CastleLighting;
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    const has = (n) => !!gl.getExtension(n);
+    const failed = [];
+    (Castle.sceneShaders || []).forEach((s, i) => {
+      if (!s || s.PSO === 1 || s.PSO_SM === 1) failed.push(i);
+      else if (s.anim && (s.anim.PSO === 1 || s.anim.PSO_SM === 1)) failed.push(i + ':anim');
+    });
+    const report = {
+      scene: Castle.currentSceneName,
+      unmasked: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : '',
+      apiRenderer: gl.getParameter(gl.RENDERER),
+      version: gl.getParameter(gl.VERSION),
+      canvas: [Castle.canvas.width, Castle.canvas.height, gl.drawingBufferWidth, gl.drawingBufferHeight],
+      limits: {
+        uniVec: gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS),
+        texSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
+        attribs: gl.getParameter(gl.MAX_VERTEX_ATTRIBS),
+        varyings: gl.getParameter(gl.MAX_VARYING_VECTORS),
+        texUnits: gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS),
+      },
+      ext: {
+        depthTex: has('WEBGL_depth_texture'),
+        drawBuffers: has('WEBGL_draw_buffers'),
+        halfFloat: has('OES_texture_half_float'),
+        halfFloatLinear: has('OES_texture_half_float_linear'),
+        fragDepth: has('EXT_frag_depth'),
+        parallel: has('KHR_parallel_shader_compile'),
+      },
+      sm: Castle.isSMEnabled,
+      deferred: CL.supported,
+      shaders: (Castle.sceneShaders || []).length,
+      animShaders: (Castle.sceneShaders || []).filter((s) => s && s.anim).length,
+      failedShaders: failed,
+      objects: (Castle.sceneObjects || []).length,
+      buildings: Object.keys(Castle.sceneBuildings || {}).length,
+      render: Castle.render,
+      pose: [Castle.currentFixedValue, Castle.camDeltaPos, Castle.fov, Castle.cameraHeight, Castle.rotationTilt],
+    };
+    console.log('PWPROBE ' + JSON.stringify(report));
+  }
+
   static isChatPreviewEnabled() {
     return (App.isLocalhostOrigin() || window.location.hostname === 'pw.r4ok.com') &&
       new URLSearchParams(window.location.search).get('previewChat') === '1';
@@ -397,14 +453,17 @@ export class App {
     // DEV-хук только для ?previewCastle=1 (localhost): камерой нужно позировать со стороны
     // стенда/консоли — модули ES-скоупа странице иначе недоступны.
     window.__castlePreview = Castle;
+    // TEMP-стенд (снять): ?previewPose=ступень,x,y — фиксированная поза камеры без кинематографа
+    const poseParam = params.get('previewPose');
     // в preview-ветке View.castle() не строится, а замок тот же — наблюдение за бездействием
     // (кинематографичный вид) поднимаем вручную
-    CastleCinematic.start();
+    if (!poseParam) CastleCinematic.start();
     const loading = DOM({ style: 'castle-preview-status', role: 'status' }, 'Загрузка замка...');
     View.active.append(loading);
     try {
       if (await Castle.initDemo(faction, Castle.canvas, { preview: true }) === 1) throw new Error('WebGL unavailable');
       loading.remove();
+      App.castlePreviewProbe(Castle, params); // TEMP-стенд (снять)
     } catch (error) {
       loading.setAttribute('role', 'alert');
       loading.textContent = 'Не удалось загрузить замок. Обновите страницу или проверьте поддержку WebGL.';
