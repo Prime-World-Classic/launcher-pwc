@@ -15,8 +15,7 @@ import * as mat4 from './glMatrix/mat4.js';
 // Фаза падения — накопленный путь (travel, метры), а не «скорость × время сцены»: произведение
 // при смене скорости или fov перематывало бы узор на тысячи ячеек за кадр.
 //
-// Смена эффекта — фейд по прозрачности (fade), между эффектами пауза. Режим переключается
-// setMode('snow'|'rain') или дебажным циклом.
+// Смена эффекта — фейд по прозрачности, расписание — по реальным часам игрока (см. schedule).
 export class CastleWeather {
   static MESH_RE = /^weather_/;
 
@@ -27,20 +26,21 @@ export class CastleWeather {
 
   static mode = 'snow';
 
-  // ДЕБАЖНАЯ ВЫКАТКА (снять при привязке погоды к сезону/времени игрока): в замках погода идёт
-  // всегда, снег и дождь чередуются. debugCycleS — сколько секунд держится эффект,
-  // debugPauseS — пауза между эффектами (осадков нет), fadeS — фейд по прозрачности.
-  // debugCycleS = 0 — автоматической смены нет, держится режим из setMode/?previewWeather=,
-  // но ручное переключение всё равно проходит через фейд.
-  static debugCycleS = 30;
-  static debugPauseS = 10;
-  static fadeS = 3;
+  // Расписание. Погода квантуется слотами по CYCLE_S секунд: слот — это один погодный цикл,
+  // «несколько циклов подряд» — просто соседние активные слоты. Активность слота — бернуллиев
+  // опыт по детерминированному хешу номера слота, с вероятностью SEASON_DUTY сезона: в
+  // среднем доля времени с осадками равна ей (50% осень/зима, 20% весна/лето), но подряд
+  // могут выпасть и несколько циклов, и длинный перерыв.
+  static CYCLE_S = 300;
+  static FADE_S = 3;
+  static SEASON_DUTY = { winter: 0.5, autumn: 0.5, spring: 0.2, summer: 0.2 };
 
-  // in → hold → out → (пауза) → in…
-  static phase = 'in';
-  static phaseClock = 0;
+  // Ручное переопределение расписания (стенд, консоль): 'snow' | 'rain' | 'off' | null.
+  static override = null;
+
+  // фаза текущего слота для отладки: режим и прозрачность, посчитанные из часов
+  static slot = 0;
   static fade = 0;
-  static pendingMode = null;
 
   // накопленный путь падения в метрах — единственная «временна́я» величина шейдера
   static travel = 0;
@@ -97,66 +97,86 @@ export class CastleWeather {
     return CastleWeather.params;
   }
 
-  // Плавно (фейдом) перевести погоду в другой режим.
-  static setMode(name) {
-    if (!CastleWeather.PRESETS[name]) return;
-    if (name === CastleWeather.mode && CastleWeather.phase === 'hold') return;
-    CastleWeather.pendingMode = name;
-    if (CastleWeather.phase === 'in' || CastleWeather.phase === 'hold') {
-      CastleWeather.phase = 'out';
-      CastleWeather.phaseClock = 0;
-    }
+  // Метеорологические сезоны северного полушария (дек-фев / мар-май / июн-авг / сен-ноя):
+  // границы не зависят от года, в отличие от астрономических солнцестояний.
+  static season(date = new Date()) {
+    const m = date.getMonth();
+    if (m === 11 || m <= 1) return 'winter';
+    if (m <= 4) return 'spring';
+    if (m <= 7) return 'summer';
+    return 'autumn';
   }
 
-  // Мгновенная установка без фейда (стенды, отладка, середина паузы)
+  // Снег — только зимой, в остальное время дождь.
+  static modeFor(date) {
+    return CastleWeather.season(date) === 'winter' ? 'snow' : 'rain';
+  }
+
+  static slotAt(ms) {
+    return Math.floor(ms / (CastleWeather.CYCLE_S * 1000));
+  }
+
+  // Детерминированный по номеру слота ПСЧ (finalizer splitmix32): одна и та же погода у всех
+  // игроков в один момент времени, независимо от того, когда открыли лончер.
+  static slotRandom(n) {
+    let x = (n ^ 0x9e3779b9) >>> 0;
+    x = Math.imul(x ^ (x >>> 16), 0x21f0aaad);
+    x = Math.imul(x ^ (x >>> 15), 0x735a2d97);
+    x = (x ^ (x >>> 15)) >>> 0;
+    return x / 4294967296;
+  }
+
+  static slotOn(n, date) {
+    return CastleWeather.slotRandom(n) < (CastleWeather.SEASON_DUTY[CastleWeather.season(date)] ?? 0);
+  }
+
+  // Режим и прозрачность по часам. Фейд нужен только на границе «пусто ↔ погода»: соседние
+  // активные слоты (несколько циклов подряд) склеиваются без мерцания.
+  static schedule(nowMs = Date.now()) {
+    const W = CastleWeather;
+    if (W.override) {
+      W.fade = W.override === 'off' ? 0 : 1;
+      if (W.override !== 'off' && W.override !== W.mode) W.applyImmediate(W.override);
+      return { mode: W.override === 'off' ? W.mode : W.override, fade: W.fade };
+    }
+    const date = new Date(nowMs);
+    const mode = W.modeFor(date);
+    const s = W.slotAt(nowMs);
+    W.slot = s;
+    if (!W.slotOn(s, date)) {
+      W.fade = 0;
+      return { mode, fade: 0 };
+    }
+    if (mode !== W.mode) W.applyImmediate(mode);
+    const slotMs = W.CYCLE_S * 1000;
+    const inMs = nowMs - s * slotMs;
+    const outMs = (s + 1) * slotMs - nowMs;
+    const fadeS = W.FADE_S * 1000;
+    // предыдущий слот «тот же режим и тоже погода» — появления не нужно
+    const prevRun = W.slotOn(s - 1, date) && W.modeFor(new Date(nowMs - slotMs)) === mode;
+    const nextRun = W.slotOn(s + 1, date) && W.modeFor(new Date(nowMs + slotMs)) === mode;
+    const fadeIn = prevRun ? 1 : Math.min(1, inMs / fadeS);
+    const fadeOut = nextRun ? 1 : Math.min(1, outMs / fadeS);
+    W.fade = Math.max(0, Math.min(fadeIn, fadeOut));
+    return { mode, fade: W.fade };
+  }
+
+  // Ручное переопределение расписания (стенд, консоль)
+  static setMode(name) {
+    if (name !== 'snow' && name !== 'rain' && name !== 'off') return;
+    CastleWeather.override = name;
+  }
+
+  static clearOverride() {
+    CastleWeather.override = null;
+  }
+
+  // Мгновенная установка пресета (расписание/override выбирают его сами)
   static applyImmediate(name, partial = null) {
     const preset = CastleWeather.PRESETS[name];
     if (!preset) return;
     CastleWeather.params = { ...preset, ...(partial || {}) };
     CastleWeather.mode = name;
-    CastleWeather.pendingMode = null;
-  }
-
-  static stepCycle(dt) {
-    const W = CastleWeather;
-    W.phaseClock += dt;
-    if (W.phase === 'in') {
-      W.fade = Math.min(1, W.phaseClock / Math.max(W.fadeS, 0.001));
-      if (W.phaseClock >= W.fadeS) {
-        W.phase = 'hold';
-        W.phaseClock = 0;
-        W.fade = 1;
-      }
-      return;
-    }
-    if (W.phase === 'hold') {
-      W.fade = 1;
-      const auto = W.debugCycleS > 0 && W.phaseClock >= W.debugCycleS;
-      if (auto || W.pendingMode) {
-        W.phase = 'out';
-        W.phaseClock = 0;
-      }
-      return;
-    }
-    if (W.phase === 'out') {
-      W.fade = Math.max(0, 1 - W.phaseClock / Math.max(W.fadeS, 0.001));
-      if (W.phaseClock >= W.fadeS) {
-        W.fade = 0;
-        // смена параметров — в тот момент, когда прозрачность уже ноль: скачка узора не видно
-        const next = W.pendingMode || (W.debugCycleS > 0 ? (W.mode === 'snow' ? 'rain' : 'snow') : null);
-        if (next && next !== W.mode) W.applyImmediate(next);
-        W.phase = 'pause';
-        W.phaseClock = 0;
-      }
-      return;
-    }
-    // пауза: осадков нет
-    W.fade = 0;
-    const pause = W.debugCycleS > 0 ? W.debugPauseS : 0;
-    if (W.phaseClock >= pause) {
-      W.phase = 'in';
-      W.phaseClock = 0;
-    }
   }
 
   // Объекты погоды в собранной сцене. transform и uniform-ы живут в Float32Array — их пишем на месте.
@@ -259,14 +279,14 @@ export class CastleWeather {
     return [fx / l, fy / l];
   }
 
-  // Каждый кадр: дебажный цикл, фаза падения, позиция квада и uniform-ы объектов.
+  // Каждый кадр: расписание по часам, фаза падения, позиция квада и uniform-ы объектов.
   // Вызывается из Castle.loop после updateDayNight (нужен Castle.daylight).
   static update(castle) {
     if (!CastleWeather.objects.length) return;
     // deltaTime считается от Castle.currentTime, а он скачет после сна цикла (вкладка скрыта,
-    // шёл бой) — без среза один такой кадр сдвигал бы цикл и фазу падения на несколько секунд
+    // шёл бой) — без среза один такой кадр сдвигал бы фазу падения на несколько секунд
     const dt = Math.min(Math.max(castle.deltaTime || 0, 0), 1);
-    CastleWeather.stepCycle(dt);
+    CastleWeather.schedule(Date.now());
 
     const p = CastleWeather.current();
     CastleWeather.travel += p.speed * dt;

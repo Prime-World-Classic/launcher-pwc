@@ -450,11 +450,11 @@ export class App {
       }
     }
     Castle.dayTimeOverride = Castle.dayModeTime[params.get('previewTime') === 'night' ? 'night' : 'day'];
-    // ?previewWeather=snow|rain|off — погодный fullscreen-оверлей (CastleWeather) на стенде;
-    // в рантайме тот же переключатель — Castle.weather.setMode('rain') из консоли
+    // ?previewWeather=snow|rain|off — погодный fullscreen-оверлей (CastleWeather) на стенде:
+    // переопределяет расписание по часам; в рантайме тот же переключатель —
+    // Castle.weather.setMode('rain'), вернуть расписание — Castle.weather.clearOverride()
     const weatherParam = params.get('previewWeather');
-    if (weatherParam === 'off') Castle.weather.enabled = false;
-    else if (weatherParam) Castle.weather.applyImmediate(weatherParam);
+    if (weatherParam) Castle.weather.setMode(weatherParam);
     // DEV-хук только для ?previewCastle=1 (localhost): камерой нужно позировать со стороны
     // стенда/консоли — модули ES-скоупа странице иначе недоступны.
     window.__castlePreview = Castle;
