@@ -3846,7 +3846,7 @@ export const en = {
       "For <num>3</num> sec., immobilizes all enemies around the hero and sprays spores every second. When the effect ends, deals them <mag>%s</mag> damage for each spore effect.<br>\nThe hero's Agility increases by <num>%s</num> (based on Intellect) for <num>6</num> sec.",
     htalent_593_name: 'Blackthorn',
     htalent_593_description:
-      'The Dying Vine talent additionally reduces the Speed of touched enemies by <num>80%</num>, decreasing within <num>4</num> seconds.',
+      'When the immobilization ends, the Dying Vine talent additionally reduces the Speed of touched enemies still within its area by <num>80%</num>, decreasing within <num>4</num> seconds.',
     htalent_594_name: 'Squall Wind',
     htalent_594_description:
       'The Wind and Sparks talent slows down by <num>10%</num> more, deals <num>25%</num> more damage, and has <num>3</num> effects of Playing with Fire.',
