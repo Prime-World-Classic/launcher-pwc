@@ -1592,18 +1592,55 @@ export class Window {
             tag: 'input',
             domaudio: domAudioPresets.defaultSelect,
             type: 'checkbox',
+            id: 'water-reflect-toggle',
+            checked: Settings.settings.waterReflect !== false,
+            event: [
+              'change',
+              (e) => {
+                // выкл — в воде нет никакого отражения (ни геометрии, ни неба со звёздами)
+                Settings.settings.waterReflect = e.target.checked;
+              },
+            ],
+          }),
+          DOM({ tag: 'label', for: 'water-reflect-toggle' }, Lang.text('waterReflect')),
+        ),
+        DOM(
+          { style: 'castle-menu-item-checkbox' },
+          DOM({
+            tag: 'input',
+            domaudio: domAudioPresets.defaultSelect,
+            type: 'checkbox',
             id: 'water-ssr-toggle',
             checked: Settings.settings.waterSsr !== false,
             event: [
               'change',
               (e) => {
-                // выкл — в воде только процедурное небо и звёзды; SSR и так недоступен без
-                // огней зданий и смены дня/ночи (источник трассировки — G-buffer кадра)
+                // выкл — в воде только процедурное небо и звёзды (как до SSR); SSR и так
+                // недоступен без огней зданий и смены дня/ночи (источник трассировки —
+                // G-buffer кадра)
                 Settings.settings.waterSsr = e.target.checked;
               },
             ],
           }),
           DOM({ tag: 'label', for: 'water-ssr-toggle' }, Lang.text('waterSsr')),
+        ),
+        DOM(
+          { style: 'castle-menu-item-checkbox' },
+          DOM({
+            tag: 'input',
+            domaudio: domAudioPresets.defaultSelect,
+            type: 'checkbox',
+            id: 'weather-toggle',
+            checked: Settings.settings.weather !== false,
+            event: [
+              'change',
+              (e) => {
+                // выкл — нет ни слоя осадков, ни затемнения света/усиления ветра под погодой
+                Settings.settings.weather = e.target.checked;
+              },
+            ],
+          }),
+          DOM({ tag: 'label', for: 'weather-toggle' }, Lang.text('weather')),
         ),
         DOM(
           { style: 'castle-menu-item-checkbox' },

@@ -21,7 +21,10 @@ import * as mat4 from './glMatrix/mat4.js';
 export class CastleWeather {
   static MESH_RE = /^weather_/;
 
-  static enabled = true;
+  static enabled = true; // выключатель погоды; каждый кадр его ставит Castle.loop из
+                         // Settings.settings.weather (настройка «Дождь и снег»), поэтому
+                         // менять его напрямую из консоли бессмысленно — для стенда есть
+                         // setMode('off') / ?previewWeather=off (override, fade в 0)
 
   // объекты текущей сцены (bind) — их transform и weather* пишутся каждый кадр
   static objects = [];
@@ -107,8 +110,9 @@ export class CastleWeather {
   static WET_AMBIENT = 0.95; // заполняющий свет чуть тусклее
   static WET_DESAT = 0.6; // фон тянется к серому (по luminance) на 60%
 
-  // Насколько погода «сегодня» затемняет сцену: 0..1 (учитывает ручной выключатель и фейд).
-  // Значение считает schedule(), поэтому вызывать нужно ПОСЛЕ него.
+  // Насколько погода «сегодня» затемняет сцену: 0..1 (учитывает выключатель из настройки
+  // «Дождь и снег», override стенда и фейд смены слота). Значение считает schedule(),
+  // поэтому вызывать нужно ПОСЛЕ него.
   static strength() {
     return CastleWeather.enabled ? CastleWeather.fade : 0;
   }

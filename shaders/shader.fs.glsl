@@ -156,11 +156,10 @@ float starField(vec3 dir, float t, float sizeGain)
   return acc;
 }
 
-// Цвет неба по направлению: днём — градиент «горизонт → зенит», ночью — тёмная база плюс
-// звёзды. Используется только для отражения в воде (там направление зеркальное).
-// starGain — множитель звёзд: в отражении звёздное поле тусклее самого неба (луч идёт вниз,
-// к глади, и блик размывается), поэтому для воды его поднимают отдельно.
-vec3 skyTint(vec3 dir, float t, float starGain, float starSize)
+// Градиент неба по направлению: днём — «горизонт → зенит», ночью — тёмная база. Без звёзд:
+// в отражении воды их надо уметь выключать отдельно (отражённая SSR-геометрия их заслоняет),
+// поэтому градиент и звёзды — две функции, а skyTint ниже — их сумма.
+vec3 skyGradient(vec3 dir)
 {
 #ifdef SCENE_DOCT
   const vec3 zenith = vec3(0.10, 0.30, 0.66);
@@ -172,9 +171,22 @@ vec3 skyTint(vec3 dir, float t, float starGain, float starSize)
   float up = pow(clamp(dir.y, 0.0, 1.0), 0.6);
   vec3 col = mix(horizon, zenith, up);
   float night = clamp(nightStars.x, 0.0, 1.0);
-  col = mix(col, vec3(0.035, 0.055, 0.115), night);
-  col += vec3(0.75, 0.82, 1.0) * starField(dir, t, starSize) * night * nightStars.y * starGain;
-  return col;
+  return mix(col, vec3(0.035, 0.055, 0.115), night);
+}
+
+// Звёздный вклад по мировому направлению. starGain — множитель звёзд: в отражении звёздное
+// поле тусклее самого неба (луч идёт вниз, к глади, и блик размывается), поэтому для воды
+// его поднимают отдельно (waterStarGain).
+vec3 starTint(vec3 dir, float t, float starGain, float starSize)
+{
+  float night = clamp(nightStars.x, 0.0, 1.0);
+  return vec3(0.75, 0.82, 1.0) * starField(dir, t, starSize) * night * nightStars.y * starGain;
+}
+
+// Небо целиком (градиент + звёзды) — фолбэк там, где SSR нет.
+vec3 skyTint(vec3 dir, float t, float starGain, float starSize)
+{
+  return skyGradient(dir) + starTint(dir, t, starGain, starSize);
 }
 #endif // SKY_STARS || WATER_REFLECT
 
@@ -267,6 +279,12 @@ vec3 ssrSample(vec2 uv, float rpx, out float alpha)
 
 // Марш по отражённому лучу r из мировой точки глади P.
 //
+// Два выхода, и это РАЗНЫЕ величины (звёзды фолбэка гасятся по второй, а не по первой):
+//   conf — вес смешивания цвета: гаснет у края кадра и на конце дистанции, чтобы не было
+//          шва там, где попадание найдено, но данные на грани;
+//   has  — 1, если валидное попадание найдено вообще. Отражённая геометрия ЗАСЛОНЯЕТ
+//          звёздное небо целиком, поэтому звёзды добавляются только при has = 0.
+//
 // Шаг — НЕ по мировой длине отрезка: 24 шага по 60 м перескакивают и берег, и башню.
 // Пересекается экран: концы отрезка P → P + r·maxDist проецируются один раз, дальше
 // точка берётся линейно по экрану (1/w и z/w линейны по экрану точно), а мировая длина
@@ -276,9 +294,10 @@ vec3 ssrSample(vec2 uv, float rpx, out float alpha)
 // Старт всегда «перед сценой»: воды в G-buffer нет (blend-объект, рисуется после
 // композита), поэтому под водой в глубине лежит дно — оно дальше глади, и луч, идущий
 // вверх, его не пересекает. Отступ ssrParams.z снимает ложные попадания о берег впритык.
-vec3 ssrTrace(vec3 P, vec3 r, out float conf)
+vec3 ssrTrace(vec3 P, vec3 r, out float conf, out float has)
 {
   conf = 0.0;
+  has = 0.0;
   if (ssrParams.x <= 0.0 || r.y <= 0.004) {
     return vec3(0.0); // луч уходит под гладь — данных нет, остаётся небо
   }
@@ -350,6 +369,7 @@ vec3 ssrTrace(vec3 P, vec3 r, out float conf)
       if (hitA < 0.5) {
         break; // в G-buffer тут ничего не рисовалось (фон) — данных нет
       }
+      has = 1.0; // данные есть: звёзды фолбэка тут не рисуются вовсе
       return col;
     }
     uPrev = u;
@@ -556,26 +576,31 @@ void main()
     vec3 rd = normalize(fragWorldPos - camPos.xyz);
     vec3 refl = normalize(vec3(rd.x, -rd.y, rd.z));
     float fres = WATER_FRES_BASE + (1.0 - WATER_FRES_BASE) * pow(1.0 - clamp(-rd.y, 0.0, 1.0), 2.5);
-    // Фолбэк — процедурное небо (градиент + звёзды). SSR кладется ПОВЕРХ него по уверенности
-    // трассировки: там, где в G-buffer нет данных (небо, прозрачные объекты, выход луча за
-    // кадр или за ssrMaxDist), кадр обязан остаться ровно таким, как без SSR.
-    vec3 reflCol = skyTint(refl, time.x, max(nightStars.w, 0.0), WATER_STAR_SIZE);
+    // Фолбэк — процедурное небо. SSR подмешивается по уверенности трассировки, но ЗВЁЗДЫ
+    // гасятся не весом смешивания, а фактом нахождения попадания: отражённая геометрия
+    // (берег, стена, скала) заслоняет звёздное небо целиком, и поверх неё звёзд быть не
+    // должно. Градиент уступает SSR плавно (conf) — шва на границе дистанции не видно.
+    vec3 reflCol = skyGradient(refl);
 #if defined(SSR) && defined(RENDER_PASS_COLOR)
     if (ssrParams.w > 0.5) {
-      // отладка (Castle.ssrDebug): красный — где есть данные SSR, синий — где фолбэк на небо.
-      // Альфа = 1 (у глади Доктов альфа-блендинг, иначе карта смешалась бы с подложкой) и
-      // выход ЗАМЕНЯЕТ цвет воды, а не складывается с ним: иначе в красный канал лезет
-      // член неба и карта перестаёт быть читаемой (замер: днём «синяя» вода давала (36,50,255)).
+      // отладка (Castle.ssrDebug): красный — данные SSR и каков вес смешивания, синий — где
+      // SSR нет. Альфа = 1 (у глади Доктов альфа-блендинг, иначе карта смешалась бы с
+      // подложкой) и выход ЗАМЕНЯЕТ цвет воды, а не складывается с ним: иначе в красный
+      // канал лезет член неба и карта перестаёт быть читаемой (замер: днём «синяя» вода
+      // давала (36,50,255)).
       float ssrConf = 0.0;
-      ssrTrace(fragWorldPos, refl, ssrConf);
+      float ssrHas = 0.0;
+      ssrTrace(fragWorldPos, refl, ssrConf, ssrHas);
       FRAG_COLOR = vec4(clamp(ssrConf, 0.0, 1.0), 0.0, 1.0 - clamp(ssrConf, 0.0, 1.0), 1.0);
     } else {
       float ssrConf = 0.0;
-      vec3 ssrCol = ssrTrace(fragWorldPos, refl, ssrConf);
-      FRAG_COLOR.rgb += mix(reflCol, ssrCol, clamp(ssrConf, 0.0, 1.0)) * fres * nightStars.z;
+      float ssrHas = 0.0;
+      vec3 ssrCol = ssrTrace(fragWorldPos, refl, ssrConf, ssrHas);
+      vec3 stars = starTint(refl, time.x, max(nightStars.w, 0.0), WATER_STAR_SIZE) * (1.0 - ssrHas);
+      FRAG_COLOR.rgb += (mix(reflCol, ssrCol, clamp(ssrConf, 0.0, 1.0)) + stars) * fres * nightStars.z;
     }
 #else
-    FRAG_COLOR.rgb += reflCol * fres * nightStars.z;
+    FRAG_COLOR.rgb += skyTint(refl, time.x, max(nightStars.w, 0.0), WATER_STAR_SIZE) * fres * nightStars.z;
 #endif
   }
 #endif

@@ -2698,10 +2698,10 @@ export class Castle {
   // отступ старта трассировки по лучу (м): снимает ложные попадания о берег впритык к глади
   static ssrStartOffset = 6.0;
 
-  // Потолок уверенности: ниже 1 — и в отражении остаётся доля процедурного неба даже там,
-  // где SSR нашёл данные (у глади нет свободной «щели» между камнями, а марш даёт одно
-  // попадание на пиксель). Замер: при 1.0 звёздные блики исчезали на всём плёсе.
-  static ssrConfMax = 0.85;
+  // Потолок веса смешивания цвета (НЕ звёзд): 1.0 — где SSR нашёл данные, отражение целиком
+  // берётся из геометрии кадра, а звёздное небо там гасится отдельно (ssrHas в шейдере).
+  // Ниже 1 — оставляет долю градиента неба в цвете; на звёзды это уже не влияет.
+  static ssrConfMax = 1.0;
 
   // Размыв выборки (px): без него гладкое зеркало показывает марш полосами — у скользящего
   // луча попадание растягивается на десятки пикселей. Радиус = база + прирост·(доля
@@ -2729,6 +2729,8 @@ export class Castle {
       !!CastleLighting.ext.halfFloatLinear &&
       // отладка теней биндит smColor на тот же юнит, что и нормаль G-buffer
       !Castle.shadowDebugMode &&
+      // общий выключатель отражений в воде (гасит и SSR, и небо) + отдельный — SSR
+      Settings.settings.waterReflect !== false &&
       Settings.settings.waterSsr !== false &&
       Castle.ssrStrength > 0
     );
@@ -2975,6 +2977,11 @@ export class Castle {
     // Погода считается ДО света: наклон квада берётся из готовой камеры этого кадра, а
     // Castle.updateDayNight затемняет солнце и фон по уже посчитанному fade (tintLight).
     // Яркость самих частиц (NIGHT_FLOOR по Castle.daylight) при этом отстаёт на кадр — незаметно.
+    // Настройка «Дождь и снег» — тот же ручной выключатель (CastleWeather.enabled): через
+    // strength() от него же зависят затемнение света и усиление ветра, так что выключение
+    // гасит весь погодный вклад, а не только слой капель. Стенд ?previewWeather=off живёт на
+    // CastleWeather.override и его не трогает.
+    CastleWeather.enabled = Settings.settings.weather !== false;
     CastleWeather.update(Castle);
 
     Castle.updateDayNight();
@@ -3364,8 +3371,11 @@ export class Castle {
     // Ночное небо и отражение в воде (shader_pos_uv_sky, shader_pos_water_reflect): мировая
     // позиция камеры и ночный уровень. Ставится только там, где uniform-ы объявлены.
     if (l.camPos) {
+      // nightStars.z — сила ВСЕГО отражения в воде (и SSR, и неба со звёздами): настройка
+      // «Отражения в воде» выключает его до нуля, и трассировка не считается вовсе (ssrActive)
+      const refl = Settings.settings.waterReflect === false ? 0 : Castle.waterReflect;
       gl.uniform4f(l.camPos, Castle.camWorld[0], Castle.camWorld[1], Castle.camWorld[2], 1);
-      gl.uniform4f(l.nightStars, CastleLighting.nightLevel, Castle.starBrightness, Castle.waterReflect, Castle.waterStarGain);
+      gl.uniform4f(l.nightStars, CastleLighting.nightLevel, Castle.starBrightness, refl, Castle.waterStarGain);
     }
 
     // SSR в воде (только цветной проход воды): сила 0 — трассировка в шейдере не выполняется,
