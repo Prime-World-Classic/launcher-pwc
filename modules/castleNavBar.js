@@ -4,6 +4,7 @@ import { Division } from './division.js';
 import { App } from './app.js';
 import { MM } from './mm.js';
 import { domAudioPresets } from './domAudioPresets.js';
+import { Settings } from './settings.js';
 
 export class CastleNAVBAR {
   static state = false;
@@ -11,6 +12,8 @@ export class CastleNAVBAR {
   static mode = 0;
 
   static stateDefaultMode = 0;
+
+  static modeMenuCloseTimer = null;
 
   // Число игроков в режимах (id режима бэкенда → { limit, oneteam }), подставляется
   // в описания вместо {team}/{players}. limit правят из веб-админки, поэтому берём
@@ -243,12 +246,31 @@ export class CastleNAVBAR {
             
         }
         */
-    // Все режимы видны всегда: выбранный — в круге над «В бой», остальные — в крыльях
-    // слева и справа от слотов пати (layoutModes). Число игроков в подсказках
-    // обновляем при наведении на режим.
-    for (const index of [9, 11, 12, 13, 14, 15, 16]) {
+    // Два вида списка режимов (Доп. настройки → castleModesWings, applyModeView):
+    // по умолчанию — меню, которое открывается при наведении на круг режима и закрывается,
+    // когда курсор ушёл и с круга, и с панели (с задержкой, чтобы успеть перевести мышь);
+    // «крылья» — все режимы видны всегда: выбранный в круге, остальные слева и справа
+    // от слотов пати (layoutModes). Число игроков в подсказках обновляем при наведении.
+    CastleNAVBAR.body.children[9].onclick = () => {
+      if (!CastleNAVBAR.isWingsView()) {
+        CastleNAVBAR.openModeMenu();
+      }
+    };
+
+    for (const index of [9, 10, 11, 12, 13, 14, 15, 16]) {
       CastleNAVBAR.body.children[index].addEventListener('mouseenter', () => {
-        CastleNAVBAR.loadModeTeams();
+        if (CastleNAVBAR.isWingsView()) {
+          CastleNAVBAR.loadModeTeams();
+        } else if (index === 9) {
+          CastleNAVBAR.openModeMenu();
+        } else {
+          clearTimeout(CastleNAVBAR.modeMenuCloseTimer);
+        }
+      });
+      CastleNAVBAR.body.children[index].addEventListener('mouseleave', () => {
+        if (!CastleNAVBAR.isWingsView()) {
+          CastleNAVBAR.closeModeMenuSoon();
+        }
       });
     }
 
@@ -309,7 +331,7 @@ export class CastleNAVBAR {
 
     CastleNAVBAR.renderQueue();
 
-    CastleNAVBAR.layoutModes();
+    CastleNAVBAR.applyModeView();
 
     return CastleNAVBAR.body.children[5];
   }
@@ -455,8 +477,84 @@ export class CastleNAVBAR {
     });
 
     CastleNAVBAR.body.children[11 + CastleNAVBAR.mode].style.display = 'none';
+  }
+
+  static isWingsView() {
+    return Settings.settings?.castleModesWings === true;
+  }
+
+  // Применяет выбранный в настройках вид списка режимов (и при смене настройки на лету).
+  static applyModeView() {
+    if (!CastleNAVBAR.body) {
+      return;
+    }
+
+    const wings = CastleNAVBAR.isWingsView();
+
+    clearTimeout(CastleNAVBAR.modeMenuCloseTimer);
+
+    CastleNAVBAR.body.classList.toggle('is-mode-wings', wings);
+
+    for (let modeId = 0; modeId < 6; modeId++) {
+      CastleNAVBAR.body.children[11 + modeId].style.left = '';
+    }
+
+    if (wings) {
+      CastleNAVBAR.body.children[5].style.display = 'flex';
+
+      CastleNAVBAR.body.children[10].style.display = 'none';
+
+      CastleNAVBAR.layoutModes();
+    } else {
+      CastleNAVBAR.hideModeMenu();
+    }
 
     CastleNAVBAR.applyModeTooltips();
+  }
+
+  static isModeMenuOpen() {
+    return CastleNAVBAR.body.children[10].style.display === 'block';
+  }
+
+  static openModeMenu() {
+    clearTimeout(CastleNAVBAR.modeMenuCloseTimer);
+
+    CastleNAVBAR.loadModeTeams();
+
+    if (!CastleNAVBAR.isModeMenuOpen()) {
+      CastleNAVBAR.viewMode();
+    }
+  }
+
+  static closeModeMenuSoon() {
+    clearTimeout(CastleNAVBAR.modeMenuCloseTimer);
+
+    CastleNAVBAR.modeMenuCloseTimer = setTimeout(() => {
+      if (CastleNAVBAR.isModeMenuOpen()) {
+        CastleNAVBAR.viewMode();
+      }
+    }, 250);
+  }
+
+  // меню режимов: полоса (children[10]) и все шесть режимов вместо кнопки «В бой»
+  static viewMode() {
+    if (CastleNAVBAR.isModeMenuOpen()) {
+      CastleNAVBAR.hideModeMenu();
+    } else {
+      CastleNAVBAR.body.children[5].style.display = 'none';
+
+      for (const index of [10, 11, 12, 13, 14, 15, 16]) {
+        CastleNAVBAR.body.children[index].style.display = 'block';
+      }
+    }
+  }
+
+  static hideModeMenu() {
+    CastleNAVBAR.body.children[5].style.display = 'flex';
+
+    for (const index of [10, 11, 12, 13, 14, 15, 16]) {
+      CastleNAVBAR.body.children[index].style.display = 'none';
+    }
   }
 
   static setMode(type, options = {}) {
@@ -471,7 +569,13 @@ export class CastleNAVBAR {
 
     CastleNAVBAR.body.children[6].style.backgroundImage = background;
 
-    CastleNAVBAR.layoutModes();
+    if (CastleNAVBAR.isWingsView()) {
+      CastleNAVBAR.layoutModes();
+    } else {
+      CastleNAVBAR.hideModeMenu();
+    }
+
+    CastleNAVBAR.applyModeTooltips();
 
 	window.dispatchEvent(new CustomEvent('CastleModeChanged', { detail: { mode: CastleNAVBAR.mode } }));
 

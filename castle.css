@@ -807,27 +807,59 @@ body.castle-cinematic {
   transform: scale(0.7);
 }
 
-/* modes that are not selected sit in the sockets of the wings left and right of the party slots;
-   left (vh) is set by CastleNAVBAR.layoutModes, the selected mode is hidden (it is in the circle) */
+/* default view (Settings castleModesWings off): the mode list on the b8 strip under the circle,
+   opened on hover over the circle (CastleNAVBAR.viewMode) */
 .castle-button-play-m1,
 .castle-button-play-m2,
 .castle-button-play-m3,
 .castle-button-play-m4,
 .castle-button-play-m5,
 .castle-button-play-m6 {
-  z-index: 2;
+  z-index: 1;
   width: 4vh;
   aspect-ratio: 1/1;
-  top: 0.6vh;
+  top: 3.9vh;
   transform: scale(0.6);
+  display: none;
 }
 
-.castle-button-play-m1:hover,
-.castle-button-play-m2:hover,
-.castle-button-play-m3:hover,
-.castle-button-play-m4:hover,
-.castle-button-play-m5:hover,
-.castle-button-play-m6:hover {
+.castle-button-play-m1 {
+  z-index: 3;
+  right: 14vh;
+}
+
+.castle-button-play-m2 {
+  right: 10.6vh;
+}
+
+.castle-button-play-m3 {
+  left: 3.78vh;
+}
+
+.castle-button-play-m4 {
+  left: 7.2vh;
+}
+
+.castle-button-play-m5 {
+  left: 10.6vh;
+}
+
+.castle-button-play-m6 {
+  left: 13.78vh;
+}
+
+/* wings view (castleModesWings on): modes that are not selected sit in the sockets of the wings
+   left and right of the party slots; left (vh) and display are set by CastleNAVBAR.layoutModes,
+   the selected mode is hidden (it is in the circle) */
+.castle-button-play.is-mode-wings
+  :is(.castle-button-play-m1, .castle-button-play-m2, .castle-button-play-m3, .castle-button-play-m4, .castle-button-play-m5, .castle-button-play-m6) {
+  z-index: 2;
+  top: 0.6vh;
+  right: auto;
+}
+
+.castle-button-play
+  :is(.castle-button-play-m1, .castle-button-play-m2, .castle-button-play-m3, .castle-button-play-m4, .castle-button-play-m5, .castle-button-play-m6):hover {
   z-index: 8;
 }
 
@@ -864,7 +896,12 @@ body.castle-cinematic {
   z-index: 0;
   top: 0.45vh;
   height: 4.3vh;
+  display: none;
   pointer-events: none;
+}
+
+.castle-button-play.is-mode-wings .castle-button-play-wing {
+  display: block;
 }
 
 .castle-button-play-wing::before,
@@ -1077,11 +1114,11 @@ body.castle-cinematic {
 /* selected mode circle: title and description on hover, same look and place as the modes in the
    wings (they are scaled 0.6, the circle is not, so sizes here are 0.6 of theirs); not while the
    queue badge shows its own tooltip */
-.castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover)) {
+.castle-button-play.is-mode-wings .castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover)) {
   z-index: 8;
 }
 
-.castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover))::before {
+.castle-button-play.is-mode-wings .castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover))::before {
   content: var(--filter-text-title, '');
   position: absolute;
   z-index: 2;
@@ -1096,7 +1133,7 @@ body.castle-cinematic {
   pointer-events: none;
 }
 
-.castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover))::after {
+.castle-button-play.is-mode-wings .castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover))::after {
   content: var(--filter-text-hover, '');
   display: flex;
   position: absolute;

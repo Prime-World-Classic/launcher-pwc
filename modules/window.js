@@ -25,6 +25,7 @@ import { keybindings } from './keybindings/keybindings.window.js';
 import { battleSettings, voiceHotkeyInput } from './battleSettings.js';
 import { fair } from './fair.js';
 import { PWGame } from './pwgame.js';
+import { CastleNAVBAR } from './castleNavBar.js';
 
 export class Window {
   static windows = {};
@@ -1584,6 +1585,25 @@ export class Window {
             ],
           }),
           DOM({ tag: 'label', for: 'building-lights-toggle' }, Lang.text('buildingLights')),
+        ),
+        DOM(
+          { style: 'castle-menu-item-checkbox' },
+          DOM({
+            tag: 'input',
+            domaudio: domAudioPresets.defaultSelect,
+            type: 'checkbox',
+            id: 'modes-wings-toggle',
+            checked: Settings.settings.castleModesWings === true,
+            event: [
+              'change',
+              (e) => {
+                // вкл — все режимы видны у «В бой», выкл — меню по наведению на круг режима
+                Settings.settings.castleModesWings = e.target.checked;
+                CastleNAVBAR.applyModeView();
+              },
+            ],
+          }),
+          DOM({ tag: 'label', for: 'modes-wings-toggle' }, Lang.text('castleModesWings')),
         ),
         DOM({ style: 'castle-menu-section-title' }, Lang.text('voiceHotkeys')),
         DOM(

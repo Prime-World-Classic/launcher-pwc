@@ -10,6 +10,9 @@ export class Settings {
     render: true,
     dayNight: true,
     buildingLights: true,
+    /** Вид списка режимов у «В бой»: false — меню по наведению на круг режима,
+     *  true — все режимы видны всегда, по бокам от слотов пати (CastleNAVBAR). */
+    castleModesWings: false,
     /** Рендер-бэкенд игры: 'd3d9' — старый пайплайн (по умолчанию, токена в
      *  протоколе нет), 'vulkan' — в протокол запуска уходит «render=vulkan»
      *  (gameRender.js, pwgame.js). Клиент без поддержки такой токен игнорирует. */

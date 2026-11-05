@@ -74,6 +74,7 @@ export const be = {
     threeD: '3D графіка',
     dayNight: 'Змена дня і ночы',
     buildingLights: 'Агні будынкаў уначы',
+    castleModesWings: 'Рэжымы заўсёды навідавоку',
     gameRender: 'Графіка гульні',
     vulkanRenderer: 'Vulkan (эксперыментальна)',
     castleBuildCategoryHeroes: 'Для герояў',
