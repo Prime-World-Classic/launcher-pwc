@@ -107,6 +107,12 @@ float starHash(vec2 p)
   return fract(p.x * p.y * 0.3123);
 }
 
+// Плотность и угловой размер — независимые регуляторы, но считаются одной ячейкой:
+// поэтому размер приходится пересчитывать в долях ячейки. Ячейка уменьшается в √3 раза
+// (STAR_GRID ×√3 → втрое больше ячеек → втрое больше звёзд), а делитель размера
+// STAR_SIZE_DIV = √3 нужен, чтобы УГЛОВОЙ размер звезды упал ровно втрое, а не в 3·√3.
+const vec2 STAR_GRID = vec2(34.641, 45.033); // ячеек на радиан: было (20, 26), ×√3
+const float STAR_SIZE_DIV = 1.7321; // √3 — см. вывод выше
 // Вклад одной ячейки решётки в точку gp (координаты в единицах ячейки). Пустая ячейка — 0.
 float starCell(vec2 cell, vec2 gp, float t, float sizeGain)
 {
@@ -114,7 +120,7 @@ float starCell(vec2 cell, vec2 gp, float t, float sizeGain)
   if (h < 0.66) return 0.0; // звезда есть не в каждой ячейке
   vec2 c = vec2(starHash(cell + 7.13), starHash(cell + 13.71));
   float r = length(gp - cell - c);
-  float size = (0.045 + 0.10 * starHash(cell + 3.37)) * clamp(sizeGain, 1.0, 4.0);
+  float size = (0.045 + 0.10 * starHash(cell + 3.37)) * clamp(sizeGain, 1.0, 4.0) / STAR_SIZE_DIV;
   float core = smoothstep(size, 0.0, r);
   float halo = smoothstep(size * 3.5, 0.0, r) * 0.22;
   float mag = 0.30 + 0.70 * starHash(cell + 2.11);
@@ -138,7 +144,7 @@ float starField(vec3 dir, float t, float sizeGain)
 {
   float az = atan(dir.z, dir.x); // -pi..pi
   float el = asin(clamp(dir.y, -1.0, 1.0)); // -pi/2..pi/2
-  vec2 g = vec2(az * 20.0, (el + 1.5707963) * 26.0);
+  vec2 g = vec2(az * STAR_GRID.x, (el + 1.5707963) * STAR_GRID.y);
   vec2 base = floor(g);
   float acc = 0.0;
   for (int j = -1; j <= 1; j++) {
