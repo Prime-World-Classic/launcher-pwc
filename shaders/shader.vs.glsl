@@ -175,13 +175,21 @@ void main()
 #endif
   gl_Position = mViewProj * worldPos;
 #ifdef SNOW
-// Мировые метры точки квада в базисе его плоскости: колонки 0 и 1 mWorld — это полуширина и
-// полувысота квада в мире, деление на их длины оставляет в векторе только мировые оси.
-// Дальше шейдер погоды строит из них мировую координату узора, поэтому пан камеры не тащит
-// осадки за собой.
+// Погодный квад (CastleWeather, shader_pos_color_uv_falloff_snow). Колонки 0 и 1 mWorld — это
+// полуширина и полувысота квада в мире (мировые оси right/up камеры, умноженные на них), поэтому
+// локальная вершина ±1 даёт смещение точки квада ОТ ОСИ ЗРЕНИЯ прямо в метрах.
+// Абсолютные мировые координаты точки (dot(worldPos, ось)) здесь НЕ берутся: вычитание чисел
+// ~1400 ед. даёт ошибку 1e-4 м, а шейдер погоды домножает её на z/D (до ~4) — на дальних слоях
+// это пиксели лишнего «скольжения» узора при каждой панораме.
   vec3 snowE1 = mWorld[0].xyz;
   vec3 snowE2 = mWorld[1].xyz;
-  fragPlanePos = vec2(dot(worldPos.xyz, snowE1) / length(snowE1), dot(worldPos.xyz, snowE2) / length(snowE2));
+  float snowW = length(snowE1), snowH = length(snowE2);
+  fragPlaneOff = vec2(animatedVertPosition.x * snowW, animatedVertPosition.y * snowH);
+  fragCamR = snowE1 / snowW;
+  fragCamU = snowE2 / snowH;
+  // ось зрения: базис (right, up, forward) у viewMatrix2 ЛЕВЫЙ (в него замешан flipMatr),
+  // поэтому forward = cross(right, up), а не cross(up, right) — знак сверен с invert(viewMatrix2)
+  fragCamF = cross(fragCamR, fragCamU);
 #endif
 #ifdef VS_NORMAL
   vec4 worldNormal = mWorld * vec4(normalize(skinnedNormal), 0.0);

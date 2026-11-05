@@ -2026,6 +2026,8 @@ export class Castle {
         weather2: obj.weather2,
         weather3: obj.weather3,
         weather4: obj.weather4,
+        weather5: obj.weather5,
+        weather6: obj.weather6,
         texture: obj.texture,
         texture_2: obj.texture_2,
         texture_3: obj.texture_3,
@@ -2081,6 +2083,8 @@ export class Castle {
           weather2: obj.weather2,
           weather3: obj.weather3,
           weather4: obj.weather4,
+          weather5: obj.weather5,
+          weather6: obj.weather6,
           texture: obj.texture,
           texture_2: obj.texture_2,
           texture_3: obj.texture_3,
@@ -2336,6 +2340,8 @@ export class Castle {
       weather2: u('weather2'),
       weather3: u('weather3'),
       weather4: u('weather4'),
+      weather5: u('weather5'),
+      weather6: u('weather6'),
       wind: u('wind'),
       windBase: u('windBase'),
       windDir: u('windDir'),
@@ -3516,6 +3522,8 @@ export class Castle {
       gl.uniform4fv(l.weather2, (wobj && wobj.weather2) || Castle.ZEROS4);
       gl.uniform4fv(l.weather3, (wobj && wobj.weather3) || Castle.ZEROS4);
       gl.uniform4fv(l.weather4, (wobj && wobj.weather4) || Castle.ZEROS4);
+      gl.uniform4fv(l.weather5, (wobj && wobj.weather5) || Castle.ZEROS4);
+      gl.uniform4fv(l.weather6, (wobj && wobj.weather6) || Castle.ZEROS4);
     }
 
     // матрицы — общие рабочие массивы (uniformMatrix4fv копирует значение), новые на каждый объект не нужны

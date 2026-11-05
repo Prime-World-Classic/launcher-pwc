@@ -7,10 +7,12 @@ import * as mat4 from './glMatrix/mat4.js';
 // Сам квад — локальный квадрат [-1,1]²; его transform каждый кадр пересчитывается из камеры так,
 // чтобы он ровно накрывал кадр (углы NDC, снятые через viewProjInv на близкой плоскости).
 //
-// Координата узора при этом МИРОВАЯ: вершинная программа отдаёт мировы метры точки квада в
-// базисе плоскости квада (fragPlanePos), а CastleWeather добавляет к ней мировую привязку
-// камеры (weather3.zw) — поэтому панорама не тащит осадки за собой, а поворот и зум не дают
-// скачка узора.
+// Координата узора — МИРОВАЯ ТРЁХМЕРНАЯ РЕШЁТКА капель: вершинная программа отдаёт метры точки
+// квада от оси зрения (fragPlaneOff) и мировые оси плоскости (fragCamR/U/F), а CastleWeather
+// добавляет к ним мировую скорость капли и накопленный путь (weather5/weather6 — целая и
+// дробная часть мировой координаты решётки, приходящейся на камеру). Поэтому панорама не тащит
+// осадки за собой, а капля, летящая вдоль луча зрения, уходит в глубину кадра, а не скользит
+// по экрану.
 //
 // Фаза падения — накопленный путь (travel, метры), а не «скорость × время сцены»: произведение
 // при смене скорости или fov перематывало бы узор на тысячи ячеек за кадр.
@@ -23,6 +25,9 @@ export class CastleWeather {
 
   // объекты текущей сцены (bind) — их transform и weather* пишутся каждый кадр
   static objects = [];
+
+  // uniform-ы погоды: их создаёт bind, пишет update, читает Castle.drawObject
+  static UNIFORMS = ['weather', 'weather2', 'weather3', 'weather4', 'weather5', 'weather6'];
 
   static mode = 'snow';
 
@@ -230,10 +235,7 @@ export class CastleWeather {
     for (const obj of castle.sceneObjects || []) {
       if (!CastleWeather.MESH_RE.test(obj.meshName)) continue;
       obj.transform = new Float32Array(16);
-      obj.weather = new Float32Array(4);
-      obj.weather2 = new Float32Array(4);
-      obj.weather3 = new Float32Array(4);
-      obj.weather4 = new Float32Array(4);
+      for (const key of CastleWeather.UNIFORMS) obj[key] = new Float32Array(4);
       obj.tintColor = new Float32Array(4);
       CastleWeather.objects.push(obj);
     }
@@ -247,8 +249,8 @@ export class CastleWeather {
   static snowR = [1, 0, 0];
   static snowU = [0, 1, 0];
   static snowF = [0, 0, -1]; // мировая ось зрения (из invert(viewMatrix2), со знаком минус)
+  static snowV = [0, -1, 0]; // мировая скорость капли (единица — «вниз», tilt — снос ветром)
   static planeDist = 10;
-  static camPlane = [0, 0];
 
   // Мировая позиция основной камеры. БЕРЁМ ИЗ invert(viewMatrix2) обязательно: локальная
   // переменная camPos в Castle.updateMainCam — перевод в ЛОКАльной системе вида (mat4.translate
@@ -310,15 +312,12 @@ export class CastleWeather {
     out[15] = 1;
 
     CastleWeather.planeDist = D;
-    CastleWeather.camPlane[0] = cw[12] * R[0] + cw[13] * R[1] + cw[14] * R[2];
-    CastleWeather.camPlane[1] = cw[12] * U[0] + cw[13] * U[1] + cw[14] * U[2];
     return out;
   }
 
   // Направление падения в базисе плоскости квада — ЭКРАННАЯ проекция мирового вектора
   // осадок, БЕЗ нормализации: его длина = sin угла между осью зрения и «мировым вниз»,
   // то есть доля падения, приходящаяся на плоскость кадра.
-  //
   // Прежняя формула брала вертикаль жёстко по экрану (0,-1) и нормализовала результат.
   // Так осадки переставали «ехать под наклоном к камере» при виде сверху (старый дефект),
   // но ценой физики: у камеры, смотрящей круто вниз, мировой «вниз» почти параллелен лучу
@@ -329,19 +328,40 @@ export class CastleWeather {
   //
   // Третий компонент — составляющая вдоль луча зрения (fallFwd): из неё в шейдере
   // строится перспектива полос (они сходятся к точке схода мировых вертикалей и растут
-  // по мере удаления от неё). Ветер — мировой (то же направление, что у покачивания
-  // деревьев), поэтому наклон сам меняет знак при обходе замка.
+  // по мере удаления от неё) И та же величина уводит каплю в глубину слоя — мировая
+  // решётка сдвигается вектором weather5/weather6, а не экранным «низом». Ветер — мировой
+  // (то же направление, что у покачивания деревьев), поэтому наклон сам меняет знак при
+  // обходе замка.
   static fallVec(tilt, windXY) {
     const R = CastleWeather.snowR;
     const U = CastleWeather.snowU;
     const F = CastleWeather.snowF;
+    const V = CastleWeather.snowV;
     const wx = windXY ? windXY[0] : 1;
     const wz = windXY ? windXY[1] : 0;
     // мировая скорость капли: вниз (0,-1,0) плюс снос tilt по направлению ветра
     const fx = tilt * wx;
     const fy = -1;
     const fz = tilt * wz;
+    V[0] = fx;
+    V[1] = fy;
+    V[2] = fz;
     return [fx * R[0] + fy * R[1] + fz * R[2], fx * U[0] + fy * U[1] + fz * U[2], fx * F[0] + fy * F[1] + fz * F[2]];
+  }
+
+  // Целая и дробная части мировой координаты решётки, приходящейся на камеру с учётом
+  // пройденного каплями пути: (camW - V*travel)*cell. Разложение — В float64 (здесь), а не
+  // в шейдере: при travel в десятки километров произведение дорастает до ~1e6 и float32
+  // перестаёт различать доли ячейки — узор начинает дрожать на пиксель и больше.
+  static latticeAnchor(camToWorld, travel, cell, outInt, outFrac) {
+    const V = CastleWeather.snowV;
+    for (let k = 0; k < 3; k++) {
+      const s = (camToWorld[12 + k] - V[k] * travel) * cell;
+      const i = Math.floor(s);
+      outInt[k] = i;
+      outFrac[k] = s - i;
+    }
+    return outInt;
   }
 
   // Каждый кадр: расписание по часам, фаза падения, позиция квада и uniform-ы объектов.
@@ -358,6 +378,9 @@ export class CastleWeather {
 
     CastleWeather.fullscreenTransform(castle);
     const fall = CastleWeather.fallVec(p.tilt, castle.windDirXY);
+    const cell = Math.max(p.density, 0.01);
+    const aInt = [0, 0, 0], aFrac = [0, 0, 0];
+    CastleWeather.latticeAnchor(CastleWeather._camToWorld, CastleWeather.travel, cell, aInt, aFrac);
 
     const gate = (CastleWeather.enabled ? 1 : 0) * CastleWeather.fade;
     const light = CastleWeather.NIGHT_FLOOR + (1 - CastleWeather.NIGHT_FLOOR) * (castle.daylight ?? 1);
@@ -378,13 +401,23 @@ export class CastleWeather {
       const w3 = obj.weather3;
       w3[0] = p.layers;
       w3[1] = p.farFade;
-      w3[2] = CastleWeather.camPlane[0];
-      w3[3] = CastleWeather.camPlane[1];
+      w3[2] = 0;
+      w3[3] = 0;
       const w4 = obj.weather4;
       w4[0] = fall[0];
       w4[1] = fall[1];
       w4[2] = p.presence;
       w4[3] = fall[2];
+      const w5 = obj.weather5;
+      w5[0] = aInt[0];
+      w5[1] = aInt[1];
+      w5[2] = aInt[2];
+      w5[3] = 0;
+      const w6 = obj.weather6;
+      w6[0] = aFrac[0];
+      w6[1] = aFrac[1];
+      w6[2] = aFrac[2];
+      w6[3] = 0;
       const tint = obj.tintColor;
       tint[0] = p.color[0] * light;
       tint[1] = p.color[1] * light;
