@@ -6,6 +6,7 @@ import { Rank } from './rank.js';
 import { App } from './app.js';
 import { Voice } from './voice.js';
 import { VoiceGameBridge } from './voiceGameBridge.js';
+import { VoiceScreen } from './voiceScreen.js';
 import { shouldReplaceDeadCall, shouldYieldToIncomingCall } from './voiceGlare.js';
 import { Chat } from './chat.js';
 import { NativeAPI } from './nativeApi.js';
@@ -588,6 +589,11 @@ export class Events {
     await Voice.remoteDrop(data.id);
   }
   
+  // Демонстрация экрана: сигналы между показывающим и зрителем (см. voiceScreenHub.js).
+  static async VScreen(data) {
+    await VoiceScreen.onSignal(data);
+  }
+
   static async VMuteState(data) {
     Voice.setMutedByPeer(data?.id, Number(data?.muted || 0) === 1);
   }

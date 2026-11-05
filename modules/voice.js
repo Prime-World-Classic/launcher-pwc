@@ -10,6 +10,7 @@ import { normalizeKey } from './keybindings/keybindings.input.js';
 import { MM } from './mm.js';
 import { uiIcon } from './uiIcon.js';
 import { NativeAPI } from './nativeApi.js';
+import { VoiceScreen } from './voiceScreen.js';
 
 export class Voice {
   static peerConnectionConfig = {
@@ -606,7 +607,7 @@ export class Voice {
     Voice.viewMethod = String(method || '');
     if (!Voice.infoPanel) return;
     const login = String(App.storage?.data?.login || '');
-    if (Voice.infoPanelLogin !== login) {
+    if (Voice.infoPanelLogin !== login || VoiceScreen.panelOutdated()) {
       Voice.updateInfoPanel();
     } else {
       Voice.syncInfoPanel();
@@ -1352,6 +1353,7 @@ export class Voice {
           },
           App.storage.data.login,
         ),
+        VoiceScreen.selfButton() || '',
       ),
       DOM({ style: 'voice-info-panel-body-item-status' }, bar),
     );
@@ -1616,7 +1618,7 @@ export class Voice {
       },
       { passive: false },
     );
-    row.append(DOM({ style: 'voice-info-panel-body-item-controls' }, mute, mutedByIcon, item, volumeText), status);
+    row.append(DOM({ style: 'voice-info-panel-body-item-controls' }, mute, mutedByIcon, item, VoiceScreen.peerButton(id) || '', volumeText), status);
     panelBody.append(row);
   }
 
@@ -1826,6 +1828,7 @@ export class Voice {
   }
 
   static suspendPeersForBattle(allyIds = [], playerCount = 0) {
+    VoiceScreen.stopForMatch();
     Voice.rememberBattleFriendAllies(allyIds);
     if (Voice.setMatchKeepCalls(playerCount)) {
       // Ничего не ставим на паузу и не игнорируем переподключения друзей до начала боя.
@@ -1936,6 +1939,7 @@ export class Voice {
       return;
     }
     if (full) {
+      VoiceScreen.closeAll();
       Voice.stopAllReconnectJobs();
       Voice.battleSuspendedPeers.clear();
     } else {
@@ -2375,6 +2379,7 @@ export class Voice {
         case 'connected':
           this.hasEverConnected = true;
           this.logSelectedPair();
+          VoiceScreen.onPeerConnected(this.id);
           if (this.timer) {
             clearTimeout(this.timer);
             this.timer = null;
@@ -2676,6 +2681,8 @@ export class Voice {
     delete Voice.manager[this.id];
     
     Voice.mutedByPeers.delete(this.id);
+
+    VoiceScreen.onPeerGone(this.id);
 
     if (this.id in Voice.cacheCandidate) {
       delete Voice.cacheCandidate[this.id];

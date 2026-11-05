@@ -477,6 +477,7 @@ cdicon {
 .ui-icon-sound-off { -webkit-mask-image: url('icons/ui/sound-off.svg'); mask-image: url('icons/ui/sound-off.svg'); }
 .ui-icon-mic { -webkit-mask-image: url('icons/ui/mic.svg'); mask-image: url('icons/ui/mic.svg'); }
 .ui-icon-mic-off { -webkit-mask-image: url('icons/ui/mic-off.svg'); mask-image: url('icons/ui/mic-off.svg'); }
+.ui-icon-screen { -webkit-mask-image: url('icons/ui/screen.svg'); mask-image: url('icons/ui/screen.svg'); }
 .ui-icon-clock { -webkit-mask-image: url('icons/ui/clock.svg'); mask-image: url('icons/ui/clock.svg'); }
 .ui-icon-stopwatch { -webkit-mask-image: url('icons/ui/stopwatch.svg'); mask-image: url('icons/ui/stopwatch.svg'); }
 .ui-icon-refresh { -webkit-mask-image: url('icons/ui/refresh.svg'); mask-image: url('icons/ui/refresh.svg'); }
@@ -11261,6 +11262,112 @@ i-success {
 
 .voice-info-panel-body-item-icon:hover {
   background: rgba(255, 255, 255, 0.16);
+}
+
+/* screen sharing: voice panel buttons (VoiceScreen) */
+.voice-info-panel-body-item .voice-info-panel-body-item-icon.voice-screen-button {
+  color: #8fe3c0;
+}
+
+.voice-info-panel-body-item .voice-info-panel-body-item-icon.voice-screen-button.voice-screen-button--on {
+  background: #3f8f6d;
+  color: #ffffff;
+}
+
+.voice-info-panel-body-item .voice-info-panel-body-item-icon.voice-screen-button--available:not(.voice-screen-button--on) {
+  color: #f0c869;
+  animation: voice-screen-available 1.6s ease-in-out infinite;
+}
+
+@keyframes voice-screen-available {
+  50% {
+    background: rgba(240, 200, 105, 0.35);
+  }
+}
+
+/* viewer window: above the castle and windows, resized by the bottom right corner */
+.voice-screen-window {
+  position: fixed;
+  right: 3vh;
+  bottom: 3vh;
+  width: 90vh;
+  height: 55vh;
+  min-width: 36vh;
+  min-height: 24vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  display: flex;
+  flex-flow: column nowrap;
+  overflow: hidden;
+  resize: both;
+  z-index: 9997;
+  background: #0d1014;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1vh;
+  box-shadow: 0 0.6vh 2.4vh rgba(0, 0, 0, 0.6);
+}
+
+.voice-screen-window-title {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6vh;
+  padding: 0.6vh 0.8vh 0.6vh 1.2vh;
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+  font-size: 1.6vh;
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+
+.voice-screen-window-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voice-screen-window-button {
+  flex: none;
+  width: 2.6vh;
+  height: 2.6vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5vh;
+  font-size: 1.5vh;
+  cursor: pointer;
+}
+
+.voice-screen-window-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.voice-screen-window-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #000000;
+}
+
+.voice-screen-window-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.voice-screen-window-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.6vh;
+  pointer-events: none;
 }
 
 .voice-info-panel-body-item--muted .voice-info-panel-body-item-icon {

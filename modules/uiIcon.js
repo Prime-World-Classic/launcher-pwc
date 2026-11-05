@@ -11,6 +11,7 @@ const MONO = new Set([
   'sound-off',
   'mic',
   'mic-off',
+  'screen',
   'clock',
   'stopwatch',
   'refresh',
