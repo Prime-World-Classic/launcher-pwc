@@ -197,6 +197,166 @@ vec3 neutral(vec3 color) {
   return mix(color, vec3(newPeak), g);
 }
 
+#if defined(SSR) && defined(RENDER_PASS_COLOR)
+// ---------------- Screen Space Reflections в воде ----------------
+// Источник трассировки — G-buffer отложенного освещения (CastleLighting): цвет (hdr, до
+// тонмаппинга, но уже с экспозицией sunLight.a и со сложенными огнями зданий), глубина и
+// мировая нормаль. Вода рисуется в прозрачном проходе ПОСЛЕ композита и прямо в экран,
+// а экран в WebGL1 не читается — поэтому источник только эти три текстуры, и SSR живёт
+// ровно пока жив отложенный путь кадра.
+//
+// Фолбэк — это НЕ отдельный путь: при conf = 0 отражение остаётся процедурным небом
+// skyTint(), то есть кадр совпадает с тем, что было до появления SSR.
+//
+// Границы GLSL ES 1.00: цикл канонический (индекс, постоянное число итераций), while нет,
+// сэмплеры не индексируются динамически — отсюда три отдельных uniform-а вместо массива.
+//
+// RENDER_PASS_COLOR в условии обязателен: defines-файл подставляется во ВСЕ три программы
+// шейдера (цвет, карта теней, G-buffer), а zNear_zFar объявлен только в цветном проходе —
+// в программе карты теней (RENDER_PASS_SM) блок не должен компилироваться вовсе.
+const int SSR_STEPS = 24; // шагов экранного марша (постоянный бюджет)
+const int SSR_REFINE = 5; // бисекций после находки пересечения: без них попадание квантуется
+                          // шагом марша (1/24 отрезка) и отражение стены идёт «ступеньками»
+const float SSR_EDGE_PX = 4.0; // пикселей у края кадра, где уверенность гаснет
+const float SSR_FADE_FROM = 0.6; // доля дистанции, с которой уверенность идёт к нулю
+
+uniform sampler2D ssrHdr; // отражаемый цвет (линейный, до neutral())
+uniform sampler2D ssrDepth; // оконная глубина сцены (WEBGL_depth_texture, 24 бит)
+uniform sampler2D ssrNormal; // мировая нормаль попадания; a = 0 у объектов без нормалей
+uniform vec4 ssrParams; // x: сила (0 — трассировка не выполняется), y: maxDist (м), z: отступ старта (м), w: 1 — карта уверенности
+uniform vec4 ssrParams2; // x: потолок уверенности, y: радиус размива на малой дистанции (px), z: прибавка радиуса на полной дистанции (px), w: резерв
+uniform vec2 ssrInvSize; // 1/ширина, 1/высота G-buffer
+
+// Линейная дистанция до камеры по оконной глубине — та же формула, что invDepth() в
+// композите (castleLighting.js). По оконной глубине сравнивать нельзя: при zNear=10 и
+// zFar=6200 всё дальше 1500 м жмётся в d ∈ [0.995, 0.998].
+float ssrSceneAxis(vec2 uv)
+{
+  float d = texture2D(ssrDepth, uv).r;
+  float inv = (zNear_zFar.y - d * (zNear_zFar.y - zNear_zFar.x)) / (zNear_zFar.x * zNear_zFar.y);
+  return 1.0 / max(inv, 1e-5);
+}
+
+// Гасение у краёв кадра: отражение за границей вьюпорта нечем добить, и без fade там
+// читается жёсткая рамка.
+float ssrEdgeFade(vec2 uv)
+{
+  vec2 sz = 1.0 / ssrInvSize;
+  vec2 px = uv * sz;
+  vec2 d = min(px, sz - px);
+  return clamp(min(d.x, d.y) / SSR_EDGE_PX, 0.0, 1.0);
+}
+
+// Выборка отражённого цвета с размывом. Без него гладкое зеркало показывает марш полосами:
+// у скользящего луча отражённая поверхность идёт почти вдоль экрана, и попадание одного
+// пикселя растягивается на десятки. Пять тапов (центр + диагонали) дешевле, чем 3×3, а
+// вес по альфе не тянет в размыв фон (в G-buffer его нет).
+vec3 ssrSample(vec2 uv, float rpx, out float alpha)
+{
+  vec2 o = rpx * ssrInvSize;
+  vec4 c0 = texture2D(ssrHdr, uv);
+  vec4 c1 = texture2D(ssrHdr, uv + vec2(-o.x, -o.y));
+  vec4 c2 = texture2D(ssrHdr, uv + vec2(o.x, -o.y));
+  vec4 c3 = texture2D(ssrHdr, uv + vec2(-o.x, o.y));
+  vec4 c4 = texture2D(ssrHdr, uv + vec2(o.x, o.y));
+  vec3 acc = neutral(c0.rgb) * (c0.a * 2.0) + (neutral(c1.rgb) + neutral(c2.rgb) + neutral(c3.rgb) + neutral(c4.rgb)) * 0.5;
+  float wsum = c0.a * 2.0 + 0.5 * (c1.a + c2.a + c3.a + c4.a);
+  alpha = c0.a;
+  return wsum > 0.001 ? acc / wsum : vec3(0.0);
+}
+
+// Марш по отражённому лучу r из мировой точки глади P.
+//
+// Шаг — НЕ по мировой длине отрезка: 24 шага по 60 м перескакивают и берег, и башню.
+// Пересекается экран: концы отрезка P → P + r·maxDist проецируются один раз, дальше
+// точка берётся линейно по экрану (1/w и z/w линейны по экрану точно), а мировая длина
+// восстанавливается как maxDist·u. Пересечение — смена знака (ось_луча − ось_сцены),
+// затем три бисекции.
+//
+// Старт всегда «перед сценой»: воды в G-buffer нет (blend-объект, рисуется после
+// композита), поэтому под водой в глубине лежит дно — оно дальше глади, и луч, идущий
+// вверх, его не пересекает. Отступ ssrParams.z снимает ложные попадания о берег впритык.
+vec3 ssrTrace(vec3 P, vec3 r, out float conf)
+{
+  conf = 0.0;
+  if (ssrParams.x <= 0.0 || r.y <= 0.004) {
+    return vec3(0.0); // луч уходит под гладь — данных нет, остаётся небо
+  }
+  float maxd = max(ssrParams.y, 10.0);
+  vec4 c0 = mViewProj * vec4(P, 1.0);
+  if (c0.w <= 0.001) {
+    return vec3(0.0);
+  }
+  vec4 c1 = mViewProj * vec4(P + r * maxd, 1.0);
+  float uEnd = 1.0;
+  if (c1.w <= 0.001) {
+    // конец отрезка за камерой: w линеен по отрезку, отсекаем у плоскости камеры
+    uEnd = c0.w / max(c0.w - c1.w, 1e-4) * 0.999;
+    c1 = mViewProj * vec4(P + r * (maxd * uEnd), 1.0);
+  }
+  vec2 n0 = c0.xy / c0.w;
+  vec2 n1 = c1.xy / c1.w;
+  float iz0 = 1.0 / c0.w;
+  float iz1 = 1.0 / c1.w;
+  float uStart = clamp(ssrParams.z / maxd, 0.0, 0.5);
+  float du = (1.0 - uStart) / float(SSR_STEPS);
+  float uPrev = uStart;
+  for (int i = 1; i <= SSR_STEPS; i++) {
+    float u = uStart + float(i) * du;
+    vec2 uv = mix(n0, n1, u) * 0.5 + 0.5;
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+      break; // луч ушёл за кадр — данных нет
+    }
+    if (1.0 / mix(iz0, iz1, u) - ssrSceneAxis(uv) > 0.0) {
+      // пересечение между uPrev и u — уточняем бисекцией
+      float a = uPrev;
+      float b = u;
+      for (int k = 0; k < SSR_REFINE; k++) {
+        float m = 0.5 * (a + b);
+        vec2 muv = mix(n0, n1, m) * 0.5 + 0.5;
+        if (1.0 / mix(iz0, iz1, m) - ssrSceneAxis(muv) > 0.0) {
+          b = m;
+        } else {
+          a = m;
+        }
+      }
+      float uh = 0.5 * (a + b);
+      if (maxd * uh < ssrParams.z) {
+        uPrev = u;
+        continue; // слишком близко к глади — идём дальше
+      }
+      vec2 uvh = mix(n0, n1, uh) * 0.5 + 0.5;
+      vec4 nrm = texture2D(ssrNormal, uvh);
+      float facing = 1.0;
+      if (nrm.a > 0.5) {
+        facing = dot(normalize(nrm.xyz * 2.0 - 1.0), -r);
+        if (facing <= 0.0) {
+          uPrev = u;
+          continue; // задняя грань / тонкий объект — не отражаем
+        }
+        conf = min(1.0, facing * 2.0);
+      } else {
+        conf = 0.7; // нормали нет (рельеф, небо) — пониженная уверенность
+      }
+      conf *= 1.0 - smoothstep(SSR_FADE_FROM, 1.0, uh / max(uEnd, 1e-3));
+      conf *= ssrEdgeFade(uvh);
+      conf = min(conf, max(ssrParams2.x, 0.0));
+      // размыв растёт с дистанцией попадания и с пологостью луча (скользящее попадание
+      // растянутее всего)
+      float rpx = ssrParams2.y + ssrParams2.z * uh * (1.5 - 0.5 * facing);
+      float hitA = 0.0;
+      vec3 col = ssrSample(uvh, rpx, hitA);
+      if (hitA < 0.5) {
+        break; // в G-buffer тут ничего не рисовалось (фон) — данных нет
+      }
+      return col;
+    }
+    uPrev = u;
+  }
+  return vec3(0.0);
+}
+#endif // SSR && RENDER_PASS_COLOR
+
 void main()
 {
 #if 0
@@ -395,7 +555,27 @@ void main()
     vec3 rd = normalize(fragWorldPos - camPos.xyz);
     vec3 refl = normalize(vec3(rd.x, -rd.y, rd.z));
     float fres = WATER_FRES_BASE + (1.0 - WATER_FRES_BASE) * pow(1.0 - clamp(-rd.y, 0.0, 1.0), 2.5);
-    FRAG_COLOR.rgb += skyTint(refl, time.x, max(nightStars.w, 0.0), WATER_STAR_SIZE) * fres * nightStars.z;
+    // Фолбэк — процедурное небо (градиент + звёзды). SSR кладется ПОВЕРХ него по уверенности
+    // трассировки: там, где в G-buffer нет данных (небо, прозрачные объекты, выход луча за
+    // кадр или за ssrMaxDist), кадр обязан остаться ровно таким, как без SSR.
+    vec3 reflCol = skyTint(refl, time.x, max(nightStars.w, 0.0), WATER_STAR_SIZE);
+#if defined(SSR) && defined(RENDER_PASS_COLOR)
+    if (ssrParams.w > 0.5) {
+      // отладка (Castle.ssrDebug): красный — где есть данные SSR, синий — где фолбэк на небо.
+      // Альфа = 1 (у глади Доктов альфа-блендинг, иначе карта смешалась бы с подложкой) и
+      // выход ЗАМЕНЯЕТ цвет воды, а не складывается с ним: иначе в красный канал лезет
+      // член неба и карта перестаёт быть читаемой (замер: днём «синяя» вода давала (36,50,255)).
+      float ssrConf = 0.0;
+      ssrTrace(fragWorldPos, refl, ssrConf);
+      FRAG_COLOR = vec4(clamp(ssrConf, 0.0, 1.0), 0.0, 1.0 - clamp(ssrConf, 0.0, 1.0), 1.0);
+    } else {
+      float ssrConf = 0.0;
+      vec3 ssrCol = ssrTrace(fragWorldPos, refl, ssrConf);
+      FRAG_COLOR.rgb += mix(reflCol, ssrCol, clamp(ssrConf, 0.0, 1.0)) * fres * nightStars.z;
+    }
+#else
+    FRAG_COLOR.rgb += reflCol * fres * nightStars.z;
+#endif
   }
 #endif
   if (shadowDebugTint.x >= 0.0) {

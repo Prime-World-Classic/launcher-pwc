@@ -10,6 +10,9 @@ export class Settings {
     render: true,
     dayNight: true,
     buildingLights: true,
+    /** SSR-отражения в воде замка (трассировка по G-buffer). Выкл или без отложенного
+     *  освещения — отражение остаётся процедурным небом и звёздами (как до SSR). */
+    waterSsr: true,
     /** Вид списка режимов у «В бой»: false — меню по наведению на круг режима,
      *  true — все режимы видны всегда, по бокам от слотов пати (CastleNAVBAR). */
     castleModesWings: false,

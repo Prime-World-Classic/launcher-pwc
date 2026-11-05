@@ -1477,6 +1477,12 @@ export class Castle {
 
     const ext = Castle.gl.getExtension('WEBGL_depth_texture');
 
+    // SSR в воде стоит трёх новых сэмплеров и ~7 новых vec4 uniform-ов фрагментной программы
+    // (в программе воды их и без того ~22 — гарантированный WebGL1 минимум 16 давно не граница).
+    Castle.ssrCapsOk =
+      Castle.gl.getParameter(Castle.gl.MAX_TEXTURE_IMAGE_UNITS) >= 5 &&
+      Castle.gl.getParameter(Castle.gl.MAX_FRAGMENT_UNIFORM_VECTORS) >= 40;
+
     if (!ext) {
       Castle.isSMEnabled = false;
     }
@@ -2347,6 +2353,13 @@ export class Castle {
       windDir: u('windDir'),
       camPos: u('camPos'),
       nightStars: u('nightStars'),
+      ssrHdr: u('ssrHdr'),
+      ssrDepth: u('ssrDepth'),
+      ssrNormal: u('ssrNormal'),
+      ssrParams: u('ssrParams'),
+      ssrParams2: u('ssrParams2'),
+      ssrInvSize: u('ssrInvSize'),
+      ssrUnit: -1, // какой юнит уже записан в ssrHdr/ssrDepth/ssrNormal
       mWorld: u('mWorld'),
       bones: u('bones'),
       smDebugColor: u('smDebugColor'),
@@ -2668,6 +2681,59 @@ export class Castle {
 
   static waterStarGain = 9.0;
 
+  // ---------------- Screen Space Reflections в воде (shader_pos*_water_reflect + SSR) -------
+  // Источник трассировки — G-buffer отложенного освещения (hdr / глубина / нормаль), поэтому
+  // SSR живёт ровно пока кадр шёл отложенным путём. Флаг — Castle.ssrFrame: к моменту
+  // отрисовки воды Castle.deferredPass уже false, проверять его в drawObject — значит получить
+  // «SSR никогда не включается» без единой строки в логе.
+  // ssrStrength = 0 — трассировка в шейдере не выполняется вовсе, отражение остаётся ровно тем
+  // же процедурным небом, что и до SSR.
+  static ssrStrength = 1.0;
+
+  // Дальше этой дистанции луч обрывается фолбэком на небо. Порог обязан заведомо не доставать
+  // до стенки скайбокса (центр (1442,-500,1504), полусторона ~3000 — см. комментарий к zFar):
+  // иначе SSR начнёт отражать панораму, а поверх ляжет фолбэк-градиент — двойное небо.
+  static ssrMaxDist = 1500.0;
+
+  // отступ старта трассировки по лучу (м): снимает ложные попадания о берег впритык к глади
+  static ssrStartOffset = 6.0;
+
+  // Потолок уверенности: ниже 1 — и в отражении остаётся доля процедурного неба даже там,
+  // где SSR нашёл данные (у глади нет свободной «щели» между камнями, а марш даёт одно
+  // попадание на пиксель). Замер: при 1.0 звёздные блики исчезали на всём плёсе.
+  static ssrConfMax = 0.85;
+
+  // Размыв выборки (px): без него гладкое зеркало показывает марш полосами — у скользящего
+  // луча попадание растягивается на десятки пикселей. Радиус = база + прирост·(доля
+  // дистанции)·(1.5 − 0.5·facing). Замер на кадре doct yaw −90 (река + дамба): при 0 —
+  // читается квантование марша, при 12 — отражение стены смазано; 1.5/8 — структура стены
+  // видна, ступенек нет.
+  static ssrBlurBase = 1.5;
+
+  static ssrBlurSlope = 8.0;
+
+  // карта уверенности вместо отражения (ssrParams.w): красный — где SSR, синий — где фолбэк
+  static ssrDebug = false;
+
+  static ssrFrame = false;
+
+  // возможности GL под новые сэмплеры и uniform-ы фрагмента (снимаются один раз при init)
+  static ssrCapsOk = false;
+
+  static get ssrActive() {
+    return (
+      Castle.ssrFrame &&
+      Castle.ssrCapsOk &&
+      CastleLighting.supported &&
+      // без LINEAR-фильтрации half-float выборки SSR — лесенка по пикселям
+      !!CastleLighting.ext.halfFloatLinear &&
+      // отладка теней биндит smColor на тот же юнит, что и нормаль G-buffer
+      !Castle.shadowDebugMode &&
+      Settings.settings.waterSsr !== false &&
+      Castle.ssrStrength > 0
+    );
+  }
+
   // мировая позиция камеры кадра (из invert(viewMatrix2), см. updateMainCam)
   static camMat = mat4.create();
 
@@ -2773,6 +2839,9 @@ export class Castle {
       avgColor: avgColor,
       windBase: Castle.windBaseOf(sceneObjectsContainer[objectId], bboxMin, bboxMax),
     };
+    // гладь, на которой работает SSR (defines-файл *_water_reflect) — признак для отладочной
+    // карты уверенности (drawObject меняет у неё смешивание на замену)
+    sceneObjectsContainer[objectId].waterSsr = /_water_reflect$/.test(sceneObjectsContainer[objectId].shader || '');
     // вершины рельефа, деревьев и кустов — для карты высот светлячков (CastleFireflies)
     CastleFireflies.keepGroundPositions(sceneObjectsContainer[objectId], meshFloat, vertStride, posOffset);
 
@@ -2990,6 +3059,8 @@ export class Castle {
     // (CastleLighting.finish), прозрачное — как раньше, поверх, с глубиной из G-buffer.
     const clearColor = [0.75, 0.85, 0.8];
     Castle.deferredPass = Castle.deferredActive && CastleLighting.beginGBuffer(Castle.gl, clearColor);
+    // G-buffer этого кадра ещё не написан — SSR (источник — он же) до finish недоступен
+    Castle.ssrFrame = false;
     if (!Castle.deferredPass) {
       Castle.gl.bindFramebuffer(Castle.gl.FRAMEBUFFER, null);
       Castle.gl.viewport(0, 0, Castle.gl.canvas.width, Castle.gl.canvas.height);
@@ -3049,6 +3120,9 @@ export class Castle {
         CastleLighting.lights.push(...CastleFireflies.lights(fireflyLevel));
         CastleLighting.finish(Castle.gl, Castle);
         Castle.deferredPass = false;
+        // G-buffer кадра жив и после композита (меняется только привязка FBO) — это источник
+        // трассировки для воды, которая рисуется следующим циклом
+        Castle.ssrFrame = true;
       }
 
       for (let i = blendsFrom; i < Castle.sceneObjects.length; ++i) {
@@ -3294,6 +3368,16 @@ export class Castle {
       gl.uniform4f(l.nightStars, CastleLighting.nightLevel, Castle.starBrightness, Castle.waterReflect, Castle.waterStarGain);
     }
 
+    // SSR в воде (только цветной проход воды): сила 0 — трассировка в шейдере не выполняется,
+    // и отражение остаётся процедурным небом. Кадр без G-buffer (старый путь, выключенные огни
+    // зданий, отладка теней) — именно этот случай.
+    if (l.ssrParams) {
+      const on = Castle.ssrActive ? 1 : 0;
+      gl.uniform4f(l.ssrParams, on * Castle.ssrStrength, Castle.ssrMaxDist, Castle.ssrStartOffset, on && Castle.ssrDebug ? 1 : 0);
+      gl.uniform4f(l.ssrParams2, Castle.ssrConfMax, Castle.ssrBlurBase, Castle.ssrBlurSlope, 0);
+      gl.uniform2f(l.ssrInvSize, 1 / (CastleLighting.width || 1), 1 / (CastleLighting.height || 1));
+    }
+
     gl.uniform4f(l.shadowDebug, Castle.shadowDebugMode, 0, 0, 0);
   }
 
@@ -3429,6 +3513,13 @@ export class Castle {
     animDir,
   ) {
     if (blend) {
+      // Отладочная карта уверенности SSR (Castle.ssrDebug): у адорнийцев гладь аддитивная
+      // (ONE/ONE), и карта сложилась бы с подложкой — по пикселям она не размечается.
+      // В этом режиме вода пишется заменой.
+      if (Castle.ssrDebug && Castle.currentDrawObject && Castle.currentDrawObject.waterSsr) {
+        blend = ['ONE', 'ZERO']; // результат = src·1 + dst·0, то есть выход шейдера заменой
+      }
+
       Castle.gl.enable(Castle.gl.BLEND);
 
       Castle.gl.disable(Castle.gl.CULL_FACE);
@@ -3608,6 +3699,25 @@ export class Castle {
       if (l.smTextureUnit !== textures.length) {
         l.smTextureUnit = textures.length;
         gl.uniform1i(l.smTexture, textures.length);
+      }
+    }
+
+    // SSR в воде: G-buffer кадра (цвет / глубина / нормаль) — на юнитах сразу после smTexture.
+    // Вода занимает tex0, smTexture — textures.length; сетка стройки (+1, +2) водой не бывает,
+    // а smColor отладки теней на +2 живёт только при shadowDebugMode, где SSR выключен.
+    if (l.ssrHdr) {
+      const base = textures.length + 1;
+      gl.activeTexture(gl.TEXTURE0 + base);
+      gl.bindTexture(gl.TEXTURE_2D, CastleLighting.hdrTexture);
+      gl.activeTexture(gl.TEXTURE0 + base + 1);
+      gl.bindTexture(gl.TEXTURE_2D, CastleLighting.depthTexture);
+      gl.activeTexture(gl.TEXTURE0 + base + 2);
+      gl.bindTexture(gl.TEXTURE_2D, CastleLighting.normalTexture);
+      if (l.ssrUnit !== base) {
+        l.ssrUnit = base;
+        gl.uniform1i(l.ssrHdr, base);
+        gl.uniform1i(l.ssrDepth, base + 1);
+        gl.uniform1i(l.ssrNormal, base + 2);
       }
     }
 

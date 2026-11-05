@@ -107,6 +107,7 @@ export const en = {
     threeD: '3D',
     dayNight: 'Day/night cycle',
     buildingLights: 'Building lights at night',
+    waterSsr: 'Water reflections',
     castleModesWings: 'Modes always visible',
     gameRender: 'Game graphics',
     vulkanRenderer: 'Vulkan (experimental)',

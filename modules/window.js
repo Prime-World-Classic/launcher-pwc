@@ -1592,6 +1592,25 @@ export class Window {
             tag: 'input',
             domaudio: domAudioPresets.defaultSelect,
             type: 'checkbox',
+            id: 'water-ssr-toggle',
+            checked: Settings.settings.waterSsr !== false,
+            event: [
+              'change',
+              (e) => {
+                // выкл — в воде только процедурное небо и звёзды; SSR и так недоступен без
+                // огней зданий и смены дня/ночи (источник трассировки — G-buffer кадра)
+                Settings.settings.waterSsr = e.target.checked;
+              },
+            ],
+          }),
+          DOM({ tag: 'label', for: 'water-ssr-toggle' }, Lang.text('waterSsr')),
+        ),
+        DOM(
+          { style: 'castle-menu-item-checkbox' },
+          DOM({
+            tag: 'input',
+            domaudio: domAudioPresets.defaultSelect,
+            type: 'checkbox',
             id: 'modes-wings-toggle',
             checked: Settings.settings.castleModesWings === true,
             event: [
