@@ -823,6 +823,20 @@ export class Voice {
     });
   }
 
+  // Клавиша войса от наблюдателя клавиш (NativeAPI, PW_KeyWatch): приходит и нажатие,
+  // и отпускание в любом окне. Рация говорит, пока клавиша зажата; иначе — вкл/выкл
+  // микрофона по нажатию. В бою игра шлёт свой "ptt" той же клавиши — setRadioPressed
+  // повторное нажатие/отпускание пропускает.
+  static async handleVoiceToggleKey(pressed) {
+    if (Settings.settings?.voiceRadioMode) {
+      Voice.clearRadioPulseTimer();
+      await Voice.setRadioPressed(pressed);
+      return;
+    }
+    if (pressed) await Voice.toggleEnabledMic();
+  }
+
+  // Запасной путь — nw.Shortcut: приходит только нажатие, рация включается импульсом.
   static async handleVoiceToggleHotkey() {
     if (Settings.settings?.voiceRadioMode) {
       await Voice.pulseRadioTalk(700);

@@ -100,7 +100,6 @@ export class NativeAPI {
     });
 
     NativeAPI.app.registerGlobalHotKey(NativeAPI.altEnterShortcut);
-    NativeAPI.refreshVoiceHotkeys();
 
     // Любая перезагрузка страницы (не только NativeAPI.reset) — снять глобальные хоткеи.
     window.addEventListener('beforeunload', () => NativeAPI.unregisterAllGlobalHotkeys());
@@ -112,6 +111,8 @@ export class NativeAPI {
     NativeAPI.loadModules();
 
     NativeAPI.platform = NativeAPI.os.platform();
+    // Хоткеям войса нужны fs/child_process (наблюдатель клавиш) — после loadModules.
+    NativeAPI.refreshVoiceHotkeys();
     NativeAPI.isSteamClient = NativeAPI.detectSteamClientLaunch();
 
     // Индекс кэша собирается заранее — ко входу уже готов.
@@ -217,6 +218,197 @@ export class NativeAPI {
     NativeAPI.voiceDestroyShortcut = null;
     NativeAPI.voiceUpVolume = null;
     NativeAPI.voiceDownVolume = null;
+    NativeAPI.clearKeyWatchCombos();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Наблюдатель клавиш войса (content/tools/keywatch/PW_KeyWatch.exe, исходник —
+  // tools/keywatch/keywatch.c). nw.Shortcut — это RegisterHotKey: Windows отдаёт
+  // нажатие только лаунчеру, и Ctrl+Z не доходил ни до игры, ни до браузера, ни до
+  // редактора. Наблюдатель только читает состояние клавиш (как Discord): нажатие
+  // остаётся у активного окна, а лаунчер видит его в любом окне — и нажатие, и
+  // отпускание (рация работает, пока клавиша зажата). Если exe нет или он не
+  // запустился (антивирус, не Windows), возвращаемся к nw.Shortcut.
+  static KEYWATCH_EXE = 'content/tools/keywatch/PW_KeyWatch.exe';
+  static KEYWATCH_REPEAT_DELAY_MS = 400;
+  static KEYWATCH_REPEAT_MS = 40;
+  static keyWatchChild = null;
+  static keyWatchFailed = false;
+  static keyWatchCombos = new Map(); // id -> { down, up, repeat, timer }
+
+  static keyWatchAvailable() {
+    if (NativeAPI.keyWatchFailed || NativeAPI.platform !== 'win32') return false;
+    if (NativeAPI.keyWatchChild) return true;
+    return NativeAPI.startKeyWatch();
+  }
+
+  // Exe запускаем из копии во временной папке: запущенный файл в content
+  // заблокирован, и NanoUpdater не смог бы его обновить (а на ошибке он
+  // перекачивает content целиком). Имя копии — по хэшу, новая версия exe
+  // ложится рядом и не мешает другому запущенному лаунчеру.
+  static keyWatchExePath() {
+    const fs = NativeAPI.fileSystem;
+    const source = NativeAPI.path.join(process.cwd(), NativeAPI.KEYWATCH_EXE);
+    const data = fs.readFileSync(source);
+    const hash = NativeAPI.crypto.createHash('md5').update(data).digest('hex').slice(0, 10);
+    const dir = NativeAPI.path.join(NativeAPI.os.tmpdir(), 'pwc-keywatch');
+    const target = NativeAPI.path.join(dir, `PW_KeyWatch-${hash}.exe`);
+    try {
+      if (fs.statSync(target).size === data.length) return target;
+    } catch {}
+    fs.mkdirSync(dir, { recursive: true });
+    const temp = `${target}.${process.pid}.tmp`;
+    fs.writeFileSync(temp, data);
+    try {
+      fs.renameSync(temp, target);
+    } catch (error) {
+      try {
+        fs.unlinkSync(temp);
+      } catch {}
+      // Копию в этот момент положил другой лаунчер — берём её.
+      if (!fs.existsSync(target)) throw error;
+    }
+    return target;
+  }
+
+  static startKeyWatch() {
+    let child;
+    try {
+      child = NativeAPI.childProcess.spawn(NativeAPI.keyWatchExePath(), [], {
+        windowsHide: true,
+        stdio: ['pipe', 'pipe', 'ignore'],
+      });
+    } catch (error) {
+      NativeAPI.onKeyWatchFailed(`spawn: ${error?.message || error}`);
+      return false;
+    }
+
+    NativeAPI.keyWatchChild = child;
+    let buffer = '';
+    child.stdout.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => {
+      buffer += chunk;
+      let index;
+      while ((index = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, index).trim();
+        buffer = buffer.slice(index + 1);
+        NativeAPI.onKeyWatchLine(line);
+      }
+    });
+    child.stdin.on('error', () => {});
+    const onGone = (reason) => {
+      if (NativeAPI.keyWatchChild !== child) return;
+      NativeAPI.keyWatchChild = null;
+      NativeAPI.onKeyWatchFailed(reason);
+    };
+    child.on('error', (error) => onGone(`error: ${error?.message || error}`));
+    child.on('exit', (code, signal) => onGone(`exit: ${code} ${signal || ''}`));
+    return true;
+  }
+
+  // Наблюдатель пропал не по нашей воле — те же клавиши через nw.Shortcut.
+  static onKeyWatchFailed(reason) {
+    console.log('PW_KeyWatch failed, fallback to nw.Shortcut:', reason);
+    Promise.resolve(NativeAPI.write('keywatch.txt', `${new Date().toISOString()} ${reason}\n`, true)).catch(() => {});
+    NativeAPI.keyWatchFailed = true;
+    NativeAPI.releaseKeyWatchCombos();
+    if (!NativeAPI.exitRequested) NativeAPI.refreshVoiceHotkeys();
+  }
+
+  static stopKeyWatch() {
+    const child = NativeAPI.keyWatchChild;
+    NativeAPI.keyWatchChild = null;
+    NativeAPI.releaseKeyWatchCombos();
+    if (!child) return;
+    try {
+      child.kill();
+    } catch {}
+  }
+
+  static keyWatchSend(line) {
+    try {
+      NativeAPI.keyWatchChild?.stdin.write(`${line}\n`);
+    } catch {}
+  }
+
+  static onKeyWatchLine(line) {
+    const match = /^(\d+) ([01])$/.exec(line);
+    if (!match) return;
+    const combo = NativeAPI.keyWatchCombos.get(Number(match[1]));
+    if (!combo) return;
+    clearTimeout(combo.timer);
+    combo.timer = 0;
+    if (match[2] === '1') {
+      combo.pressed = true;
+      NativeAPI.runKeyWatchHandler(combo.down);
+      if (combo.repeat) {
+        // Как автоповтор RegisterHotKey: громкость меняется, пока клавиша зажата.
+        const tick = () => {
+          if (!combo.pressed) return;
+          NativeAPI.runKeyWatchHandler(combo.down);
+          combo.timer = setTimeout(tick, NativeAPI.KEYWATCH_REPEAT_MS);
+        };
+        combo.timer = setTimeout(tick, NativeAPI.KEYWATCH_REPEAT_DELAY_MS);
+      }
+    } else if (combo.pressed) {
+      combo.pressed = false;
+      NativeAPI.runKeyWatchHandler(combo.up);
+    }
+  }
+
+  static runKeyWatchHandler(handler) {
+    if (!handler) return;
+    try {
+      Promise.resolve(handler()).catch((error) => console.log(error));
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  // Отпустить всё, что считалось зажатым (иначе рация осталась бы включённой).
+  static releaseKeyWatchCombos() {
+    for (const combo of NativeAPI.keyWatchCombos.values()) {
+      clearTimeout(combo.timer);
+      combo.timer = 0;
+      if (combo.pressed) {
+        combo.pressed = false;
+        NativeAPI.runKeyWatchHandler(combo.up);
+      }
+    }
+  }
+
+  static clearKeyWatchCombos() {
+    NativeAPI.releaseKeyWatchCombos();
+    NativeAPI.keyWatchCombos.clear();
+    if (NativeAPI.keyWatchChild) NativeAPI.keyWatchSend('clear');
+  }
+
+  static addKeyWatchCombo(tokens, handlers) {
+    const vk = VoiceGameBridge.hotkeyToVk(tokens, []);
+    if (!vk || vk === '-') return false;
+    const id = NativeAPI.keyWatchCombos.size;
+    NativeAPI.keyWatchCombos.set(id, { ...handlers, pressed: false, timer: 0 });
+    NativeAPI.keyWatchSend(`set ${id} ${vk}`);
+    return true;
+  }
+
+  static refreshVoiceHotkeysWatched() {
+    const tokensOf = (value, fallback) => {
+      const list = Array.isArray(value) ? value.map((x) => String(x || '').trim().toUpperCase()).filter(Boolean) : [];
+      // Как formatShortcutFromTokens: одни модификаторы — не сочетание, берём значение по умолчанию.
+      const modifiers = new Set(['CTRL', 'ALT', 'SHIFT', 'WIN']);
+      return list.some((x) => !modifiers.has(x)) ? list : fallback;
+    };
+
+    NativeAPI.addKeyWatchCombo(tokensOf(Settings.settings?.voiceToggleHotkey, ['CTRL', 'Z']), {
+      down: () => Voice.handleVoiceToggleKey?.(true),
+      up: () => Voice.handleVoiceToggleKey?.(false),
+    });
+    NativeAPI.addKeyWatchCombo(tokensOf(Settings.settings?.voiceDropHotkey, ['CTRL', 'K']), {
+      down: () => Voice.destroy(false, true),
+    });
+    NativeAPI.addKeyWatchCombo(['CTRL', 'UP'], { down: () => Voice.volumeControl(true), repeat: true });
+    NativeAPI.addKeyWatchCombo(['CTRL', 'DOWN'], { down: () => Voice.volumeControl(false), repeat: true });
   }
 
   // Глобальные хоткеи регистрируются на всё NW-приложение и переживают перезагрузку
@@ -226,6 +418,7 @@ export class NativeAPI {
   static unregisterAllGlobalHotkeys() {
     if (!NativeAPI.status || !NativeAPI.app) return;
     NativeAPI.unregisterVoiceHotkeys();
+    NativeAPI.stopKeyWatch();
     try {
       if (NativeAPI.altEnterShortcut) NativeAPI.app.unregisterGlobalHotKey(NativeAPI.altEnterShortcut);
     } catch {}
@@ -234,6 +427,19 @@ export class NativeAPI {
   static refreshVoiceHotkeys() {
     if (!NativeAPI.status || !NativeAPI.app) return;
     NativeAPI.unregisterVoiceHotkeys();
+
+    // Наблюдатель клавиш — нажатие не отнимается у активного окна (см. выше).
+    let watched = false;
+    try {
+      watched = NativeAPI.keyWatchAvailable();
+    } catch (error) {
+      NativeAPI.keyWatchFailed = true;
+      console.log('PW_KeyWatch unavailable:', error);
+    }
+    if (watched) {
+      NativeAPI.refreshVoiceHotkeysWatched();
+      return;
+    }
 
     const toggleKey = NativeAPI.formatShortcutFromTokens(Settings.settings?.voiceToggleHotkey, 'Ctrl+Z');
     if (toggleKey) {
@@ -608,6 +814,10 @@ export class NativeAPI {
       return true;
     }
     NativeAPI.exitRequested = true;
+
+    try {
+      NativeAPI.stopKeyWatch();
+    } catch {}
 
     try {
       Voice.destroy(true);
