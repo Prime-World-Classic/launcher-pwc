@@ -212,6 +212,8 @@ export class Voice {
   static radioPressedByKeyboard = false;
 
   static radioPulseTimer = null;
+  static radioPanelLingerTimer = null;
+  static RADIO_PANEL_LINGER_MS = 3000;
 
   static logQueue = Promise.resolve();
 
@@ -587,9 +589,13 @@ export class Voice {
   // собеседника нет) или включён свой микрофон (в режиме рации без собеседников говорить
   // некому). Иначе — пустая рамка с крестиком, которая висела после каждого лобби без
   // голосовых союзников.
+  // В режиме рации без собеседников — пока зажата клавиша и ещё RADIO_PANEL_LINGER_MS после.
   static shouldShowInfoPanel() {
     if (Object.keys(Voice.manager).length > 0 || Voice.reconnectJobs.size > 0) return true;
-    return Boolean(Voice.mic?.enabled) && !Settings.settings?.voiceRadioMode;
+    if (Settings.settings?.voiceRadioMode) {
+      return Voice.radioPressedByKeyboard || Boolean(Voice.radioPanelLingerTimer);
+    }
+    return Boolean(Voice.mic?.enabled);
   }
 
   static showInfoPanel(force = false) {
@@ -768,7 +774,42 @@ export class Voice {
     const next = Boolean(pressed);
     if (Voice.radioPressedByKeyboard === next) return;
     Voice.radioPressedByKeyboard = next;
-    await Voice.setMicEnabled(next);
+    Voice.clearRadioPanelLinger();
+    if (next) {
+      // Нажали рацию — панель видна (как Ctrl+Z в обычном режиме), даже закрытая крестиком.
+      Voice.infoPanelHiddenByUser = false;
+      await Voice.setMicEnabled(true);
+      Voice.showInfoPanel(true);
+      return;
+    }
+    // Отпустили — без звонка панель ещё немного видна и прячется: иначе мигала бы на каждом нажатии.
+    Voice.radioPanelLingerTimer = setTimeout(() => {
+      Voice.radioPanelLingerTimer = null;
+      Voice.hideInfoPanelIfIdle();
+    }, Voice.RADIO_PANEL_LINGER_MS);
+    await Voice.setMicEnabled(false);
+  }
+
+  static clearRadioPanelLinger() {
+    if (!Voice.radioPanelLingerTimer) return;
+    clearTimeout(Voice.radioPanelLingerTimer);
+    Voice.radioPanelLingerTimer = null;
+  }
+
+  // Переключатель «Режим рации». Раньше менялся только флаг: включённый в обычном режиме микрофон
+  // так и оставался включённым (говорили всё время), а панель тут же пряталась и больше не
+  // появлялась. В рации микрофон включён только пока зажата клавиша; при выходе из рации —
+  // как выбрал игрок в обычном режиме (Ctrl+Z).
+  static setRadioMode(enabled) {
+    Settings.settings.voiceRadioMode = Boolean(enabled);
+    Voice.clearRadioPulseTimer();
+    Voice.clearRadioPanelLinger();
+    Voice.radioPressedByKeyboard = false;
+    if (Voice.mic) {
+      Voice.mic.enabled = Voice.getInitialMicEnabled();
+    }
+    Voice.updateInfoPanel();
+    Voice.showInfoPanel();
   }
 
   static clearRadioPulseTimer() {

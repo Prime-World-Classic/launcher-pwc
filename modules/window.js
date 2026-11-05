@@ -1677,7 +1677,7 @@ export class Window {
               event: [
                 'change',
                 (e) => {
-                  Settings.settings.voiceRadioMode = e.target.checked;
+                  Voice.setRadioMode(e.target.checked);
                 },
               ],
             },
