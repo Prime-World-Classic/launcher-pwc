@@ -637,7 +637,7 @@ export const en = {
     voiceMicUnavailable: 'Microphone unavailable: you can hear others, but they cannot hear you. Check that it is plugged in and allowed in Windows settings',
     waitingResponse: 'waiting for response',
     voiceConnecting: 'connecting',
-    voiceReconnectingAttempt: 'reconnecting {attempt}',
+    voiceReconnectingAttempt: 'reconnecting, attempt {attempt}',
     voiceDisconnected: 'connection lost',
     voiceFailed: 'connection failed',
     voiceClosed: 'ended',

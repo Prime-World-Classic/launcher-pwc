@@ -645,7 +645,7 @@ export const ru = {
     voiceMicUnavailable: 'Микрофон недоступен: собеседников слышно, а вас нет. Проверьте, подключён ли он и разрешён ли в настройках Windows',
     waitingResponse: 'ожидание ответа',
     voiceConnecting: 'соединение',
-    voiceReconnectingAttempt: 'переподключение {attempt}',
+    voiceReconnectingAttempt: 'переподключение, попытка {attempt}',
     voiceDisconnected: 'связь прервалась',
     voiceFailed: 'ошибка соединения',
     voiceClosed: 'завершён',

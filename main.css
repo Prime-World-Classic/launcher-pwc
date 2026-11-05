@@ -11322,6 +11322,51 @@ i-success {
   position: relative;
 }
 
+/* connection status under the nick, in place of the level bar while not connected */
+.voice-info-panel-body-item-state {
+  display: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  font: 1.2vh / 1.2 'DejaVuSans', sans-serif;
+  color: #e8cf86;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0.1vh 0.3vh #000;
+}
+
+.voice-info-panel-body-item-state::before {
+  content: '';
+  display: inline-block;
+  width: 0.7vh;
+  height: 0.7vh;
+  margin-right: 0.5vh;
+  border-radius: 50%;
+  vertical-align: 0.1vh;
+  background: currentColor;
+  box-shadow: 0 0 0.5vh currentColor;
+}
+
+.voice-info-panel-body-item-state[data-kind='wait']::before {
+  animation: voice-wait 1.2s ease-in-out infinite;
+}
+
+.voice-info-panel-body-item-state[data-kind='bad'] {
+  color: #ef7a6c;
+}
+
+.voice-info-panel-body-item-state[data-kind='closed'] {
+  color: rgba(243, 236, 217, 0.55);
+}
+
+.voice-info-panel-body-item--connecting .voice-info-panel-body-item-state {
+  display: block;
+}
+
+.voice-info-panel-body-item--connecting .voice-info-panel-body-item-bar {
+  display: none;
+}
+
 .voice-info-panel-body-item-bar {
   flex-grow: 1;
   height: 0.45vh;

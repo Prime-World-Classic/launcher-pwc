@@ -1458,42 +1458,42 @@ export class Voice {
   static playerInfoPanel(id) {
     let name = Voice.manager[id].name ? Voice.manager[id].name : `id${id}`;
 
-    let state = () => {
-      let status = '';
+    // Статус соединения: текст и вид (wait — ждём/соединяемся, bad — связь потеряна, closed — завершён).
+    let statusInfo = () => {
+      const connectionState = Voice.manager[id].peer.connectionState;
+      if (connectionState === 'connected') return { text: '', kind: '' };
       const reconnectJob = Voice.getReconnectJob(id, Voice.manager[id].key);
-
-      if (reconnectJob && Voice.manager[id].peer.connectionState !== 'connected') {
-        status = Lang.text('voiceReconnectingAttempt').replace('{attempt}', String((reconnectJob.attempt || 0) + 1));
-      } else {
-        switch (Voice.manager[id].peer.connectionState) {
-          case 'new':
-            status = Lang.text('waitingResponse');
-            break;
-
-          case 'connecting':
-            status = Lang.text('voiceConnecting');
-            break;
-
-          case 'disconnected':
-            status = Lang.text('voiceDisconnected');
-            break;
-
-          case 'failed':
-            status = Lang.text('voiceFailed');
-            break;
-
-          case 'closed':
-            status = Lang.text('voiceClosed');
-            break;
-
-          default:
-            status = Voice.manager[id].peer.connectionState;
-            break;
-        }
+      if (reconnectJob) {
+        return {
+          text: Lang.text('voiceReconnectingAttempt').replace('{attempt}', String((reconnectJob.attempt || 0) + 1)),
+          kind: 'wait',
+        };
       }
-
-      return Voice.manager[id].peer.connectionState == 'connected' ? `${name}` : `${name} (${status})`;
+      switch (connectionState) {
+        case 'new':
+          return { text: Lang.text('waitingResponse'), kind: 'wait' };
+        case 'connecting':
+          return { text: Lang.text('voiceConnecting'), kind: 'wait' };
+        case 'disconnected':
+          return { text: Lang.text('voiceDisconnected'), kind: 'bad' };
+        case 'failed':
+          return { text: Lang.text('voiceFailed'), kind: 'bad' };
+        case 'closed':
+          return { text: Lang.text('voiceClosed'), kind: 'closed' };
+        default:
+          return { text: String(connectionState || ''), kind: 'wait' };
+      }
     };
+
+    // ник со статусом — для подсказки значка (в узкой колонке ников нет)
+    let state = () => {
+      const { text } = statusInfo();
+      return text ? `${name} (${text})` : `${name}`;
+    };
+
+    // Статус — отдельной строкой под ником вместо полоски уровня: в строке с ником
+    // он обрезался многоточием («Lantarm (пер…»).
+    const statusLabel = DOM({ style: 'voice-info-panel-body-item-state' }, '');
 
     let item = DOM(
       {
@@ -1533,7 +1533,10 @@ export class Voice {
     
     const updateItemView = () => {
       const mutedMark = Voice.isPeerSilenced(Number(id)) ? ' [MUTED]' : '';
-      item.innerText = `${state()}${mutedMark}`;
+      item.innerText = `${name}${mutedMark}`;
+      const info = statusInfo();
+      statusLabel.textContent = info.text;
+      statusLabel.dataset.kind = info.kind;
       mute.replaceChildren(uiIcon(Voice.isPeerSilenced(Number(id)) ? 'sound-off' : 'sound-on'));
       // в узкой колонке ников нет — ник в подсказке значка
       mute.dataset.tip = state();
@@ -1602,7 +1605,7 @@ export class Voice {
 
     const panelBody = Voice.getInfoPanelBody();
     if (!panelBody) return;
-    const status = DOM({ style: 'voice-info-panel-body-item-status' }, bar);
+    const status = DOM({ style: 'voice-info-panel-body-item-status' }, bar, statusLabel);
     row.addEventListener(
       'wheel',
       (event) => {
