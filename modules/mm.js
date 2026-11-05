@@ -20,6 +20,7 @@ import { Splash } from './splash.js';
 import { domAudioPresets } from './domAudioPresets.js';
 import { SOUNDS_LIBRARY } from './soundsLibrary.js';
 import { loadKeybinds } from './keybindings/keybindings.io.js';
+import { LanePositionQueue } from './lanePositionQueue.js';
 
 export class MM {
   static id = '';
@@ -221,6 +222,7 @@ export class MM {
   }
 
   static close() {
+    MM.lanePositionQueue?.dispose();
     MM.lobbyRunId++;
     MM.lobbySkinRequestId++;
     clearInterval(MM.lobbyPreviewInterval);
@@ -1505,10 +1507,20 @@ export class MM {
   }
 
   static renderMap(team) {
+    MM.lanePositionQueue?.dispose();
     MM.renderBody = DOM({ style: team == 1 ? 'map' : 'map-reverse' });
     const map = MM.renderBody;
-    let nextPositionAt = 0;
-    let positionPending = false;
+    const lobbyId = MM.id;
+    const queue = MM.lanePositionQueue = new LanePositionQueue({
+      cooldown: MM.lobbyPositionCooldownMs,
+      isActive: () => map.isConnected && MM.isInTambur && MM.id === lobbyId,
+      send: (position) => App.api.request(App.CURRENT_MM, 'position', { id: lobbyId, position }),
+      onError: (error) => App.error(error),
+      onChange: (position) => {
+        map.setAttribute('aria-busy', String(position !== null));
+        for (const point of map.children) point.classList.toggle('map-position-pending', Number(point.dataset.position) === position);
+      },
+    });
 
     let container = DOM({ style: 'mm-lobby-map-frame' }, MM.renderBody);
 
@@ -1525,8 +1537,6 @@ export class MM {
         event: [
           'click',
           async () => {
-            if (positionPending || Date.now() < nextPositionAt) return;
-            nextPositionAt = Date.now() + MM.lobbyPositionCooldownMs;
             if (MM.preview) {
               const player = document.getElementById(`PLAYER${MM.lobbyUserId}`);
               if (!player) return;
@@ -1548,20 +1558,7 @@ export class MM {
               }
               return;
             }
-            positionPending = true;
-            map.setAttribute('aria-busy', 'true');
-            try {
-              await App.api.request(App.CURRENT_MM, 'position', {
-                id: MM.id,
-                position: item.dataset.player == App.storage.data.id ? 0 : item.dataset.position,
-              });
-            } catch (error) {
-              nextPositionAt = 0;
-              App.error(error);
-            } finally {
-              positionPending = false;
-              map.setAttribute('aria-busy', 'false');
-            }
+            queue.enqueue(item.dataset.player == App.storage.data.id ? 0 : Number(item.dataset.position));
           },
         ],
       });

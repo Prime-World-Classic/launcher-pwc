@@ -11693,7 +11693,7 @@ i-success {
   box-sizing: border-box;
   margin: 0;
   align-items: center;
-  width: min(48cqh, calc(100vw - 16px));
+  width: min(48cqh, calc(100vw - max(32px, 5cqh)));
 }
 
 #wplayer-build {
@@ -16212,6 +16212,10 @@ body:has(> * > #wcastle-call)::before {
   box-shadow: inset 0 0 0.5cqh rgba(107, 212, 207, 0.14);
 }
 
+#wfair .wtop-mode-tab.fair-cat.is-active:not(.fair-cat--collection) {
+  background: linear-gradient(180deg, rgba(22, 103, 111, 0.94), rgba(8, 61, 70, 0.98));
+}
+
 #wfair .fair-cat--collection {
   margin-top: auto;
 }
@@ -16315,6 +16319,45 @@ body:has(> * > #wcastle-call)::before {
   object-fit: contain;
   vertical-align: middle;
 }
+
+.fair-balance .fair-gem { width: 2.6cqh; height: 2.6cqh; }
+.fair-card .fair-iconrow { min-height: 9cqh; }
+.fair-card .fair-circle { width: 8.2cqh; height: 8.2cqh; }
+.fair-card .fair-circle.is-gray { width: 6.4cqh; height: 6.4cqh; }
+
+#wfair .fair-cat--collection { position: relative; isolation: isolate; }
+#wfair .fair-cat--collection[data-effect='glow'] { animation: fair-collection-glow 5s ease-in-out infinite; }
+#wfair .fair-cat--collection:is([data-effect='trace'], [data-effect='sweep'])::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 30%, rgba(253, 229, 149, .8) 50%, transparent 70%) 200% 0 / 300% 100%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: fair-collection-trace 6s ease-in-out infinite;
+}
+#wfair .fair-cat--collection[data-effect='sweep']::after {
+  background-image: linear-gradient(180deg, transparent 20%, rgba(155, 230, 223, .85) 50%, transparent 80%);
+  background-size: 100% 300%;
+  animation-name: fair-collection-sweep;
+  animation-duration: 7s;
+}
+@keyframes fair-collection-glow {
+  0%, 100% { border-color: rgba(168, 151, 82, .95); box-shadow: 0 0 0 transparent; }
+  50% { border-color: #e3d396; box-shadow: 0 0 .45cqh rgba(230, 207, 139, .22); }
+}
+@keyframes fair-collection-trace { 0%, 25% { background-position: 180% 0; } 75%, 100% { background-position: -80% 0; } }
+@keyframes fair-collection-sweep { 0%, 30% { background-position: 0 180%; } 80%, 100% { background-position: 0 -80%; } }
+@media (prefers-reduced-motion: reduce) {
+  #wfair .fair-cat--collection[data-effect], #wfair .fair-cat--collection[data-effect]::after { animation: none; }
+}
+
+.map-position-pending { outline: 2px dashed #f5df91; outline-offset: 2px; }
+.mm > .window__overlay { z-index: 9999; }
 
 #wfair .bs-header {
   display: flex;

@@ -747,6 +747,10 @@ export async function fair(tab = null, { previewData = null } = {}) {
       DOM({ tag: 'span', style: 'fair-cat-text' }, Lang.text(tabDesc.label)),
       DOM({ tag: 'span', style: 'fair-count' }, String(counter(tabDesc.id))),
     );
+    if (isCollectionTab(tabDesc.id)) {
+      const proposal = previewData && new URLSearchParams(location.search).get('previewCollectionEffect');
+      el.dataset.effect = ['glow', 'trace', 'sweep'].includes(proposal) ? proposal : 'trace';
+    }
     tabButtons.set(tabDesc.id, el);
     sidebar.append(el);
   }

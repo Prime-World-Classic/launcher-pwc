@@ -123,6 +123,7 @@ export class Voice {
   static userMedia = null;
 
   static micUnavailable = false;
+  static micUnavailableNotified = false;
 
   static localMediaPromise = null;
 
@@ -790,7 +791,7 @@ export class Voice {
       await Voice.initLocalMedia();
     }
     if (!Voice.mic) {
-      if (enabled) App.error(Lang.text('voiceMicUnavailable'));
+      if (enabled) Voice.notifyMicUnavailable();
       return;
     }
     if (Voice.mic.enabled === Boolean(enabled)) return;
@@ -940,6 +941,7 @@ export class Voice {
     }
 
     Voice.micUnavailable = false;
+    Voice.micUnavailableNotified = false;
     Voice.rawMic = tracks[0];
     Voice.watchRawMic(Voice.rawMic);
 
@@ -973,6 +975,12 @@ export class Voice {
       console.log('Voice DSP init failed, no silent track:', error);
     }
     Voice.listenDeviceChange();
+  }
+
+  static notifyMicUnavailable() {
+    if (Voice.micUnavailableNotified) return;
+    Voice.micUnavailableNotified = true;
+    App.error(Lang.text('voiceMicUnavailable'));
   }
 
   // Дорожка для звонка: микрофон, а пока его нет — тихая дорожка той же цепочки обработки.
@@ -1210,7 +1218,7 @@ export class Voice {
     }
 
     if (!Voice.mic) {
-      return App.error(Lang.text('voiceMicUnavailable'));
+      return Voice.notifyMicUnavailable();
     }
 
     Voice.mic.enabled = !Voice.mic.enabled;

@@ -30,7 +30,7 @@ import { CastleNAVBAR } from './castleNavBar.js';
 export class Window {
   static windows = {};
   static windowOrder = [];
-  static overlayWindowIds = new Set(['wquest', 'wbuild', 'wtop', 'wshop', 'wfair', 'wgame', 'wsteamauth', 'wyandexauth', 'wregistration-fraction']);
+  static overlayWindowIds = new Set(['wquest', 'wbuild', 'wtop', 'wshop', 'wfair', 'wgame', 'wsteamauth', 'wyandexauth', 'wregistration-fraction', 'wally-build', 'wplayer-build']);
   static overlayWindowMethods = new Set(['menu', 'settings', 'battleSettings', 'advancedSettings', 'keybindings', 'accountPanel', 'support']);
   static async show(category, method, value, value2, value3) {
     if (!(method in Window)) {
@@ -114,6 +114,7 @@ export class Window {
         Window.windowOrder.splice(index, 1);
       }
     }
+    const host = method === 'allyBuild' ? MM.view : View.active;
     if (Window.overlayWindowIds.has(template.id) || Window.overlayWindowMethods.has(method)) {
       const overlay = DOM({
         style: template.id === 'wquest' ? ['window__overlay', 'wquest__overlay'] : 'window__overlay',
@@ -163,7 +164,7 @@ export class Window {
         overlay.remove();
       };
       template.windowOverlay = overlay;
-      View.active.append(overlay);
+      host.append(overlay);
     }
     Window.windows[category] = template;
 
@@ -173,7 +174,6 @@ export class Window {
     // замка снимаем сразу: окна лежат внутри #castle-body и гасли бы вместе с интерфейсом.
     CastleCinematic.exit();
 
-    const host = method === 'allyBuild' ? MM.view : View.active;
     host.append(template);
     if (template.id === 'wbuild') {
       View.placeBuildHeroesFrame();

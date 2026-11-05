@@ -39,7 +39,10 @@ const artworkCache = new Map();
 const localSelection = new Map();
 
 const ownedSkins = (hero) => (host ? host.ownedSkins(hero.id) : hero.skins.map((skin) => skin.index));
-const selectedSkin = (hero) => (host ? host.selectedSkin(hero.id) : localSelection.get(hero.id) ?? 1);
+const selectedSkin = (hero) => {
+  const skin = host ? host.selectedSkin(hero.id) : localSelection.get(hero.id) ?? 1;
+  return hero.id === 27 && Number(skin) === 7 ? 1 : skin;
+};
 const skinName = (hero, skin) => {
   if (host) return host.heroName(hero.id, skin.index);
   // те же ключи, что у Lang.heroName
@@ -111,6 +114,7 @@ function renderSelectButton(hero, skin) {
   button.disabled = selecting || selected || (!owned && !host);
   button.textContent = buy ? t('heroesSkinBuy') : selected ? t('heroesSkinSelected') : t('heroesSkinSelect');
   button.classList.toggle('hero-select-button--buy', buy);
+  button.classList.toggle('hero-select-button--selected', selected);
 }
 
 function render(direction = 0) {
@@ -228,9 +232,13 @@ async function init() {
     words = (await import(`/content/lang/${lang}.js`))[lang].word;
   }
   applyStaticTexts();
-  const response = await fetch('content/heroes-preview.json?v=20261029-castle-details-2');
+  const response = await fetch('content/heroes-preview.json?v=20261105-castle-art-2');
   if (!response.ok) throw new Error(t('heroesLoadError'));
   heroes = await response.json();
+  // Display-only alias: retain skin 7 in game/account data, show its identical art once.
+  for (const hero of heroes) {
+    if (hero.id === 27) hero.skins = hero.skins.filter((skin) => skin.index !== 7);
+  }
   if (!heroes.length || heroes.some((hero) => !hero.skins.length)) throw new Error(t('heroesLoadError'));
   heroIndex = Math.max(0, heroes.findIndex((hero) => hero.id === requestedHero));
   const startSkin = (requestedHero === Number(params.get('hero')) && Number(params.get('skin'))) || selectedSkin(heroes[heroIndex]);

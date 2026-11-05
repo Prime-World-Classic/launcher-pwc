@@ -155,7 +155,7 @@
         "index": 10,
         "name": "Хозяйка гор",
         "portrait": "content/hero/2/10.webp",
-        "figure": "content/img/heroes-display/2-10-pose-20261012.webp"
+        "figure": "content/img/heroes-display/2-10-crossed-20261105.png"
       }
     ]
   },
@@ -1780,13 +1780,13 @@
         "index": 2,
         "name": "Кобр",
         "portrait": "content/hero/27/2.webp",
-        "figure": "content/img/heroes-display/27-2-art-20261013.webp"
+        "figure": "content/img/heroes-display/27-2-arms-20261105.png"
       },
       {
         "index": 3,
         "name": "Нага",
         "portrait": "content/hero/27/3.webp",
-        "figure": "content/img/heroes-display/27-3-v1.webp"
+        "figure": "content/img/heroes-display/27-3-pose-20261104.png"
       },
       {
         "index": 4,
@@ -1963,7 +1963,7 @@
         "index": 2,
         "name": "Следопыт",
         "portrait": "content/hero/30/2.webp",
-        "figure": "content/img/heroes-display/30-2-v1.webp"
+        "figure": "content/img/heroes-display/30-2-pose-20261104.png"
       },
       {
         "index": 3,

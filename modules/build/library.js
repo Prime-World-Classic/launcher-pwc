@@ -303,14 +303,16 @@ export class Library {
       button.addEventListener('click', () => play(SOUNDS_LIBRARY.CLICK_BUTTON_PRESS_SMALL, 'ui-small-click'));
       view.append(button);
     };
-    // ЛКМ — показать/скрыть, ПКМ — только они
+    // Active talents: left click isolates them, right click toggles visibility.
     const active = DOM({ style: 'build-rarity-other' });
     prepare(active, 'active', 'active', Lang.text('buildActiveFilterTooltip'));
-    active.addEventListener('click', () => this.setRule('active', active.dataset.active === '1' ? ['0'] : null));
-    active.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
+    active.addEventListener('click', () => {
       delete this.rules.rarity;
       this.setRule('active', ['1']);
+    });
+    active.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      this.setRule('active', active.dataset.active === '1' ? ['0'] : null);
     });
     for (const rarity of RARITIES) {
       const button = DOM({ data: { rarityId: rarity.id } });

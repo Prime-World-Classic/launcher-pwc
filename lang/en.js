@@ -474,7 +474,7 @@ export const en = {
     TALENT_ANOMALY_MISMATCH_CLIENT: 'This talent is not available for your client.',
     TALENT_ANOMALY_UNKNOWN_ACTION: 'Unknown talent action.',
     smartcastDescription: 'Right-click or check the active talent box to enable smartcast (use a skill without additional confirmation).',
-    buildActiveFilterTooltip: 'Active talents',
+    buildActiveFilterTooltip: 'Active talents: left click - active only; right click - show/hide',
     buildTalentSearchPlaceholder: 'Search talent...',
     buildTalentSearchClear: 'Clear talent search',
     buildSetsTooltipBody: 'Sets of related talents are listed below.\n\nHover over an icon to see the set description, its talents and their build rows. Left-click to install the entire set in empty slots of the corresponding rows. Right-click to remove the entire set from the build. To remove a single talent, left-click it in the hero build.',
@@ -671,7 +671,7 @@ export const en = {
 
     // Магаз
     shop_shop: 'Fair',
-    shop_collection: 'Collection',
+    shop_collection: 'Your collection',
 
     shop_use: 'Use',
     shop_in_use: 'In use',
@@ -7041,7 +7041,7 @@ export const en = {
     bsAdvPingSoundVolume: 'Signal volume',
     bsAdvPingWheel: 'Signal wheel (hold)',
     bsAdvPingWheelDelay: 'Signal wheel delay, s',
-    bsAdvPraise: 'Praise (Alt + click on a portrait)',
+    bsAdvPraise: 'Enable/Disable praise (Alt + click on a portrait)',
     bsAdvShowAbilityStatus: 'Tell allies about an ability\'s state',
     bsAdvSmartCastToggles: 'Smart cast: checkboxes on the panel',
     bsAdvTeamPortraitsScale: 'Team portraits size',

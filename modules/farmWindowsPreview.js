@@ -6,7 +6,7 @@ import { View } from './view.js';
 import { Window } from './window.js';
 
 const url = new URL(window.location.href);
-url.searchParams.set('previewCastle', '1');
+if (url.searchParams.get('previewTambur') !== '1') url.searchParams.set('previewCastle', '1');
 history.replaceState(null, '', url);
 
 if (url.searchParams.get('previewConstruction') === 'unowned') {
@@ -81,7 +81,8 @@ if (url.searchParams.get('previewWindow') === 'news') {
   App.showCastlePreview = async () => {
     await showCastle();
     App.notificationsNews = [
-      { id: -301, title: 'Обновление 3.0.0', message: 'Новое в замке и подготовке к бою.' },
+      { id: -301, title: '3.0.0. Большое обновление уже в Prime World Classic!', message: 'Новое в замке и подготовке к бою.',
+        content_html: App.processSteamNewsMarkup('<p><b>Жирный текст</b> и <i>курсив</i>.</p>[carousel]<img src="content/hero/66/1.webp"><img src="content/hero/67/1.webp">[/carousel]') },
       { id: -302, title: 'Обновление 2.16.2', message: 'Исправления и улучшения интерфейса.', is_read: true },
       { id: -303, title: 'Обновление 4.0.0', message: 'Следующее крупное обновление.', is_read: true },
     ].map((item) => App.normalizeNotificationNews({ ...item, is_external: true }));

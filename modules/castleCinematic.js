@@ -164,7 +164,7 @@ export class CastleCinematic {
   static canEnter() {
     if (!document.getElementById('castle-body')) return false;
     if (Castle.render.includes(false)) return false;
-    if (document.querySelector('#castle-body > [id^="w"], #castle-body > .window__overlay, dialog[open]')) return false;
+    if (document.querySelector('#castle-body > [id^="w"], #castle-body > .window__overlay, dialog[open], .launcher-notifications-panel.is-open')) return false;
     return true;
   }
 

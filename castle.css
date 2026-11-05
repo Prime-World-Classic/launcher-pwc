@@ -5178,6 +5178,28 @@ body > :has(> #wbuild) .castle-bottom-content {
     url('icons/activeBorder.webp') center / cover no-repeat;
 }
 
+.launcher-news-item.is-major-release .launcher-news-thumb {
+  border: .22cqh double #f5d37b;
+  outline: .12cqh solid rgba(173, 120, 39, .8);
+  outline-offset: .16cqh;
+  box-shadow: inset 0 0 .4cqh rgba(255, 226, 151, .35), 0 0 .55cqh rgba(245, 195, 83, .25);
+}
+.launcher-news-rich-content .launcher-news-gallery {
+  display: flex;
+  align-items: center;
+  gap: 1cqh;
+  max-width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+.launcher-news-gallery > .launcher-news-inline-image {
+  flex: 0 0 95%;
+  width: 95%;
+  max-height: 60vh;
+  object-fit: contain;
+  scroll-snap-align: center;
+}
+
 .launcher-news-item:hover {
   transform: translateX(0.25cqh);
 }
@@ -7434,7 +7456,7 @@ body > :has(> #wbuild) .castle-bottom-content {
 
 /* corner: resource at the storage limit */
 .farm-corner-item.farm-corner-full .farm-corner-value {
-  color: #ffb36b;
+  color: #ff7777;
   opacity: 1;
 }
 

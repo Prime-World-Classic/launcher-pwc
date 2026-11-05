@@ -1831,6 +1831,7 @@ export class App {
   }
 
   static openNotificationsPanel() {
+    CastleCinematic.exit();
     if (!App.notificationsPanel) App.notificationsPanel = App.createNotificationsPanel();
     if (!App.notificationsPanelBackdrop) {
       App.notificationsPanelBackdrop = DOM({
@@ -2149,7 +2150,7 @@ export class App {
   }
 
   static async loadSteamNotificationNews({ forceUpdate = false } = {}) {
-    const cacheKey = `pwclassic_steam_news_${App.notificationsSteamAppId}`;
+    const cacheKey = `pwclassic_steam_news_v2_${App.notificationsSteamAppId}`;
     const cached = App.readSteamNewsCache(cacheKey);
     if (!forceUpdate && cached && Date.now() - Number(cached.updatedAt || 0) < App.notificationsSteamNewsCacheMs) {
       return cached.news;
@@ -2254,7 +2255,8 @@ export class App {
       const link = App.getXmlNodeText(item, 'link');
       const pubDate = App.getXmlNodeText(item, 'pubDate');
       const image = App.extractFirstSteamImage(rawDescription);
-      const message = App.htmlToPlainText(rawDescription) || Lang.text('newsSteamNoDescription');
+      const contentHtml = App.processSteamNewsMarkup(rawDescription);
+      const message = App.htmlToPlainText(contentHtml) || Lang.text('newsSteamNoDescription');
       const id = App.stablePositiveHash(`steam:${link || title}:${pubDate}`);
 
       return {
@@ -2262,7 +2264,7 @@ export class App {
         title,
         message,
         details: '',
-        content_html: App.processSteamNewsMarkup(rawDescription),
+        content_html: contentHtml,
         type: 'steam',
         source: 'steam',
         banner_url: App.normalizeAuditAssetUrl(image || ''),
@@ -2283,7 +2285,9 @@ export class App {
   }
 
   static processSteamNewsMarkup(content) {
-    return App.sanitizeNewsHtml(String(content || ''));
+    return App.sanitizeNewsHtml(String(content || '')
+      .replace(/\[carousel\]/gi, '<div data-news-gallery>')
+      .replace(/\[\/carousel\]/gi, '</div>'));
   }
 
   static htmlToPlainText(content) {
@@ -2335,7 +2339,7 @@ export class App {
   static isMajorNotificationNews(item) {
     if (item?.is_major === true || item?.release_type === 'major') return true;
     const title = String(item?.title || '').trim();
-    return /^(?:(?:крупное|большое|глобальное|major)\s+)?(?:обновление|update|release)\s+(?:v\s*)?[1-9]\d*\.0(?:\.0)?(?=$|[\s:!\u2013\u2014-])/iu.test(title);
+    return /^(?:(?:(?:крупное|большое|глобальное|major)\s+)?(?:обновление|update|release)\s+)?(?:v\s*)?[1-9]\d*\.0(?:\.0)?(?=$|[\s:!\u2013\u2014-]|\.(?!\d))/iu.test(title);
   }
 
   static normalizeNotificationNews(item) {
@@ -2535,7 +2539,8 @@ export class App {
     if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent || '');
     if (node.nodeType !== Node.ELEMENT_NODE) return null;
 
-    const tag = node.tagName.toLowerCase();
+    const sourceTag = node.tagName.toLowerCase();
+    const tag = ({ b: 'strong', i: 'em' })[sourceTag] || sourceTag;
     if (tag === 'script' || tag === 'style') return null;
     if (tag === 'img') {
       const src = App.normalizeAuditAssetUrl(node.getAttribute('src') || '');
@@ -2566,8 +2571,10 @@ export class App {
       return link;
     }
 
+    const gallery = tag === 'div' && (node.hasAttribute('data-news-gallery') || node.classList.contains('launcher-news-gallery'));
     const allowedTags = new Set(['p', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br']);
-    const element = document.createElement(allowedTags.has(tag) ? tag : 'span');
+    const element = document.createElement(gallery ? 'div' : allowedTags.has(tag) ? tag : 'span');
+    if (gallery) element.className = 'launcher-news-gallery';
     [...node.childNodes].forEach((child) => {
       const cleanChild = App.cloneAllowedNewsNode(child, state);
       if (cleanChild) element.append(cleanChild);
