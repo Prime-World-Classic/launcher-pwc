@@ -107,19 +107,14 @@ float starHash(vec2 p)
   return fract(p.x * p.y * 0.3123);
 }
 
-// Яркость звезды по мировому направлению. Пустая ячейка — 0.
-float starField(vec3 dir, float t)
+// Вклад одной ячейки решётки в точку gp (координаты в единицах ячейки). Пустая ячейка — 0.
+float starCell(vec2 cell, vec2 gp, float t, float sizeGain)
 {
-  float az = atan(dir.z, dir.x); // -pi..pi
-  float el = asin(clamp(dir.y, -1.0, 1.0)); // -pi/2..pi/2
-  vec2 g = vec2(az * 20.0, (el + 1.5707963) * 26.0);
-  vec2 cell = floor(g);
-  vec2 f = g - cell;
   float h = starHash(cell);
   if (h < 0.66) return 0.0; // звезда есть не в каждой ячейке
   vec2 c = vec2(starHash(cell + 7.13), starHash(cell + 13.71));
-  float r = length(f - c);
-  float size = 0.045 + 0.10 * starHash(cell + 3.37);
+  float r = length(gp - cell - c);
+  float size = (0.045 + 0.10 * starHash(cell + 3.37)) * clamp(sizeGain, 1.0, 4.0);
   float core = smoothstep(size, 0.0, r);
   float halo = smoothstep(size * 3.5, 0.0, r) * 0.22;
   float mag = 0.30 + 0.70 * starHash(cell + 2.11);
@@ -131,9 +126,34 @@ float starField(vec3 dir, float t)
   return (core + halo) * mag * (0.55 + 0.75 * flash);
 }
 
+// Яркость звезды по мировому направлению.
+// sizeGain — раздувание ядра/ореола той же звезды (позиции не меняются): в отражении воды
+// звезда обязана быть КРУПНЕЕ, чем в небе, — отражённое направление по глади меняется
+// быстро, и точечная звезда в отражении попадала в доли пикселя.
+// Ореол достает за пределы своей ячейки (радиус size*3.5), поэтому суммация идёт по
+// соседям 3×3: без этого у звезды, вставшей впритык к границе ячейки, срезается край —
+// в кадре это квадратный «пластырь» (замер: при sizeGain 2.4 квадраты видны и в небе,
+// и в воде).
+float starField(vec3 dir, float t, float sizeGain)
+{
+  float az = atan(dir.z, dir.x); // -pi..pi
+  float el = asin(clamp(dir.y, -1.0, 1.0)); // -pi/2..pi/2
+  vec2 g = vec2(az * 20.0, (el + 1.5707963) * 26.0);
+  vec2 base = floor(g);
+  float acc = 0.0;
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      acc = max(acc, starCell(base + vec2(float(i), float(j)), g, t, sizeGain));
+    }
+  }
+  return acc;
+}
+
 // Цвет неба по направлению: днём — градиент «горизонт → зенит», ночью — тёмная база плюс
-// звёзды. Используется и для отражения в воде (там направление зеркальное).
-vec3 skyTint(vec3 dir, float t)
+// звёзды. Используется только для отражения в воде (там направление зеркальное).
+// starGain — множитель звёзд: в отражении звёздное поле тусклее самого неба (луч идёт вниз,
+// к глади, и блик размывается), поэтому для воды его поднимают отдельно.
+vec3 skyTint(vec3 dir, float t, float starGain, float starSize)
 {
 #ifdef SCENE_DOCT
   const vec3 zenith = vec3(0.10, 0.30, 0.66);
@@ -146,7 +166,7 @@ vec3 skyTint(vec3 dir, float t)
   vec3 col = mix(horizon, zenith, up);
   float night = clamp(nightStars.x, 0.0, 1.0);
   col = mix(col, vec3(0.035, 0.055, 0.115), night);
-  col += vec3(0.75, 0.82, 1.0) * starField(dir, t) * night * nightStars.y;
+  col += vec3(0.75, 0.82, 1.0) * starField(dir, t, starSize) * night * nightStars.y * starGain;
   return col;
 }
 #endif // SKY_STARS || WATER_REFLECT
@@ -331,7 +351,7 @@ void main()
     vec3 sdir = normalize(fragWorldPos - camPos.xyz);
     float night = clamp(nightStars.x, 0.0, 1.0);
     FRAG_COLOR.rgb = mix(FRAG_COLOR.rgb, FRAG_COLOR.rgb * vec3(0.60, 0.72, 1.10) + vec3(0.010, 0.016, 0.036), night);
-    FRAG_COLOR.rgb += vec3(0.86, 0.90, 1.0) * starField(sdir, time.x) * night * nightStars.y;
+    FRAG_COLOR.rgb += vec3(0.86, 0.90, 1.0) * starField(sdir, time.x, 1.0) * night * nightStars.y;
   }
 #endif
 
@@ -351,12 +371,17 @@ void main()
 #ifdef WATER_REFLECT
   // Отражение неба в воде. Вода плоская и горизонтальная, поэтому нормаль отражения — просто
   // зеркальная Y-составляющая луча зрения; у скользящих лучей (дальше от камеры) отражение
-  // сильнее — как у настоящего Френеля.
+  // сильнее — как у настоящего Френеля. Френель не уходит в ноль и при отвесном взгляде:
+  // у гладкой воды нормальное падение отражает ~2%, и это единственное, что даёт ночные
+  // звёзды в середине плёса, а не только у дальнего берега.
+  // nightStars.w — отдельная прибавка к звёздам именно в отражении (waterStarGain).
   {
+    const float WATER_FRES_BASE = 0.06; // отвесный луч: ~2% отражения у воды, здесь — с запасом
+    const float WATER_STAR_SIZE = 2.4; // та же звезда в отражении — крупнее, чем в небе
     vec3 rd = normalize(fragWorldPos - camPos.xyz);
     vec3 refl = normalize(vec3(rd.x, -rd.y, rd.z));
-    float fres = pow(1.0 - clamp(-rd.y, 0.0, 1.0), 2.5);
-    FRAG_COLOR.rgb += skyTint(refl, time.x) * fres * nightStars.z;
+    float fres = WATER_FRES_BASE + (1.0 - WATER_FRES_BASE) * pow(1.0 - clamp(-rd.y, 0.0, 1.0), 2.5);
+    FRAG_COLOR.rgb += skyTint(refl, time.x, max(nightStars.w, 0.0), WATER_STAR_SIZE) * fres * nightStars.z;
   }
 #endif
   if (shadowDebugTint.x >= 0.0) {

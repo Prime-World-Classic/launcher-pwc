@@ -2652,10 +2652,13 @@ export class Castle {
 
   // Ночное небо и отражение неба в воде (shader_pos_uv_sky, shader_pos_water_reflect).
   // starBrightness — множитель звёзд; waterReflect — сила отражения неба в воде (у скользящих
-  // лучей она растёт сама, см. fresnel в шейдере).
+  // лучей она растёт сама, см. fresnel в шейдере); waterStarGain — насколько звёзды в
+  // отражении ярче звёзд самого неба (у воды свой множитель: отражённое поле тусклее прямого).
   static starBrightness = 1.0;
 
-  static waterReflect = 0.5;
+  static waterReflect = 0.85;
+
+  static waterStarGain = 3.0;
 
   // мировая позиция камеры кадра (из invert(viewMatrix2), см. updateMainCam)
   static camMat = mat4.create();
@@ -2668,7 +2671,13 @@ export class Castle {
     const t = Castle.currentTime;
     const gust = 0.72 + 0.28 * Math.sin(t * 0.23) + 0.16 * Math.sin(t * 0.071 + 2.1);
     const wet = 1 + 0.5 * CastleWeather.strength();
-    return { amp: Castle.windAmp * gust * wet, speed: Castle.windSpeed, freq: Castle.windFreq, profile: Castle.windProfile, dir: Castle.windDirXY };
+    return {
+      amp: Castle.windAmp * gust * wet,
+      speed: Castle.windSpeed,
+      freq: Castle.windFreq,
+      profile: Castle.windProfile,
+      dir: Castle.windDirXY,
+    };
   }
 
   // Нижняя граница и высота объекта в МИРЕ — профиль покачивания (windBase в шейдере).
@@ -3274,7 +3283,7 @@ export class Castle {
     // позиция камеры и ночный уровень. Ставится только там, где uniform-ы объявлены.
     if (l.camPos) {
       gl.uniform4f(l.camPos, Castle.camWorld[0], Castle.camWorld[1], Castle.camWorld[2], 1);
-      gl.uniform4f(l.nightStars, CastleLighting.nightLevel, Castle.starBrightness, Castle.waterReflect, 0);
+      gl.uniform4f(l.nightStars, CastleLighting.nightLevel, Castle.starBrightness, Castle.waterReflect, Castle.waterStarGain);
     }
 
     gl.uniform4f(l.shadowDebug, Castle.shadowDebugMode, 0, 0, 0);
@@ -3659,7 +3668,9 @@ export class Castle {
     if (Castle.buildingBoundsCache[name]) return Castle.buildingBoundsCache[name];
     const bounds = { min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity] };
     for (const object of Castle.sceneBuildings[name]?.objects || []) {
-      const lo = object.meshData?.bboxMin, hi = object.meshData?.bboxMax, m = object.transform;
+      const lo = object.meshData?.bboxMin,
+        hi = object.meshData?.bboxMax,
+        m = object.transform;
       if (!lo || !hi || !m) continue;
       for (let corner = 0; corner < 8; corner++) {
         const p = [corner & 1 ? hi[0] : lo[0], corner & 2 ? hi[1] : lo[1], corner & 4 ? hi[2] : lo[2]];
@@ -3684,7 +3695,8 @@ export class Castle {
     // совпадает с центром на экране при одном ракурсе и уезжает при сдвиге камеры.)
     const mesh = Castle.sceneBuildings[name];
     const angle = (building.rot || 0) * 1.57;
-    const cx = (bounds.min[0] + bounds.max[0]) / 2, cz = (bounds.min[2] + bounds.max[2]) / 2;
+    const cx = (bounds.min[0] + bounds.max[0]) / 2,
+      cz = (bounds.min[2] + bounds.max[2]) / 2;
     const point = [
       Castle.zeroTranslation[0] + (building.posX * 7.0 + (mesh.size[0] / 2.0) * 7.0) + Math.cos(angle) * cx + Math.sin(angle) * cz,
       1 + bounds.max[1],
