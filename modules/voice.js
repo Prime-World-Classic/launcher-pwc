@@ -212,8 +212,6 @@ export class Voice {
   static radioPressedByKeyboard = false;
 
   static radioPulseTimer = null;
-  static radioPanelLingerTimer = null;
-  static RADIO_PANEL_LINGER_MS = 3000;
 
   static logQueue = Promise.resolve();
 
@@ -585,17 +583,34 @@ export class Voice {
     return Voice.infoPanel?.querySelector?.('.voice-info-panel-body') || null;
   }
 
-  // Панель нужна, только пока идёт звонок (или его переподключение — между попытками записи
-  // собеседника нет) или включён свой микрофон (в режиме рации без собеседников говорить
-  // некому). Иначе — пустая рамка с крестиком, которая висела после каждого лобби без
-  // голосовых союзников.
-  // В режиме рации без собеседников — пока зажата клавиша и ещё RADIO_PANEL_LINGER_MS после.
+  // Панель видна всегда — сразу после входа, со своим ником, даже если никому не звонили, в любом
+  // режиме (и в рации). Прячет её только «Мут всех и себя»; звонок с другом под ним идёт дальше,
+  // поэтому с ним панель остаётся. Крестик прячет панель до следующего звонка или нажатия
+  // клавиши войса.
   static shouldShowInfoPanel() {
-    if (Object.keys(Voice.manager).length > 0 || Voice.reconnectJobs.size > 0) return true;
-    if (Settings.settings?.voiceRadioMode) {
-      return Voice.radioPressedByKeyboard || Boolean(Voice.radioPanelLingerTimer);
+    if (!Voice.isLoggedInView()) return false;
+    if (!Voice.isMutedAll()) return true;
+    return Voice.hasFriendCall();
+  }
+
+  // Voice.init вызывается и до входа: на экране авторизации панели (с пустым ником) нет.
+  static viewMethod = '';
+  static infoPanelLogin = null;
+
+  static isLoggedInView() {
+    return Number(App.storage?.data?.id) > 0 && Voice.viewMethod !== 'authorization';
+  }
+
+  // View.show: сменился экран (вход, выход из аккаунта). Сменился ник — панель перерисовывается.
+  static onViewShown(method) {
+    Voice.viewMethod = String(method || '');
+    if (!Voice.infoPanel) return;
+    const login = String(App.storage?.data?.login || '');
+    if (Voice.infoPanelLogin !== login) {
+      Voice.updateInfoPanel();
+    } else {
+      Voice.syncInfoPanel();
     }
-    return Boolean(Voice.mic?.enabled);
   }
 
   static showInfoPanel(force = false) {
@@ -606,6 +621,16 @@ export class Voice {
       Voice.updateInfoPanel();
     }
     Voice.infoPanel.style.display = 'flex';
+  }
+
+  // Видимость по shouldShowInfoPanel в обе стороны: сняли «Мут всех и себя» — панель вернулась.
+  static syncInfoPanel() {
+    if (!Voice.infoPanel) return;
+    if (Voice.shouldShowInfoPanel()) {
+      if (!Voice.infoPanelHiddenByUser) Voice.infoPanel.style.display = 'flex';
+      return;
+    }
+    Voice.infoPanel.style.display = 'none';
   }
 
   static hideInfoPanelIfIdle() {
@@ -728,6 +753,9 @@ export class Voice {
 
     document.body.append(Voice.infoPanel);
 
+    // Панель со своим ником — сразу после входа, а не с первым звонком.
+    Voice.showInfoPanel();
+
     Voice.ensureRadioHotkeyListeners();
 
     requestAnimationFrame(() => Voice.updatePanelPosition());
@@ -774,26 +802,14 @@ export class Voice {
     const next = Boolean(pressed);
     if (Voice.radioPressedByKeyboard === next) return;
     Voice.radioPressedByKeyboard = next;
-    Voice.clearRadioPanelLinger();
     if (next) {
-      // Нажали рацию — панель видна (как Ctrl+Z в обычном режиме), даже закрытая крестиком.
+      // Нажали рацию — панель открывается, даже закрытая крестиком (как Ctrl+Z в обычном режиме).
       Voice.infoPanelHiddenByUser = false;
       await Voice.setMicEnabled(true);
       Voice.showInfoPanel(true);
       return;
     }
-    // Отпустили — без звонка панель ещё немного видна и прячется: иначе мигала бы на каждом нажатии.
-    Voice.radioPanelLingerTimer = setTimeout(() => {
-      Voice.radioPanelLingerTimer = null;
-      Voice.hideInfoPanelIfIdle();
-    }, Voice.RADIO_PANEL_LINGER_MS);
     await Voice.setMicEnabled(false);
-  }
-
-  static clearRadioPanelLinger() {
-    if (!Voice.radioPanelLingerTimer) return;
-    clearTimeout(Voice.radioPanelLingerTimer);
-    Voice.radioPanelLingerTimer = null;
   }
 
   // Переключатель «Режим рации». Раньше менялся только флаг: включённый в обычном режиме микрофон
@@ -803,7 +819,6 @@ export class Voice {
   static setRadioMode(enabled) {
     Settings.settings.voiceRadioMode = Boolean(enabled);
     Voice.clearRadioPulseTimer();
-    Voice.clearRadioPanelLinger();
     Voice.radioPressedByKeyboard = false;
     if (Voice.mic) {
       Voice.mic.enabled = Voice.getInitialMicEnabled();
@@ -1364,6 +1379,7 @@ export class Voice {
     }
 
     panelBody.append(selfItem);
+    Voice.infoPanelLogin = String(App.storage?.data?.login || '');
 
     for (let id in Voice.manager) {
       Voice.playerInfoPanel(id);
@@ -1415,7 +1431,7 @@ export class Voice {
 
     Voice.syncLobbyVoice();
 
-    Voice.hideInfoPanelIfIdle();
+    Voice.syncInfoPanel();
   }
 
   static formatHotkey(tokens, fallback) {

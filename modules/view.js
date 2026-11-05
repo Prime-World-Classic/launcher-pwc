@@ -1070,6 +1070,9 @@ export class View {
       return;
     }
 
+    // панель войса: после входа — сразу со своим ником, на экране входа — нет
+    Voice.onViewShown(method);
+
     // Ensure action bar slots exist in native input_new.cfg once per app session.
     if (method === 'castle' && !View._actionBarCfgEnsured) {
       try {
