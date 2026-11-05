@@ -33,6 +33,9 @@ export class Settings {
     voiceRadioMode: false,
     voiceToggleHotkey: ['CTRL', 'Z'],
     voiceDropHotkey: ['CTRL', 'K'],
+    /** Микрофон войса: deviceId и имя устройства; '' — устройство записи Windows по умолчанию. */
+    voiceMicDevice: '',
+    voiceMicLabel: '',
     buildSetLmbMode: 1,
     buildSetSortMode: 0,
     buildRowHoverHighlight: true,

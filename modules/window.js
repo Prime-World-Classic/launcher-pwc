@@ -22,7 +22,7 @@ import { UiTooltip } from './uiTooltip.js';
 
 // windows
 import { keybindings } from './keybindings/keybindings.window.js';
-import { battleSettings, voiceHotkeyInput } from './battleSettings.js';
+import { battleSettings, voiceHotkeyInput, voiceMicControls } from './battleSettings.js';
 import { fair } from './fair.js';
 import { PWGame } from './pwgame.js';
 import { CastleNAVBAR } from './castleNavBar.js';
@@ -1451,6 +1451,13 @@ export class Window {
         DOM({ style: 'castle-menu-section-title' }, Lang.text('voiceHotkeys')),
         DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceEnableToggle')), voiceHotkeyInput('voiceToggleHotkey', 'castle-keybinding-input')),
         DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceDropCalls')), voiceHotkeyInput('voiceDropHotkey', 'castle-keybinding-input')),
+        ...(() => {
+          const mic = voiceMicControls();
+          return [
+            DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceMic')), mic.select),
+            DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceMicCheck')), mic.test),
+          ];
+        })(),
         DOM(
           {
             style: 'castle-menu-item-button',

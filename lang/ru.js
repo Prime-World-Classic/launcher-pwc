@@ -1050,6 +1050,13 @@ export const ru = {
     // keybindings
 
     voiceHotkeys: 'Голосовая связь',
+    voiceMic: 'Микрофон',
+    voiceMicDefault: 'По умолчанию (Windows)',
+    voiceMicUnnamed: 'Микрофон без имени',
+    voiceMicMissing: 'не подключён',
+    voiceMicCheck: 'Проверка микрофона',
+    voiceMicTestStart: 'Проверить',
+    voiceMicTestStop: 'Стоп',
     voiceEnableToggle: 'Вкл/выкл микрофон',
     voiceDropCalls: 'Сбросить звонки',
 

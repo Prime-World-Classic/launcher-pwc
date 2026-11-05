@@ -133,6 +133,7 @@ const PAGES = {
     // голосовая связь лаунчера (те же клавиши — в «Настройках замка»)
     { type: 'launcherKey', settingKey: 'voiceToggleHotkey', label: 'voiceEnableToggle' },
     { type: 'launcherKey', settingKey: 'voiceDropHotkey', label: 'voiceDropCalls' },
+    { type: 'launcherMic' },
   ],
   chatWheel: [
     { type: 'header', label: 'bsAdvHdrChatWheel' },
@@ -300,6 +301,128 @@ export function voiceHotkeyInput(settingKey, style = 'bs-key') {
   input.addEventListener('focus', () => NativeAPI.unregisterVoiceHotkeys?.());
   input.addEventListener('blur', () => NativeAPI.refreshVoiceHotkeys?.());
   return input;
+}
+
+// Микрофон войса (Settings.voiceMicDevice) и его проверка: { select, test }. Выбор сохраняется
+// сразу и подхватывается идущими звонками; «По умолчанию (Windows)» — устройство записи Windows
+// по умолчанию, как было раньше. Проверка открывает тот же микрофон, что возьмёт звонок.
+export function voiceMicControls() {
+  const select = DOM({ tag: 'select', style: ['bs-select', 'voice-mic-select'], domaudio: domAudioPresets.defaultSelect });
+  const fill = DOM({ style: 'voice-mic-meter-fill' });
+  const meter = DOM({ style: 'voice-mic-meter' }, fill);
+  const button = DOM({ style: ['bs-key', 'voice-mic-test-btn'], domaudio: domAudioPresets.defaultButton }, Lang.text('voiceMicTestStart'));
+  const test = DOM({ style: 'voice-mic-test' }, button, meter);
+
+  const option = (value, text, label = '') => {
+    const element = DOM({ tag: 'option' }, text);
+    element.value = value;
+    element.dataset.label = label;
+    return element;
+  };
+
+  const refill = async () => {
+    let devices = [];
+    try {
+      devices = await Voice.listMicDevices();
+      // Без разрешения на микрофон Chromium прячет имена: разовый запрос, чтобы их показать.
+      if (devices.length && devices.every((device) => !device.label)) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
+        devices = await Voice.listMicDevices();
+      }
+    } catch {}
+
+    const current = String(Settings.settings?.voiceMicDevice || '');
+    const currentLabel = String(Settings.settings?.voiceMicLabel || '');
+    // «default» — то же, что без выбора; его имя («По умолчанию - <устройство>») показываем в пункте.
+    const def = devices.find((device) => device.deviceId === 'default');
+    const defName = def?.label ? def.label.replace(/^[^-]*-\s*/, '') : '';
+    const options = [option('', defName ? `${Lang.text('voiceMicDefault')}: ${defName}` : Lang.text('voiceMicDefault'))];
+    let selected = '';
+    for (const device of devices) {
+      if (!device.deviceId || device.deviceId === 'default') continue;
+      options.push(option(device.deviceId, device.label || Lang.text('voiceMicUnnamed'), device.label));
+      if (current && (device.deviceId === current || (!selected && currentLabel && device.label === currentLabel))) {
+        selected = device.deviceId;
+      }
+    }
+    if (current && !selected) {
+      // Выбранный микрофон отключён: пока его нет, звонок идёт через Windows по умолчанию.
+      const missing = option(current, `${currentLabel || Lang.text('voiceMicUnnamed')} (${Lang.text('voiceMicMissing')})`, currentLabel);
+      options.push(missing);
+      selected = current;
+    }
+    select.replaceChildren(...options);
+    select.value = selected;
+    select.title = select.selectedOptions[0]?.textContent || '';
+  };
+
+  let testing = null;
+  const stopTest = () => {
+    if (!testing) return;
+    cancelAnimationFrame(testing.frame);
+    testing.stream.getTracks().forEach((track) => track.stop());
+    testing.context.close().catch(() => {});
+    testing = null;
+    fill.style.width = '0%';
+    button.textContent = Lang.text('voiceMicTestStart');
+    test.title = '';
+  };
+  const startTest = async () => {
+    let stream = null;
+    try {
+      stream = await Voice.openMicStream();
+    } catch {
+      App.error(Lang.text('voiceMicUnavailable'));
+      return;
+    }
+    if (!button.isConnected) {
+      stream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+    const context = new AudioContext();
+    const analyser = context.createAnalyser();
+    analyser.fftSize = 1024;
+    context.createMediaStreamSource(stream).connect(analyser);
+    const samples = new Float32Array(analyser.fftSize);
+    testing = { stream, context, frame: 0 };
+    button.textContent = Lang.text('voiceMicTestStop');
+    test.title = stream.getAudioTracks()[0]?.label || '';
+    const tick = () => {
+      if (!testing) return;
+      if (!button.isConnected) return stopTest();
+      analyser.getFloatTimeDomainData(samples);
+      let sum = 0;
+      for (const value of samples) sum += value * value;
+      const db = 20 * Math.log10(Math.sqrt(sum / samples.length) || 1e-8);
+      // -60 дБ и тише — пусто, 0 дБ — полная шкала
+      fill.style.width = `${Math.max(0, Math.min(100, ((db + 60) / 60) * 100)).toFixed(1)}%`;
+      testing.frame = requestAnimationFrame(tick);
+    };
+    tick();
+  };
+
+  button.addEventListener('click', () => (testing ? stopTest() : startTest()));
+  select.addEventListener('change', async () => {
+    const label = select.selectedOptions[0]?.dataset.label || '';
+    select.title = select.selectedOptions[0]?.textContent || '';
+    await Voice.setMicDevice(select.value, label);
+    if (testing) {
+      stopTest();
+      await startTest();
+    }
+  });
+
+  const onDeviceChange = () => {
+    if (!select.isConnected) {
+      navigator.mediaDevices.removeEventListener('devicechange', onDeviceChange);
+      return stopTest();
+    }
+    refill();
+  };
+  navigator.mediaDevices?.addEventListener?.('devicechange', onDeviceChange);
+  refill();
+  return { select, test };
 }
 
 // клавиша игры (input_new.cfg): имена клавиш — как у игры, конфликт подсвечивается
@@ -488,6 +611,12 @@ function buildRowsPage(rowsDesc, ctx) {
       case 'launcherKey':
         page.append(row(Lang.text(desc.label), voiceHotkeyInput(desc.settingKey)));
         break;
+      case 'launcherMic': {
+        // микрофон голосовой связи лаунчера (тот же выбор — в «Настройках замка»)
+        const mic = voiceMicControls();
+        page.append(row(Lang.text('voiceMic'), mic.select), row(Lang.text('voiceMicCheck'), mic.test));
+        break;
+      }
       case 'launcherCheck': {
         // настройка лончера (launcher.cfg), а не user.cfg: сохраняется сразу, как launcherKey
         const box = checkbox(Settings.settings[desc.settingKey] === desc.on, async (checked) => {

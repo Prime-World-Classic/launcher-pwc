@@ -847,7 +847,7 @@ export class Voice {
 
   static async initLocalMediaOnce() {
     try {
-      Voice.userMedia = await navigator.mediaDevices.getUserMedia(Voice.getMediaConstraints());
+      Voice.userMedia = await Voice.openMicStream();
     } catch (error) {
       return Voice.onMicUnavailable(error?.name || error);
     }
@@ -949,6 +949,71 @@ export class Voice {
     };
   }
 
+  // Микрофон из настроек (Settings.voiceMicDevice — deviceId, voiceMicLabel — его имя на случай,
+  // если Windows выдаст устройству новый id). Пусто — устройство записи Windows по умолчанию:
+  // без deviceId Chromium берёт именно его, и если оно заглушено, а говорят в другой микрофон,
+  // собеседникам уходит тишина.
+  static async listMicDevices() {
+    if (!navigator.mediaDevices?.enumerateDevices) return [];
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter((device) => device.kind === 'audioinput');
+  }
+
+  // deviceId выбранного микрофона, если он сейчас подключён; '' — брать Windows по умолчанию.
+  static async resolveMicDeviceId() {
+    const id = String(Settings.settings?.voiceMicDevice || '');
+    if (!id) return '';
+    let devices = [];
+    try {
+      devices = await Voice.listMicDevices();
+    } catch {
+      return id;
+    }
+    // Без разрешения на микрофон Chromium прячет id и имена — пробуем сохранённый id как есть.
+    if (!devices.length || devices.every((device) => !device.deviceId)) return id;
+    if (devices.some((device) => device.deviceId === id)) return id;
+    const label = String(Settings.settings?.voiceMicLabel || '');
+    const byLabel = label ? devices.find((device) => device.label === label) : null;
+    return byLabel ? byLabel.deviceId : '';
+  }
+
+  // Выбранный микрофон, а если его нет или он не открылся — Windows по умолчанию.
+  static async openMicStream() {
+    const constraints = Voice.getMediaConstraints();
+    const deviceId = await Voice.resolveMicDeviceId();
+    let stream = null;
+    if (deviceId) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          ...constraints,
+          audio: { ...constraints.audio, deviceId: { exact: deviceId } },
+        });
+      } catch (error) {
+        Voice.log('mic-selected-failed', { error: String(error?.name || error) });
+      }
+    }
+    if (!stream) stream = await navigator.mediaDevices.getUserMedia(constraints);
+    Voice.log('mic-open', {
+      label: stream?.getAudioTracks?.()[0]?.label || '',
+      selected: Boolean(deviceId),
+    });
+    return stream;
+  }
+
+  // Смена микрофона в настройках: идущие звонки переходят на него сразу, без перезвона.
+  static async setMicDevice(deviceId, label = '') {
+    Settings.settings.voiceMicDevice = String(deviceId || '');
+    Settings.settings.voiceMicLabel = deviceId ? String(label || '') : '';
+    await Settings.WriteSettings();
+    Voice.log('mic-device-set', { label: Settings.settings.voiceMicLabel });
+    if (Voice.userMedia) {
+      await Voice.reacquireMic(true);
+    } else if (Voice.micUnavailable && Object.keys(Voice.manager).length) {
+      await Voice.initLocalMedia();
+      Voice.updateInfoPanel();
+    }
+  }
+
   // Выдернутый микрофон завершает свою дорожку ('ended'), и без повторного getUserMedia
   // звонок после подключения обратно шлёт тишину. Новая дорожка подключается ко входу той же
   // цепочки обработки: собеседникам по-прежнему идёт Voice.mic, переподключать звонки не нужно.
@@ -971,25 +1036,35 @@ export class Voice {
         Voice.reacquireMic();
       } else if (Voice.micUnavailable && Object.keys(Voice.manager).length) {
         Voice.initLocalMedia().then(() => Voice.updateInfoPanel());
+      } else if (Voice.userMedia && Settings.settings?.voiceMicDevice) {
+        // Выбранный микрофон подключили обратно, а звонок идёт через Windows по умолчанию.
+        Voice.resolveMicDeviceId()
+          .then((id) => {
+            const current = Voice.rawMic?.getSettings?.()?.deviceId;
+            if (id && current && id !== current) Voice.reacquireMic(true);
+          })
+          .catch(() => {});
       }
     });
   }
 
-  static reacquireMic() {
-    if (!Voice.reacquireMicPromise) {
-      Voice.reacquireMicPromise = Voice.reacquireMicOnce().finally(() => {
-        Voice.reacquireMicPromise = null;
-      });
+  // force — открыть микрофон заново и при живой дорожке (сменили устройство в настройках).
+  static reacquireMic(force = false) {
+    if (Voice.reacquireMicPromise) {
+      return force ? Voice.reacquireMicPromise.then(() => Voice.reacquireMic(true)) : Voice.reacquireMicPromise;
     }
+    Voice.reacquireMicPromise = Voice.reacquireMicOnce(force).finally(() => {
+      Voice.reacquireMicPromise = null;
+    });
     return Voice.reacquireMicPromise;
   }
 
-  static async reacquireMicOnce() {
-    if (!Voice.userMedia || Voice.rawMic?.readyState !== 'ended') return;
+  static async reacquireMicOnce(force = false) {
+    if (!Voice.userMedia || (!force && Voice.rawMic?.readyState !== 'ended')) return;
 
     let stream = null;
     try {
-      stream = await navigator.mediaDevices.getUserMedia(Voice.getMediaConstraints());
+      stream = await Voice.openMicStream();
     } catch (error) {
       // Микрофона пока нет — следующая попытка будет по 'devicechange'.
       Voice.log('mic-reacquire-failed', { error: String(error?.name || error) });

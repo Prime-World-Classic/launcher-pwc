@@ -1055,6 +1055,13 @@ export const en = {
     // keybindings
 
     voiceHotkeys: 'Voice communication',
+    voiceMic: 'Microphone',
+    voiceMicDefault: 'Default (Windows)',
+    voiceMicUnnamed: 'Unnamed microphone',
+    voiceMicMissing: 'not connected',
+    voiceMicCheck: 'Microphone check',
+    voiceMicTestStart: 'Test',
+    voiceMicTestStop: 'Stop',
     voiceEnableToggle: 'Toggle microphone',
     voiceDropCalls: 'Drop calls',
 
