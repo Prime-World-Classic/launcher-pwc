@@ -1059,7 +1059,7 @@ export const en = {
     voiceMicDefault: 'Default (Windows)',
     voiceMicUnnamed: 'Unnamed microphone',
     voiceMicMissing: 'not connected',
-    voiceMicCheck: 'Microphone check',
+    voiceMicCheck: 'Mic test',
     voiceMicTestStart: 'Test',
     voiceMicTestStop: 'Stop',
     voiceEnableToggle: 'Toggle microphone',

@@ -1451,13 +1451,6 @@ export class Window {
         DOM({ style: 'castle-menu-section-title' }, Lang.text('voiceHotkeys')),
         DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceEnableToggle')), voiceHotkeyInput('voiceToggleHotkey', 'castle-keybinding-input')),
         DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceDropCalls')), voiceHotkeyInput('voiceDropHotkey', 'castle-keybinding-input')),
-        ...(() => {
-          const mic = voiceMicControls();
-          return [
-            DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceMic')), mic.select),
-            DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceMicCheck')), mic.test),
-          ];
-        })(),
         DOM(
           {
             style: 'castle-menu-item-button',
@@ -1692,6 +1685,14 @@ export class Window {
           ),
           DOM({ tag: 'label', for: 'voice-radio-mode' }, Lang.text('voiceRadioMode')),
         ),
+        // микрофон войса (тот же выбор — в «Настройках боя» → «Общение»)
+        ...(() => {
+          const mic = voiceMicControls('castle-keybinding-input');
+          return [
+            DOM({ style: ['castle-menu-item-checkbox', 'castle-menu-voice-key'] }, DOM({}, Lang.text('voiceMic')), mic.select),
+            DOM({ style: ['castle-menu-item-checkbox', 'castle-menu-voice-key'] }, DOM({}, Lang.text('voiceMicCheck')), mic.test),
+          ];
+        })(),
         DOM({ style: 'wcastle-menu__exit-separator' }),
         DOM(
           {

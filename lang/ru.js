@@ -1054,7 +1054,7 @@ export const ru = {
     voiceMicDefault: 'По умолчанию (Windows)',
     voiceMicUnnamed: 'Микрофон без имени',
     voiceMicMissing: 'не подключён',
-    voiceMicCheck: 'Проверка микрофона',
+    voiceMicCheck: 'Тест микрофона',
     voiceMicTestStart: 'Проверить',
     voiceMicTestStop: 'Стоп',
     voiceEnableToggle: 'Вкл/выкл микрофон',

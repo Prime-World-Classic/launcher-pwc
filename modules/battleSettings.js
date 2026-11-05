@@ -305,13 +305,19 @@ export function voiceHotkeyInput(settingKey, style = 'bs-key') {
 
 // Микрофон войса (Settings.voiceMicDevice) и его проверка: { select, test }. Выбор сохраняется
 // сразу и подхватывается идущими звонками; «По умолчанию (Windows)» — устройство записи Windows
-// по умолчанию, как было раньше. Проверка открывает тот же микрофон, что возьмёт звонок.
-export function voiceMicControls() {
-  const select = DOM({ tag: 'select', style: ['bs-select', 'voice-mic-select'], domaudio: domAudioPresets.defaultSelect });
+// по умолчанию, как было раньше. Проверка открывает тот же микрофон, что возьмёт звонок; уровень —
+// заливка внутри самой кнопки. inputStyle — вид полей окна: 'bs-key' (настройки боя) или
+// 'castle-keybinding-input' (настройки замка, как у клавиш войса).
+export function voiceMicControls(inputStyle = 'bs-key') {
+  const select = DOM({
+    tag: 'select',
+    style: [inputStyle, inputStyle === 'bs-key' ? 'bs-select' : 'voice-mic-select--castle', 'voice-mic-select'],
+    domaudio: domAudioPresets.defaultSelect,
+  });
   const fill = DOM({ style: 'voice-mic-meter-fill' });
-  const meter = DOM({ style: 'voice-mic-meter' }, fill);
-  const button = DOM({ style: ['bs-key', 'voice-mic-test-btn'], domaudio: domAudioPresets.defaultButton }, Lang.text('voiceMicTestStart'));
-  const test = DOM({ style: 'voice-mic-test' }, button, meter);
+  const caption = DOM({ tag: 'span', style: 'voice-mic-test-caption' }, Lang.text('voiceMicTestStart'));
+  const button = DOM({ style: [inputStyle, 'voice-mic-test-btn'], domaudio: domAudioPresets.defaultButton }, fill, caption);
+  const test = button;
 
   const option = (value, text, label = '') => {
     const element = DOM({ tag: 'option' }, text);
@@ -365,28 +371,35 @@ export function voiceMicControls() {
     testing.context.close().catch(() => {});
     testing = null;
     fill.style.width = '0%';
-    button.textContent = Lang.text('voiceMicTestStart');
+    caption.textContent = Lang.text('voiceMicTestStart');
     test.title = '';
   };
+  let starting = false;
   const startTest = async () => {
+    // пока микрофон открывается, повторное нажатие не открывает второй
+    if (starting || testing) return;
+    starting = true;
     let stream = null;
     try {
       stream = await Voice.openMicStream();
     } catch {
       App.error(Lang.text('voiceMicUnavailable'));
       return;
+    } finally {
+      starting = false;
     }
     if (!button.isConnected) {
       stream.getTracks().forEach((track) => track.stop());
       return;
     }
     const context = new AudioContext();
+    context.resume?.()?.catch?.(() => {});
     const analyser = context.createAnalyser();
     analyser.fftSize = 1024;
     context.createMediaStreamSource(stream).connect(analyser);
     const samples = new Float32Array(analyser.fftSize);
     testing = { stream, context, frame: 0 };
-    button.textContent = Lang.text('voiceMicTestStop');
+    caption.textContent = Lang.text('voiceMicTestStop');
     test.title = stream.getAudioTracks()[0]?.label || '';
     const tick = () => {
       if (!testing) return;
@@ -402,7 +415,11 @@ export function voiceMicControls() {
     tick();
   };
 
-  button.addEventListener('click', () => (testing ? stopTest() : startTest()));
+  button.addEventListener('click', () => {
+    if (starting) return;
+    if (testing) stopTest();
+    else startTest();
+  });
   select.addEventListener('change', async () => {
     const label = select.selectedOptions[0]?.dataset.label || '';
     select.title = select.selectedOptions[0]?.textContent || '';

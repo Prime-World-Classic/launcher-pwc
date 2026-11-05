@@ -15659,42 +15659,58 @@ body:has(> * > #wcastle-call)::before {
   cursor: var(--cursor-pointer);
 }
 
-.voice-mic-test {
-  flex: 0 0 auto;
+/* advanced settings: microphone rows on the same plates as the checkbox rows */
+.castle-menu-item-checkbox.castle-menu-voice-key {
+  width: 90cqw;
+  font: 5.6cqw / 1.25 'DejaVuSans', sans-serif;
+}
+
+.castle-menu-item-checkbox.castle-menu-voice-key > div:first-child {
+  white-space: nowrap;
+}
+
+.castle-menu-item-checkbox.castle-menu-voice-key .castle-keybinding-input {
+  width: 42%;
+  height: 7cqw;
+  font-size: 4.6cqw;
+  border-radius: 2cqw;
+}
+
+/* castle settings: same box as the voice hotkeys, text left-aligned */
+.castle-menu-voice-key .voice-mic-select--castle {
+  padding: 0 1.2cqh;
+  text-align: left;
+}
+
+.voice-mic-select--castle option {
+  background: #0d3f3d;
+  color: #ffe5b7;
+}
+
+/* level fill under the button caption */
+.voice-mic-test-btn {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 0.8cqh;
-  width: 22cqh;
-}
-
-.castle-menu-voice-key .voice-mic-select,
-.castle-menu-voice-key .voice-mic-test {
-  width: 45%;
-}
-
-.voice-mic-test .voice-mic-test-btn {
-  flex: 0 0 auto;
-  width: auto;
-  min-width: 7cqh;
-  padding: 0 1cqh;
-  line-height: 3cqh;
+  justify-content: center;
   cursor: var(--cursor-pointer);
-}
-
-.voice-mic-meter {
-  flex: 1 1 auto;
-  height: 1.2cqh;
-  border-radius: 0.6cqh;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.45);
-  box-shadow: inset 0 0.2cqh 0.3cqh rgba(0, 0, 0, 0.6), 0 0.1cqh 0.1cqh rgba(255, 255, 255, 0.2);
+  user-select: none;
 }
 
 .voice-mic-meter-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
   width: 0%;
-  height: 100%;
-  background: linear-gradient(90deg, #3fae5c, #9ccf4f 60%, #e2c44f 85%, #e0603c);
+  background: linear-gradient(90deg, rgba(63, 174, 92, 0.75), rgba(156, 207, 79, 0.75) 60%, rgba(226, 196, 79, 0.8) 85%, rgba(224, 96, 60, 0.85));
   transition: width 0.05s linear;
+  pointer-events: none;
+}
+
+.voice-mic-test-caption {
+  position: relative;
 }
 
 /* ---------------------------------------------------------------- Menus: buttons and sliders as in Battle settings */
