@@ -4616,7 +4616,7 @@
         },
         {
           "mesh": "doct/terrain_far_01.bin",
-          "indexCount": 1416,
+          "indexCount": 2736,
           "shader": "shader_pos_color_uv_hills",
           "texture": "doct4179",
           "tintColor": [0.62, 0.68, 0.78, 1],
@@ -4624,14 +4624,14 @@
         },
         {
           "mesh": "doct/rocks_far_01.bin",
-          "indexCount": 15822,
+          "indexCount": 3141,
           "shader": "shader_pos_tangent16_norm_uv16_uv",
           "texture": "doct4238",
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         },
         {
           "mesh": "doct/trees_far_01.bin",
-          "indexCount": 8304,
+          "indexCount": 2934,
           "shader": "shader_pos_norm_uv16_uv_ak_wind",
           "texture": "doct4050",
           "transform": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
