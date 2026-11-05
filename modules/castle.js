@@ -2659,12 +2659,14 @@ export class Castle {
   // Ночное небо и отражение неба в воде (shader_pos_uv_sky, shader_pos_water_reflect).
   // starBrightness — множитель звёзд; waterReflect — сила отражения неба в воде (у скользящих
   // лучей она растёт сама, см. fresnel в шейдере); waterStarGain — насколько звёзды в
-  // отражении ярче звёзд самого неба (у воды свой множитель: отражённое поле тусклее прямого).
+  // отражении ярче звёзд самого неба (у воды свой множитель: отражённое поле тусклее прямого,
+  // и площадка блоба в отражении меньше — с WATER_STAR_SIZE 1.0 этот множитель держит
+  // суммарный свет бликов на уровне прежнего при 3.0: замер суммы пиков 15.4k ↔ 15.5k).
   static starBrightness = 1.0;
 
   static waterReflect = 0.85;
 
-  static waterStarGain = 3.0;
+  static waterStarGain = 9.0;
 
   // мировая позиция камеры кадра (из invert(viewMatrix2), см. updateMainCam)
   static camMat = mat4.create();
