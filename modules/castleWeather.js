@@ -17,6 +17,14 @@ import * as mat4 from './glMatrix/mat4.js';
 // Фаза падения — накопленный путь (travel, метры), а не «скорость × время сцены»: произведение
 // при смене скорости или fov перематывало бы узор на тысячи ячеек за кадр.
 //
+// Толщина среза слоя — `slabSamples` (weather3.z): сколько точек луча фрагмента опрашивается на
+// слой. 1 = слой плоский, капля живёт ~одну ячейку по глубине (у дождя ~1,3 кадра — картинка
+// «кипит»); >1 = слой превращается в плиту, жизнь капли и число кадров без смены узора растут
+// пропорционально, цена прохода — тоже. Второе плечо — `yStretch` (weather3.w): плотность
+// решётки по мировой вертикали ниже горизонтальной, ячейка растянута вдоль падения — капля
+// живёт дольше БЕЗ лишних выборок. Подбор чисел — измерением, см.
+// `pw-launcher-edit/references/castle-weather-measure.md`.
+//
 // Смена эффекта — фейд по прозрачности, расписание — по реальным часам игрока (см. schedule).
 export class CastleWeather {
   static MESH_RE = /^weather_/;
@@ -57,7 +65,7 @@ export class CastleWeather {
   // и DEPTH_TEST (включён в прозрачном проходе) его не отсекает.
   static NDC_Z = -0.995;
 
-  static KEYS = ['speed', 'tail', 'density', 'jitter', 'tilt', 'size', 'depthNear', 'depthFar', 'layers', 'farFade', 'alpha', 'presence'];
+  static KEYS = ['speed', 'tail', 'density', 'jitter', 'tilt', 'size', 'depthNear', 'depthFar', 'layers', 'farFade', 'alpha', 'presence', 'slabSamples', 'yStretch'];
 
   // Все размеры и скорости — мировые метры: частица в 2 см остаётся 2 см при любом зуме,
   // а на экране её размер задаётся дистанцией слоя.
@@ -77,12 +85,14 @@ export class CastleWeather {
       layers: 6,
       farFade: 0.35, // дальний слой бледнее ближнего в 3 раза
       presence: 0.42, // доля ячеек с частицей
+      slabSamples: 1, // снег и так живёт ~6 кадров — плоский срез его не шумит
+      yStretch: 1,
     },
     // дождь: тонкие отвесные полосы, летят быстрее, прозрачнее и холоднее по цвету
     rain: {
       color: [0.72, 0.78, 0.86],
-      alpha: 0.375,
-      speed: 9.0,
+      alpha: 0.19,
+      speed: 6.0,
       tail: 0.35, // м — длина полосы
       density: 5.4,
       jitter: 0.3,
@@ -93,6 +103,14 @@ export class CastleWeather {
       layers: 6,
       farFade: 0.45,
       presence: 0.42,
+      // Толщина среза слоя: сколько точек ЛУЧА опрашивается на слой (1 = прежняя плоскость).
+      // При 1 капля живёт ~1,3 кадра и осадок «кипит»; 3 — втрое дольше ценой втрое больше
+      // работы шейдера на слой. Подобрано измерением (rainmetric/rainport в скиле):
+      // независимость узора от кадра к кадру 0,80 → 0,41 при том же количестве дождя.
+      slabSamples: 3,
+      // Плотность решётки по мировой вертикали относительно горизонтальной: <1 растягивает
+      // ячейку вдоль падения (капля живёт дольше) без удорожания выборки.
+      yStretch: 0.5,
     },
   };
 
@@ -357,10 +375,12 @@ export class CastleWeather {
   // пройденного каплями пути: (camW - V*travel)*cell. Разложение — В float64 (здесь), а не
   // в шейдере: при travel в десятки километров произведение дорастает до ~1e6 и float32
   // перестаёт различать доли ячейки — узор начинает дрожать на пиксель и больше.
+  // cell — вектор (x, y, z) ячеек на метр: по мировой вертикали плотность может отличаться
+  // (yStretch в пресете), и тогда фаза по Y идёт в своём шаге.
   static latticeAnchor(camToWorld, travel, cell, outInt, outFrac) {
     const V = CastleWeather.snowV;
     for (let k = 0; k < 3; k++) {
-      const s = (camToWorld[12 + k] - V[k] * travel) * cell;
+      const s = (camToWorld[12 + k] - V[k] * travel) * cell[k];
       const i = Math.floor(s);
       outInt[k] = i;
       outFrac[k] = s - i;
@@ -383,8 +403,11 @@ export class CastleWeather {
     CastleWeather.fullscreenTransform(castle);
     const fall = CastleWeather.fallVec(p.tilt, castle.windDirXY);
     const cell = Math.max(p.density, 0.01);
+    // ячейка может быть растянута вдоль мировой вертикали (=направление падения): тот же узор
+    // по горизонтали, но капля живёт в срезе слоя дольше
+    const cellVec = [cell, cell * Math.max(p.yStretch || 1, 0.01), cell];
     const aInt = [0, 0, 0], aFrac = [0, 0, 0];
-    CastleWeather.latticeAnchor(CastleWeather._camToWorld, CastleWeather.travel, cell, aInt, aFrac);
+    CastleWeather.latticeAnchor(CastleWeather._camToWorld, CastleWeather.travel, cellVec, aInt, aFrac);
 
     const gate = (CastleWeather.enabled ? 1 : 0) * CastleWeather.fade;
     const light = CastleWeather.NIGHT_FLOOR + (1 - CastleWeather.NIGHT_FLOOR) * (castle.daylight ?? 1);
@@ -405,8 +428,8 @@ export class CastleWeather {
       const w3 = obj.weather3;
       w3[0] = p.layers;
       w3[1] = p.farFade;
-      w3[2] = 0;
-      w3[3] = 0;
+      w3[2] = Math.max(p.slabSamples || 1, 1); // выборок вдоль луча внутри слоя (толщина среза)
+      w3[3] = p.yStretch || 1; // множитель плотности решётки по мировой вертикали
       const w4 = obj.weather4;
       w4[0] = fall[0];
       w4[1] = fall[1];
