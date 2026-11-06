@@ -32,11 +32,18 @@ export class Settings {
     voiceVolume: 1.0,
     language: 'ru',
     novoice: false,
+    /** «Выключить войс»: никто не может позвонить, сам не звонит, микрофон не открывается. */
+    voiceOff: false,
     voiceOverlay: true,
     voiceOverlayPos: null,
     voiceRadioMode: false,
     voiceToggleHotkey: ['CTRL', 'Z'],
     voiceDropHotkey: ['CTRL', 'K'],
+    /** Клавиша рации (режим «Рация»). Совпадает с voiceToggleHotkey — рация на ней, как было до
+     *  отдельной клавиши; иначе voiceToggleHotkey в рации — мьют, который блокирует рацию. */
+    voicePttHotkey: ['CTRL', 'Z'],
+    /** Задержка отпускания рации, мс (как в Discord: 0..2000, по умолчанию 20). */
+    voicePttReleaseMs: 20,
     /** Микрофон войса: deviceId и имя устройства; '' — устройство записи Windows по умолчанию. */
     voiceMicDevice: '',
     voiceMicLabel: '',

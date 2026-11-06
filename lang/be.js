@@ -80,7 +80,6 @@ export const be = {
     buildHeroRating: 'Рэйтынг героя',
     menu: 'Мяню',
     preferences: 'Прылады',
-    advancedSettings: 'Дад. налады',
     windowMode: 'Аконны рэжым',
     threeD: '3D графіка',
     dayNight: 'Змена дня і ночы',

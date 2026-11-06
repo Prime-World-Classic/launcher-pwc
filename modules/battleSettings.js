@@ -132,6 +132,7 @@ const PAGES = {
     { type: 'key', command: 'voice_overlay_unlock_on', label: 'bsKeyVoiceOverlayUnlock' },
     // голосовая связь лаунчера (те же клавиши — в «Настройках замка»)
     { type: 'launcherKey', settingKey: 'voiceToggleHotkey', label: 'voiceEnableToggle' },
+    { type: 'launcherKey', settingKey: 'voicePttHotkey', label: 'voicePttKey', allowMouse: true },
     { type: 'launcherKey', settingKey: 'voiceDropHotkey', label: 'voiceDropCalls' },
     { type: 'launcherMic' },
   ],
@@ -248,16 +249,38 @@ function parseWheelItems(text, valid) {
 
 // ---------------------------------------------------------------- элементы
 
+const KEY_LABELS = { MOUSE4: 'Mouse 4', MOUSE5: 'Mouse 5', CAPITAL: 'CapsLock' };
+
 function formatKeys(keys) {
-  return keys && keys.length ? keys.filter(Boolean).join(' + ') : '';
+  return keys && keys.length ? keys.filter(Boolean).map((k) => KEY_LABELS[k] || k).join(' + ') : '';
 }
 
-// поле клавиши: щёлкнуть и нажать клавишу (Backspace — очистить, Esc/Enter — выйти)
-function keyInput(getKeys, setKeys, { style = 'bs-key', noBareModifier = false } = {}) {
+// поле клавиши: щёлкнуть и нажать клавишу (Backspace — очистить, Esc/Enter — выйти);
+// allowMouse — ещё и боковые кнопки мыши (MOUSE4/MOUSE5, для рации, как в Discord)
+function keyInput(getKeys, setKeys, { style = 'bs-key', noBareModifier = false, allowMouse = false } = {}) {
   const input = DOM({ tag: 'input', style, readOnly: true });
   const refresh = () => {
     input.value = formatKeys(getKeys());
   };
+  if (allowMouse) {
+    input.addEventListener('mousedown', (e) => {
+      const button = { 3: 'MOUSE4', 4: 'MOUSE5' }[e.button];
+      if (!button || document.activeElement !== input) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const keys = [];
+      if (e.ctrlKey) keys.push('CTRL');
+      if (e.altKey) keys.push('ALT');
+      if (e.shiftKey) keys.push('SHIFT');
+      keys.push(button);
+      setKeys(keys);
+      refresh();
+    });
+    // «назад/вперёд» мыши не должны листать страницу, пока назначаем кнопку
+    input.addEventListener('mouseup', (e) => {
+      if (e.button === 3 || e.button === 4) e.preventDefault();
+    });
+  }
   input.addEventListener(
     'keydown',
     (e) => {
@@ -288,7 +311,7 @@ function keyInput(getKeys, setKeys, { style = 'bs-key', noBareModifier = false }
 
 // клавиша голосовой связи лаунчера (Settings.voiceToggleHotkey / voiceDropHotkey): сохраняется сразу,
 // пока поле в фокусе, глобальные клавиши войса сняты, чтобы нажатие не включало их
-export function voiceHotkeyInput(settingKey, style = 'bs-key') {
+export function voiceHotkeyInput(settingKey, style = 'bs-key', { allowMouse = false } = {}) {
   const input = keyInput(
     () => (Array.isArray(Settings.settings?.[settingKey]) ? Settings.settings[settingKey] : []),
     async (keys) => {
@@ -296,7 +319,7 @@ export function voiceHotkeyInput(settingKey, style = 'bs-key') {
       await Settings.WriteSettings();
       Voice.updateInfoPanel?.();
     },
-    { style, noBareModifier: true },
+    { style, noBareModifier: true, allowMouse },
   );
   input.addEventListener('focus', () => NativeAPI.unregisterVoiceHotkeys?.());
   input.addEventListener('blur', () => NativeAPI.refreshVoiceHotkeys?.());
@@ -626,7 +649,7 @@ function buildRowsPage(rowsDesc, ctx) {
         page.append(row(Lang.text(desc.label), bindKeyInput(desc.command, null, () => saveKeybinds())));
         break;
       case 'launcherKey':
-        page.append(row(Lang.text(desc.label), voiceHotkeyInput(desc.settingKey)));
+        page.append(row(Lang.text(desc.label), voiceHotkeyInput(desc.settingKey, 'bs-key', { allowMouse: Boolean(desc.allowMouse) })));
         break;
       case 'launcherMic': {
         // микрофон голосовой связи лаунчера (тот же выбор — в «Настройках замка»)
@@ -1170,14 +1193,16 @@ export async function battleSettings() {
   return root;
 }
 
-// ---------------------------------------------------------------- «Доп. настройки» замка
+/// ---------------------------------------------------------------- «Настройки замка»
 
 // Тот же вид, что у «Настроек боя» (вкладки слева, разделы с заголовками, пояснения под пунктами),
 // но значения — настройки лаунчера (Settings.settings), а не user.cfg игры. Применяются сразу.
-// type: header | note | setting (галочка: get/set) | launcherKey | launcherMic;
-// dep — список id галочек, без которых пункт недоступен.
+// type: header | note | setting (галочка: get/set) | volumes (ползунки громкости сеткой) |
+// language | launcherKey | launcherMic;
+// dep — список id галочек, без которых пункт недоступен ('!id' — доступен, пока галочка снята).
 const S = () => Settings.settings;
-const ADVANCED_PAGES = {
+const applyAudio = () => Settings.ApplySettings({ render: false, window: false });
+const CASTLE_PAGES = {
   castle: [
     { type: 'header', label: 'advHdrScreen' },
     {
@@ -1225,47 +1250,163 @@ const ADVANCED_PAGES = {
     // выкл — нет ни слоя осадков, ни затемнения света/усиления ветра под погодой
     { type: 'setting', id: 'weather', label: 'weather', get: () => S().weather !== false, set: (on) => (S().weather = on) },
     { type: 'note', label: 'advNoteWeather' },
+  ],
+  sound: [
+    { type: 'header', label: 'advHdrVolume' },
+    {
+      type: 'volumes',
+      items: [
+        { key: 'globalVolume', label: 'volume', def: 0.5, apply: applyAudio },
+        { key: 'musicVolume', label: 'volumeMusic', def: 0.5, apply: applyAudio },
+        // звуки — с пробным звуком, чтобы слышать громкость (как было в старом окне)
+        { key: 'soundsVolume', label: 'volumeSound', def: 0.2, apply: (v, ctx) => (applyAudio(), ctx.onSoundTest?.()) },
+        { key: 'voiceVolume', label: 'voiceVolume', def: 1, apply: (v) => Voice.setVolumeLevel(v) },
+      ],
+    },
+  ],
+  interface: [
     { type: 'header', label: 'advHdrInterface' },
     // вкл — все режимы видны у «В бой», выкл — меню по наведению на круг режима
     { type: 'setting', id: 'castleModesWings', label: 'castleModesWings', get: () => S().castleModesWings === true, set: (on, ctx) => ((S().castleModesWings = on), ctx.onModesWings?.()) },
     { type: 'note', label: 'advNoteModesWings' },
+    { type: 'language' },
   ],
   voice: [
     { type: 'header', label: 'voiceHotkeys' },
-    { type: 'setting', id: 'novoice', label: 'voiceEnabled', get: () => Boolean(S().novoice), set: (on) => Voice.setMutedAll(on) },
+    // никто не может позвонить, сам не звонит (Voice.setVoiceOff); остальные пункты войса — серые
+    { type: 'setting', id: 'voiceOff', label: 'voiceOff', get: () => S().voiceOff === true, set: (on) => Voice.setVoiceOff(on) },
+    { type: 'note', label: 'advNoteVoiceOff' },
+    { type: 'setting', id: 'novoice', label: 'voiceEnabled', dep: ['!voiceOff'], get: () => Boolean(S().novoice), set: (on) => Voice.setMutedAll(on) },
     { type: 'note', label: 'advNoteMuteAll' },
-    { type: 'setting', id: 'voiceOverlay', label: 'voiceOverlay', get: () => S().voiceOverlay !== false, set: (on) => (S().voiceOverlay = on) },
+    { type: 'setting', id: 'voiceOverlay', label: 'voiceOverlay', dep: ['!voiceOff'], get: () => S().voiceOverlay !== false, set: (on) => (S().voiceOverlay = on) },
     { type: 'note', label: 'advNoteVoiceOverlay' },
-    { type: 'setting', id: 'voiceRadioMode', label: 'voiceRadioMode', get: () => Boolean(S().voiceRadioMode), set: (on) => Voice.setRadioMode(on) },
-    { type: 'note', label: 'advNoteRadioMode' },
+    // режим ввода, как в Discord: голосовая активация (микрофон по Вкл/выкл) или рация
+    {
+      type: 'choice',
+      id: 'voiceRadioMode',
+      label: 'voiceInputMode',
+      dep: ['!voiceOff'],
+      options: [
+        { value: false, label: 'voiceInputVoice' },
+        { value: true, label: 'voiceInputPtt' },
+      ],
+      get: () => Boolean(S().voiceRadioMode),
+      set: (value) => {
+        Voice.setRadioMode(value);
+        NativeAPI.refreshVoiceHotkeys?.();
+      },
+    },
+    { type: 'note', label: 'advNoteInputMode' },
     { type: 'header', label: 'advHdrVoiceKeys' },
     { type: 'launcherKey', settingKey: 'voiceToggleHotkey', label: 'voiceEnableToggle' },
+    { type: 'launcherKey', settingKey: 'voicePttHotkey', label: 'voicePttKey', allowMouse: true, dep: ['voiceRadioMode'] },
+    {
+      type: 'number',
+      id: 'voicePttReleaseMs',
+      label: 'voicePttRelease',
+      dep: ['voiceRadioMode'],
+      min: 0,
+      max: 2000,
+      steps: 201,
+      unit: 'voiceMs',
+      get: () => Voice.getPttReleaseMs(),
+      set: (v) => (S().voicePttReleaseMs = Math.round(v)),
+    },
+    { type: 'note', label: 'advNotePttKeys' },
     { type: 'launcherKey', settingKey: 'voiceDropHotkey', label: 'voiceDropCalls' },
     { type: 'header', label: 'voiceMic' },
     { type: 'launcherMic' },
   ],
 };
 
-const ADVANCED_CATEGORIES = [
+const CASTLE_CATEGORIES = [
   { id: 'castle', label: 'advCatCastle' },
+  { id: 'sound', label: 'advCatSound' },
+  { id: 'interface', label: 'advCatInterface' },
   { id: 'voice', label: 'advCatVoice' },
 ];
 
-let shownAdvancedCategory = 'castle';
+let shownCastleCategory = 'castle';
 
-function buildAdvancedPage(rowsDesc, ctx) {
+// громкость лаунчера 0..1 (Settings.settings[key]) — сеткой, как «Звук» в «Настройках боя»
+function castleVolume(item, ctx) {
+  const raw = Number(S()[item.key]);
+  const value = Math.min(1, Math.max(0, Number.isFinite(raw) ? raw : item.def));
+  const text = DOM({ style: 'bs-value' }, `${Math.round(value * 100)}%`);
+  const el = slider({
+    value,
+    min: 0,
+    max: 1,
+    steps: 101,
+    onInput: (v) => {
+      S()[item.key] = v;
+      text.textContent = `${Math.round(v * 100)}%`;
+      item.apply(v, ctx);
+    },
+  });
+  return DOM({ style: 'bs-field' }, DOM({ style: 'bs-field-label' }, Lang.text(item.label)), DOM({ style: 'bs-slider-box' }, el, text));
+}
+
+function buildCastlePage(rowsDesc, ctx) {
   const page = DOM({ style: 'bs-page' });
   const checks = new Map();
   const dependents = [];
   const updateEnabled = () => {
     for (const d of dependents) {
-      const enabled = d.dep.every((id) => checks.get(id) !== false);
+      const enabled = d.dep.every((id) => (id.startsWith('!') ? checks.get(id.slice(1)) !== true : checks.get(id) !== false));
       d.element.classList.toggle('is-disabled', !enabled);
-      d.box.disabled = !enabled;
+      for (const control of d.controls) control.disabled = !enabled;
+      if (d.box) d.box.disabled = !enabled;
     }
   };
+  const addDependent = (desc, element, ...controls) => {
+    if (desc.dep) dependents.push({ dep: desc.dep, element, controls });
+  };
   for (const desc of rowsDesc) {
-    if (desc.type === 'setting') {
+    if (desc.type === 'choice') {
+      // выпадающий список (режим ввода войса); для dep — как галочка: true/false
+      checks.set(desc.id, desc.get());
+      const select = DOM({ tag: 'select', style: ['bs-key', 'bs-select'], domaudio: domAudioPresets.defaultSelect });
+      desc.options.forEach((option, index) => {
+        const element = DOM({ tag: 'option' }, Lang.text(option.label));
+        element.value = String(index);
+        select.append(element);
+      });
+      select.value = String(Math.max(0, desc.options.findIndex((o) => o.value === desc.get())));
+      select.addEventListener('change', () => {
+        const value = desc.options[Number(select.value)]?.value;
+        checks.set(desc.id, value);
+        desc.set(value, ctx);
+        updateEnabled();
+      });
+      const element = row(Lang.text(desc.label), select);
+      page.append(element);
+      addDependent(desc, element, select);
+    } else if (desc.type === 'launcherKey') {
+      const input = voiceHotkeyInput(desc.settingKey, 'bs-key', { allowMouse: Boolean(desc.allowMouse) });
+      const element = row(Lang.text(desc.label), input);
+      page.append(element);
+      addDependent(desc, element, input);
+    } else if (desc.type === 'number') {
+      // ползунок с числом (задержка отпускания рации, мс)
+      const text = DOM({ style: 'bs-value' }, `${desc.get()} ${Lang.text(desc.unit)}`);
+      const el = slider({
+        value: desc.get(),
+        min: desc.min,
+        max: desc.max,
+        steps: desc.steps,
+        onInput: (v) => {
+          text.textContent = `${Math.round(v)} ${Lang.text(desc.unit)}`;
+        },
+        onChange: async (v) => {
+          desc.set(v, ctx);
+          await Settings.WriteSettings();
+        },
+      });
+      const element = row(Lang.text(desc.label), DOM({ style: 'bs-slider-box' }, el, text));
+      page.append(element);
+      addDependent(desc, element, el);
+    } else if (desc.type === 'setting') {
       checks.set(desc.id, desc.get());
       const box = checkbox(desc.get(), (checked) => {
         checks.set(desc.id, checked);
@@ -1278,7 +1419,14 @@ function buildAdvancedPage(rowsDesc, ctx) {
       });
       const element = DOM({ style: ['bs-row', 'bs-row--check'] }, box, label);
       page.append(element);
-      if (desc.dep) dependents.push({ dep: desc.dep, element, box });
+      addDependent(desc, element, box);
+    } else if (desc.type === 'volumes') {
+      page.append(DOM({ style: 'bs-grid' }, ...desc.items.map((item) => castleVolume(item, ctx))));
+    } else if (desc.type === 'language') {
+      // язык лаунчера: по нажатию — следующий (Lang.toggle), окно перерисовывается на новом языке
+      const name = Lang.list?.[Lang.target]?.name || Lang.target;
+      const control = DOM({ style: ['bs-key', 'bs-lang-button'], domaudio: domAudioPresets.defaultButton, event: ['click', () => ctx.onLanguage?.()] }, name);
+      page.append(row(Lang.text('language'), control));
     } else {
       // header, note, launcherKey, launcherMic — как на страницах «Настроек боя»
       page.append(...buildRowsPage([desc], ctx).childNodes);
@@ -1288,24 +1436,26 @@ function buildAdvancedPage(rowsDesc, ctx) {
   return page;
 }
 
-// onBack — «Назад» (в «Настройки замка»); onModesWings — перерисовать режимы у «В бой»
-export function advancedSettings({ onBack, onModesWings } = {}) {
+// «Назад» — в меню замка. Хуки из window.js (там Castle, звуки и перерисовка экранов):
+// onModesWings — перерисовать режимы у «В бой»; onSoundTest — пробный звук при смене громкости
+// звуков; onLanguage — сменить язык и открыть окно заново.
+export function castleSettings({ onBack, onModesWings, onSoundTest, onLanguage } = {}) {
   NativeAPI.unregisterVoiceHotkeys?.();
-  const ctx = { onModesWings };
+  const ctx = { onModesWings, onSoundTest, onLanguage };
   const content = DOM({ style: ['bs-content', 'wtop-list-scroll'] });
   const footer = DOM({ style: 'bs-footer' });
   const sidebar = DOM({ style: 'bs-sidebar' });
   const catButtons = new Map();
 
   const show = (id) => {
-    shownAdvancedCategory = id;
+    shownCastleCategory = id;
     for (const [cid, el] of catButtons) el.classList.toggle('is-active', cid === id);
-    content.replaceChildren(buildAdvancedPage(ADVANCED_PAGES[id], ctx));
+    content.replaceChildren(buildCastlePage(CASTLE_PAGES[id], ctx));
     content.scrollTop = 0;
     footer.replaceChildren(button(Lang.text('back'), () => (onBack ? onBack() : root.requestClose?.()), true));
   };
 
-  for (const cat of ADVANCED_CATEGORIES) {
+  for (const cat of CASTLE_CATEGORIES) {
     const el = DOM(
       {
         domaudio: domAudioPresets.bigButton,
@@ -1320,12 +1470,12 @@ export function advancedSettings({ onBack, onModesWings } = {}) {
 
   // id окна — как у «Настроек боя»: весь вид (#wbattle-settings в main.css) общий
   const root = DOM(
-    { id: 'wbattle-settings', style: ['wcastle-menu--quest-bg', 'wadvanced-settings'] },
-    DOM({ style: 'title-modal' }, DOM({ style: 'title-modal-text' }, Lang.text('advancedSettings'))),
+    { id: 'wbattle-settings', style: ['wcastle-menu--quest-bg', 'wcastle-settings'] },
+    DOM({ style: 'title-modal' }, DOM({ style: 'title-modal-text' }, Lang.text('preferences'))),
     DOM({ style: 'bs-body' }, sidebar, DOM({ style: 'bs-main' }, content, footer)),
   );
   root.cleanup = () => NativeAPI.refreshVoiceHotkeys?.();
 
-  show(ADVANCED_PAGES[shownAdvancedCategory] ? shownAdvancedCategory : 'castle');
+  show(CASTLE_PAGES[shownCastleCategory] ? shownCastleCategory : 'castle');
   return root;
 }

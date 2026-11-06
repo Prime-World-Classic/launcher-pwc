@@ -22,7 +22,7 @@ import { UiTooltip } from './uiTooltip.js';
 
 // windows
 import { keybindings } from './keybindings/keybindings.window.js';
-import { battleSettings, advancedSettings, voiceHotkeyInput } from './battleSettings.js';
+import { battleSettings, castleSettings } from './battleSettings.js';
 import { fair } from './fair.js';
 import { PWGame } from './pwgame.js';
 import { CastleNAVBAR } from './castleNavBar.js';
@@ -31,7 +31,7 @@ export class Window {
   static windows = {};
   static windowOrder = [];
   static overlayWindowIds = new Set(['wquest', 'wbuild', 'wtop', 'wshop', 'wfair', 'wgame', 'wsteamauth', 'wyandexauth', 'wregistration-fraction', 'wally-build', 'wplayer-build']);
-  static overlayWindowMethods = new Set(['menu', 'settings', 'battleSettings', 'advancedSettings', 'keybindings', 'accountPanel', 'support']);
+  static overlayWindowMethods = new Set(['menu', 'settings', 'battleSettings', 'keybindings', 'accountPanel', 'support']);
   static async show(category, method, value, value2, value3) {
     if (!(method in Window)) {
       return;
@@ -1289,227 +1289,27 @@ export class Window {
     );
   }
 
+  // «Настройки замка»: вид как у «Настроек боя» (battleSettings.js, castleSettings), значения —
+  // настройки лаунчера. Бывшие «Доп. настройки» — вкладки этого окна.
   static async settings() {
-    let soundTestId = 'sound_test';
-	
-	 setTimeout(() => {
-          const sliders = document.querySelectorAll('.castle-menu-slider');
-          sliders.forEach(slider => {
-              Window.updateSliderFill(slider);
-          });
-      }, 0);
-
-	
-    return DOM(
-      { id: 'wcastle-menu', style: ['wcastle-menu--quest-bg', 'wcastle-menu--settings-shade'] },
-      DOM({style: 'title-modal'}, DOM({style: 'title-modal-text'}, Lang.text('preferences'))),
-      DOM(
-        { style: 'castle-menu-items' },
-        DOM(
-          { style: 'castle-menu-label' },
-          Lang.text('volume'),
-          DOM({
-            tag: 'input',
-            domaudio: domAudioPresets.defaultButton,
-            type: 'range',
-            value: Settings.settings.globalVolume * 100,
-            min: '0',
-            max: '100',
-            step: '1',
-            style: 'castle-menu-slider',
-            event: [
-              'input',
-              (e) => {
-                Settings.settings.globalVolume = parseFloat(e.target.value) / 100;
-                Settings.ApplySettings({ render: false, window: false });
-
-                document.getElementById('global-volume-percentage').textContent = `${Math.round(Settings.settings.globalVolume * 100)}%`;
-				Window.updateSliderFill(e.target);
-              },
-            ],
-          }),
-          DOM(
-            {
-              tag: 'span',
-              id: 'global-volume-percentage',
-              style: 'volume-percentage',
-            },
-            `${Math.round(Settings.settings.globalVolume * 100)}%`,
-          ),
-        ),
-        DOM(
-          { style: 'castle-menu-label' },
-          Lang.text('volumeMusic'),
-          DOM({
-            tag: 'input',
-            domaudio: domAudioPresets.defaultButton,
-            type: 'range',
-            value: Settings.settings.musicVolume * 100,
-            min: '0',
-            max: '100',
-            step: '1',
-            style: 'castle-menu-slider',
-            event: [
-              'input',
-              (e) => {
-                Settings.settings.musicVolume = parseFloat(e.target.value) / 100;
-                Settings.ApplySettings({ render: false, window: false });
-
-                document.getElementById('music-volume-percentage').textContent = `${Math.round(Settings.settings.musicVolume * 100)}%`;
-				Window.updateSliderFill(e.target);
-              },
-            ],
-          }),
-          DOM(
-            {
-              tag: 'span',
-              id: 'music-volume-percentage',
-              style: 'volume-percentage',
-            },
-            `${Math.round(Settings.settings.musicVolume * 100)}%`,
-          ),
-        ),
-        DOM(
-          { style: 'castle-menu-label' },
-          Lang.text('volumeSound'),
-          DOM({
-            tag: 'input',
-            domaudio: domAudioPresets.defaultButton,
-            type: 'range',
-            value: Settings.settings.soundsVolume * 100,
-            min: '0',
-            max: '100',
-            step: '1',
-            style: 'castle-menu-slider',
-            event: [
-              'input',
-              (e) => {
-                Settings.settings.soundsVolume = parseFloat(e.target.value) / 100;
-                Settings.ApplySettings({ render: false, window: false });
-
-                if (!Castle.testSoundIsPlaying) {
-                  Castle.testSoundIsPlaying = true;
-                  Sound.play(
-                    SOUNDS_LIBRARY.MM_FOUND,
-                    {
-                      id: soundTestId,
-                      volume: Castle.GetVolume(Castle.AUDIO_SOUNDS),
-                    },
-                    () => {
-                      Castle.testSoundIsPlaying = false;
-                    },
-                  );
-                }
-
-                document.getElementById('sounds-volume-percentage').textContent = `${Math.round(Settings.settings.soundsVolume * 100)}%`;
-				Window.updateSliderFill(e.target);
-              },
-            ],
-          }),
-          DOM(
-            {
-              tag: 'span',
-              id: 'sounds-volume-percentage',
-              style: 'volume-percentage',
-            },
-            `${Math.round(Settings.settings.soundsVolume * 100)}%`,
-          ),
-        ),
-        DOM(
-          { style: 'castle-menu-label' },
-          Lang.text('voiceVolume'),
-          DOM({
-            tag: 'input',
-            domaudio: domAudioPresets.defaultButton,
-            type: 'range',
-            id: 'voice-volume-slider',
-            value: Math.round((Number(Settings.settings.voiceVolume) || 1) * 100),
-            min: '0',
-            max: '100',
-            step: '1',
-            style: 'castle-menu-slider',
-            event: [
-              'input',
-              (e) => {
-                Settings.settings.voiceVolume = parseFloat(e.target.value) / 100;
-                Voice.setVolumeLevel(Settings.settings.voiceVolume);
-                document.getElementById('voice-volume-percentage').textContent = `${Math.round(Settings.settings.voiceVolume * 100)}%`;
-                Window.updateSliderFill(e.target);
-              },
-            ],
-          }),
-          DOM(
-            {
-              tag: 'span',
-              id: 'voice-volume-percentage',
-              style: 'volume-percentage',
-            },
-            `${Math.round((Number(Settings.settings.voiceVolume) || 1) * 100)}%`,
-          ),
-        ),
-        // клавиши голосовой связи лаунчера (те же — в «Настройках боя» → «Общение»)
-        DOM({ style: 'castle-menu-section-title' }, Lang.text('voiceHotkeys')),
-        DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceEnableToggle')), voiceHotkeyInput('voiceToggleHotkey', 'castle-keybinding-input')),
-        DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceDropCalls')), voiceHotkeyInput('voiceDropHotkey', 'castle-keybinding-input')),
-        DOM(
-          {
-            style: 'castle-menu-item-button',
-            domaudio: domAudioPresets.defaultButton,
-            event: [
-              'click',
-              () => {
-                Window.show('main', 'advancedSettings');
-              },
-            ],
-          },
-          Lang.text('advancedSettings'),
-        ),
-        DOM(
-          {
-            style: 'castle-menu-item-button',
-            domaudio: domAudioPresets.defaultButton,
-            event: [
-              'click',
-              async (e) => {
-                const oldLanguage = Lang.target;
-                Lang.toggle();
-                Settings.settings.language = Lang.target;
-                App.error(`${Lang.text('LangTarg')}: ${Lang.list[oldLanguage].name} → ${Lang.list[Lang.target].name}`);
-                await Lang.reinitViews();
-                await Window.show('main', 'settings');
-              },
-            ],
-          },
-          `${Lang.text('language')} (${Lang.target})`,
-        ),
-        // Кнопка "Назад"
-        DOM({ style: 'wcastle-menu__exit-separator' }),
-        DOM(
-          {
-            domaudio: domAudioPresets.bigButton,
-            style: ['castle-menu-item-button', 'castle-menu-item-button--red'],
-            event: [
-              'click',
-              () => {
-                Window.show('main', 'menu');
-              },
-            ],
-          },
-          Lang.text('back'),
-        ),
-        /*,
-				
-				DOM({ style: 'castle-menu-label-description' }, Lang.text('soundHelp'))
-				*/
-      ),
-    );
-  }
-
-  // «Доп. настройки»: вид как у «Настроек боя» (battleSettings.js), значения — настройки лаунчера
-  static async advancedSettings() {
-    return advancedSettings({
-      onBack: () => Window.show('main', 'settings'),
+    return castleSettings({
+      onBack: () => Window.show('main', 'menu'),
       onModesWings: () => CastleNAVBAR.applyModeView(),
+      onSoundTest: () => {
+        if (Castle.testSoundIsPlaying) return;
+        Castle.testSoundIsPlaying = true;
+        Sound.play(SOUNDS_LIBRARY.MM_FOUND, { id: 'sound_test', volume: Castle.GetVolume(Castle.AUDIO_SOUNDS) }, () => {
+          Castle.testSoundIsPlaying = false;
+        });
+      },
+      onLanguage: async () => {
+        const oldLanguage = Lang.target;
+        Lang.toggle();
+        Settings.settings.language = Lang.target;
+        App.error(`${Lang.text('LangTarg')}: ${Lang.list[oldLanguage].name} → ${Lang.list[Lang.target].name}`);
+        await Lang.reinitViews();
+        await Window.show('main', 'settings');
+      },
     });
   }
 

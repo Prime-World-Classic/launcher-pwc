@@ -89,6 +89,10 @@ export class VoiceGameBridge {
     NUM_DIV: 0x6f,
     NUM_DOT: 0x6e,
     NUM_ENTER: 0x0d,
+    CAPITAL: 0x14,
+    // боковые кнопки мыши (рация как в Discord): GetAsyncKeyState видит их как VK_XBUTTON1/2
+    MOUSE4: 0x05,
+    MOUSE5: 0x06,
   };
 
   static start() {
@@ -407,7 +411,7 @@ export class VoiceGameBridge {
     const pos = Array.isArray(settings.voiceOverlayPos) ? settings.voiceOverlayPos : [-1, -1];
     const lines = [
       'PWV 1',
-      `cfg ${enabled ? 1 : 0} ${settings.voiceRadioMode ? 1 : 0} ${VoiceGameBridge.hotkeyToVk(settings.voiceToggleHotkey, ['CTRL', 'Z'])} ${Number(pos[0]).toFixed(4)} ${Number(pos[1]).toFixed(4)}`,
+      `cfg ${enabled ? 1 : 0} ${settings.voiceRadioMode ? 1 : 0} ${VoiceGameBridge.hotkeyToVk(Voice.getPttTokens?.() || settings.voiceToggleHotkey, ['CTRL', 'Z'])} ${Number(pos[0]).toFixed(4)} ${Number(pos[1]).toFixed(4)}`,
     ];
 
     if (!enabled) {

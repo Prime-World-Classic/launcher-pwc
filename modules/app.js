@@ -491,7 +491,7 @@ export class App {
   static async showSettingsPreview() {
     View.active = DOM({ style: 'view' });
     document.body.append(View.active);
-    const navigation = new Set(['account', 'preferences', 'battleSettings', 'advancedSettings', 'back'].map((key) => Lang.text(key)));
+    const navigation = new Set(['account', 'preferences', 'battleSettings', 'back'].map((key) => Lang.text(key)));
     View.active.addEventListener('click', (event) => {
       if (event.target.closest('.close-button, .bs-cat, .window__overlay')) return;
       const button = event.target.closest('.castle-menu-item-button');
@@ -524,7 +524,7 @@ export class App {
       }
     }, true);
     const requested = new URLSearchParams(window.location.search).get('settingsPage');
-    const method = ['menu', 'accountPanel', 'settings', 'advancedSettings', 'battleSettings'].includes(requested) ? requested : 'menu';
+    const method = ['menu', 'accountPanel', 'settings', 'battleSettings'].includes(requested) ? requested : 'menu';
     await Window.show('main', method);
   }
 
@@ -844,6 +844,8 @@ export class App {
 
   static onApiReconnected() {
     Chat.onReconnect?.();
+    // сервер мог перезапуститься и забыть «Выключить войс»
+    Voice.syncVoiceOffToServer?.(true);
     Events.onApiReconnected?.();
   }
 

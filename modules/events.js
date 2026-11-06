@@ -510,6 +510,16 @@ export class Events {
     const callKey = String(data?.key || '');
     const logIn = (decision, extra = {}) =>
       Voice.log('incoming', { id: Number(data?.id), key: callKey, reconnect: Number(data?.reconnect || 0), caller: Boolean(data?.isCaller), decision, ...extra });
+    // «Выключить войс»: бэкенд такие звонки не пересылает; дошедший (старый бэкенд) сразу
+    // сбрасываем, чтобы звонящий не ждал ответа.
+    if (Voice.isVoiceOff()) {
+      logIn('voice-off');
+      const callerId = Number(data?.id);
+      if (Number.isFinite(callerId) && callerId > 0) {
+        App.api.ghost('user', 'callDrop', { id: callerId }).catch(() => {});
+      }
+      return;
+    }
     // 1×1 и тестовый клиент: звонок не рвётся на матч, поэтому его переподключение пускаем.
     // Так же пускаем переподключение союзника, с которым звонок друзей шёл ещё до матча:
     // этот звонок в бою не ставится на паузу, и обрыв связи не должен ждать конца боя.

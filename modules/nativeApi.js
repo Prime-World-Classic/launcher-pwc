@@ -214,6 +214,10 @@ export class NativeAPI {
     try {
       if (NativeAPI.voiceDownVolume) NativeAPI.app.unregisterGlobalHotKey(NativeAPI.voiceDownVolume);
     } catch {}
+    try {
+      if (NativeAPI.voicePttShortcut) NativeAPI.app.unregisterGlobalHotKey(NativeAPI.voicePttShortcut);
+    } catch {}
+    NativeAPI.voicePttShortcut = null;
     NativeAPI.voiceShortcut = null;
     NativeAPI.voiceDestroyShortcut = null;
     NativeAPI.voiceUpVolume = null;
@@ -404,6 +408,14 @@ export class NativeAPI {
       down: () => Voice.handleVoiceToggleKey?.(true),
       up: () => Voice.handleVoiceToggleKey?.(false),
     });
+    // Рация на своей клавише (может быть и боковая кнопка мыши: GetAsyncKeyState видит VK 5/6).
+    // На той же клавише, что «Вкл/выкл микрофон», её ведёт сочетание выше.
+    if (Voice.getPttTokens && !Voice.isPttOnToggleKey?.()) {
+      NativeAPI.addKeyWatchCombo(Voice.getPttTokens(), {
+        down: () => Voice.handlePttKey?.(true),
+        up: () => Voice.handlePttKey?.(false),
+      });
+    }
     NativeAPI.addKeyWatchCombo(tokensOf(Settings.settings?.voiceDropHotkey, ['CTRL', 'K']), {
       down: () => Voice.destroy(false, true),
     });
@@ -490,8 +502,30 @@ export class NativeAPI {
       },
     });
     NativeAPI.app.registerGlobalHotKey(NativeAPI.voiceDownVolume);
+
+    // Рация на своей клавише: nw.Shortcut даёт только нажатие — говорим импульсом
+    // (Voice.pulseRadioTalk). Кнопки мыши nw.Shortcut не умеет — для них нужен наблюдатель.
+    const pttTokens = Voice.getPttTokens?.() || [];
+    const pttKey = Voice.isPttOnToggleKey?.() || pttTokens.some((x) => /^MOUSE/.test(x)) ? '' : NativeAPI.formatShortcutFromTokens(pttTokens, '');
+    if (pttKey) {
+      try {
+        NativeAPI.voicePttShortcut = new nw.Shortcut({
+          key: pttKey,
+          active: () => {
+            Voice.handlePttHotkey?.();
+          },
+          failed: (error) => {
+            console.log(error);
+          },
+        });
+        NativeAPI.app.registerGlobalHotKey(NativeAPI.voicePttShortcut);
+      } catch (error) {
+        console.log('PTT shortcut failed:', error);
+        NativeAPI.voicePttShortcut = null;
+      }
+    }
   }
-  
+
   static async exec(exeFile, workingDir, args, callback, cwd = process.cwd()) {
     return new Promise((resolve, reject) => {
       if (!NativeAPI.status) {
