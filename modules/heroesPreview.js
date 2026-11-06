@@ -232,7 +232,7 @@ async function init() {
     words = (await import(`/content/lang/${lang}.js`))[lang].word;
   }
   applyStaticTexts();
-  const response = await fetch('content/heroes-preview.json?v=20261105-castle-art-2');
+  const response = await fetch('content/heroes-preview.json?v=20261106-cobr-final-5');
   if (!response.ok) throw new Error(t('heroesLoadError'));
   heroes = await response.json();
   // Display-only alias: retain skin 7 in game/account data, show its identical art once.

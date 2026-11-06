@@ -72,22 +72,26 @@ export class TalentInput {
     this.hovered = node;
     const talent = this.talentOf(node);
     const library = node.dataset.state == 1;
-    if (Date.now() < this.suppressedUntil || this.drag || !talent) return ed.tooltip.hide();
-    if (library && ed.library.hoverSuppressed) return;
+    if (!this.hoverAllowed(node) || !talent) return ed.tooltip.hide();
     if (library) {
       // подсветка сета и ряда у библиотеки — с задержкой: быстрый проход мышью не тормозит
       clearTimeout(this.setHoverTimer);
       this.setHoverTimer = setTimeout(() => {
-        if (this.hovered !== node || this.drag || !node.isConnected || ed.library.hoverSuppressed) return;
+        if (this.hovered !== node || !this.hoverAllowed(node)) return;
         const set = ed.highlight.talentSet(talent);
         ed.highlight.showRow(talent.level);
         if (!set) ed.highlight.previewTalent(talent);
       }, SET_HOVER_DELAY_MS);
-      requestAnimationFrame(() => this.hovered === node && ed.tooltip.showTalent(node, talent));
+      requestAnimationFrame(() => this.hovered === node && this.hoverAllowed(node) && ed.tooltip.showTalent(node, talent));
       return;
     }
     ed.highlight.talentSet(talent);
     ed.tooltip.showTalent(node, talent);
+  }
+
+  hoverAllowed(node) {
+    return !this.ed.destroyed && node.isConnected && !this.drag && Date.now() >= this.suppressedUntil
+      && !this.ed.library.scrollbarDragging && (node.dataset.state != 1 || !this.ed.library.hoverSuppressed);
   }
 
   leave(node) {

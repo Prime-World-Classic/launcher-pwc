@@ -57,6 +57,25 @@ export class Library {
     this.selectedSet = null;
     this.setItems = [];
     this.loaded = false;
+    this.pointer = null;
+    this.hoverSuppressed = false;
+    this.scrollbarDrags = new Set();
+  }
+
+  get scrollbarDragging() {
+    return this.scrollbarDrags.size > 0;
+  }
+
+  suppressHover() {
+    this.hoverSuppressed = true;
+    clearTimeout(this.suppressTimer);
+    if (this.ed.input.hovered) this.ed.input.leave(this.ed.input.hovered);
+    else this.ed.tooltip.hide();
+    this.suppressTimer = setTimeout(() => {
+      if (this.scrollbarDragging || this.ed.destroyed) return;
+      this.hoverSuppressed = false;
+      this.ed.input.hoverAt(this.pointer);
+    }, 80);
   }
 
   // --- Разметка -----------------------------------------------------------------------------
@@ -127,26 +146,42 @@ export class Library {
       thumb.classList.toggle('is-disabled', !limit);
     };
     thumb.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0 || !max()) return;
+      if (e.button !== 0 || !max() || drag) return;
       e.preventDefault();
       thumb.focus();
-      drag = { y: e.clientY, top: parseFloat(thumb.style.top) || 0 };
-      thumb.setPointerCapture(e.pointerId);
+      this.pointer = { x: e.clientX, y: e.clientY };
+      drag = { pointerId: e.pointerId, y: e.clientY, top: parseFloat(thumb.style.top) || 0 };
+      this.scrollbarDrags.add(thumb);
+      this.suppressHover();
+      try {
+        thumb.setPointerCapture(e.pointerId);
+      } catch {
+        release();
+      }
     });
     thumb.addEventListener('pointermove', (e) => {
-      if (!drag || !travel()) return;
+      if (!drag || e.pointerId !== drag.pointerId || !travel()) return;
+      this.pointer = { x: e.clientX, y: e.clientY };
       const top = Math.max(0, Math.min(travel(), drag.top + e.clientY - drag.y));
       thumb.style.top = `${top}px`;
       list.scrollTop = (top / travel()) * max();
     });
-    const release = () => {
-      if (!drag) return;
+    const release = (e) => {
+      if (!drag || (e?.pointerId !== undefined && e.pointerId !== drag.pointerId)) return;
+      const pointerId = drag.pointerId;
       drag = null;
+      this.scrollbarDrags.delete(thumb);
+      this.pointer = e?.type === 'pointerup' ? { x: e.clientX, y: e.clientY } : null;
+      if (thumb.hasPointerCapture?.(pointerId)) thumb.releasePointerCapture(pointerId);
       update();
+      this.suppressHover();
     };
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture', 'blur']) thumb.addEventListener(type, release);
+    window.addEventListener('blur', release);
     rail.addEventListener('pointerdown', (e) => {
       if (e.target === thumb || e.button !== 0) return;
+      this.pointer = { x: e.clientX, y: e.clientY };
+      this.suppressHover();
       const rect = rail.getBoundingClientRect();
       const ratio = travel() ? (e.clientY - rect.top - thumb.offsetHeight / 2) / travel() : 0;
       list.scrollTop = Math.max(0, Math.min(1, ratio)) * max();
@@ -156,6 +191,7 @@ export class Library {
       if (delta === undefined && e.key !== 'Home' && e.key !== 'End') return;
       e.preventDefault();
       e.stopPropagation();
+      this.suppressHover();
       list.scrollTop = e.key === 'Home' ? 0 : e.key === 'End' ? max() : list.scrollTop + delta;
     });
     // не чаще раза за кадр: при заполнении библиотеки MutationObserver зовёт на каждую порцию
@@ -173,22 +209,26 @@ export class Library {
     resize.observe(rail);
     const content = new MutationObserver(schedule);
     content.observe(list, { childList: true });
-    this.ed.cleanups.push(() => (resize.disconnect(), content.disconnect(), cancelAnimationFrame(frame)));
+    this.ed.cleanups.push(() => {
+      window.removeEventListener('blur', release);
+      release();
+      resize.disconnect();
+      content.disconnect();
+      cancelAnimationFrame(frame);
+    });
   }
 
   // Колесо и прокрутка библиотеки гасят подсказку; остановились — подсказка таланта под курсором
   installListScroll() {
-    const suppress = () => {
-      this.hoverSuppressed = true;
-      clearTimeout(this.suppressTimer);
-      this.suppressTimer = setTimeout(() => {
-        this.hoverSuppressed = false;
-        this.ed.input.hoverAt(this.pointer);
-      }, 80);
+    const suppress = (e) => {
+      if (e.type === 'wheel') this.pointer = { x: e.clientX, y: e.clientY };
+      this.suppressHover();
     };
     this.list.addEventListener('wheel', suppress, { passive: true });
     this.list.addEventListener('scroll', suppress, { passive: true });
-    this.list.addEventListener('mousemove', (e) => (this.pointer = { x: e.clientX, y: e.clientY }), { passive: true });
+    // Полоса — рядом со списком: её текущие координаты тоже должны заменять старую иконку.
+    this.view.addEventListener('mousemove', (e) => (this.pointer = { x: e.clientX, y: e.clientY }), { passive: true });
+    this.view.addEventListener('mouseleave', () => (this.pointer = null), { passive: true });
   }
 
   // Список сетов крутится плавно (по трети шага); подсветка сета на время прокрутки снимается
@@ -672,6 +712,9 @@ export class Library {
   destroy() {
     clearTimeout(this.suppressTimer);
     clearTimeout(this.setsScrollTimer);
+    this.scrollbarDrags.clear();
+    this.hoverSuppressed = false;
+    this.pointer = null;
     this.altHint?.remove();
   }
 }
