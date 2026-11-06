@@ -1319,14 +1319,15 @@ const CASTLE_PAGES = {
   ],
 };
 
+// «Интерфейс» — первая вкладка: на ней окно открывается в первый раз, потом — на последней открытой
 const CASTLE_CATEGORIES = [
+  { id: 'interface', label: 'advCatInterface' },
   { id: 'castle', label: 'advCatCastle' },
   { id: 'sound', label: 'advCatSound' },
-  { id: 'interface', label: 'advCatInterface' },
   { id: 'voice', label: 'advCatVoice' },
 ];
 
-let shownCastleCategory = 'castle';
+let shownCastleCategory = CASTLE_CATEGORIES[0].id;
 
 // громкость лаунчера 0..1 (Settings.settings[key]) — сеткой, как «Звук» в «Настройках боя»
 function castleVolume(item, ctx) {
@@ -1476,6 +1477,6 @@ export function castleSettings({ onBack, onModesWings, onSoundTest, onLanguage }
   );
   root.cleanup = () => NativeAPI.refreshVoiceHotkeys?.();
 
-  show(CASTLE_PAGES[shownCastleCategory] ? shownCastleCategory : 'castle');
+  show(CASTLE_PAGES[shownCastleCategory] ? shownCastleCategory : CASTLE_CATEGORIES[0].id);
   return root;
 }

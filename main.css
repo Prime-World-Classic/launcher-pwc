@@ -11196,8 +11196,28 @@ i-success {
 
 /* Castle settings: language button in a settings row (battleSettings.js castleSettings) */
 #wbattle-settings .bs-key.bs-lang-button {
-  cursor: pointer;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+/* "Mute everyone and myself" is on: the panel stays and shows a small caption under the own row */
+.voice-info-panel-muted-all {
+  display: flex;
+  align-items: center;
+  gap: 0.6vh;
+  padding: 0.2vh 0.6vh;
+  font: 1.25vh / 1.2 'DejaVuSans', sans-serif;
+  color: rgba(243, 236, 217, 0.75);
+  text-shadow: 0 0.1vh 0.2vh #000;
+}
+
+.voice-info-panel-muted-all .ui-icon {
+  width: 1.6vh;
+  height: 1.6vh;
+  flex: 0 0 auto;
+  opacity: 0.7;
 }
 
 /* "Turn off voice": the panel shows only the "voice chat is off" caption */

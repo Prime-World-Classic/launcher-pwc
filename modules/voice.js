@@ -589,15 +589,12 @@ export class Voice {
   }
 
   // Панель видна всегда — сразу после входа, со своим ником, даже если никому не звонили, в любом
-  // режиме (и в рации). Прячет её только «Мут всех и себя»; звонок с другом под ним идёт дальше,
-  // поэтому с ним панель остаётся. Крестик прячет панель до следующего звонка или нажатия
-  // клавиши войса.
+  // режиме (и в рации, и под «Мут всех и себя» — тогда в ней надпись о муте; при выключенном войсе —
+  // «Голосовая связь выключена»). Раньше «Мут всех и себя» панель прятал: галочка тогда значила
+  // «выключить войс», теперь для этого есть отдельная настройка. Крестик прячет панель до
+  // следующего звонка или нажатия клавиши войса.
   static shouldShowInfoPanel() {
-    if (!Voice.isLoggedInView()) return false;
-    // при выключенном войсе панель видна с надписью «Голосовая связь выключена»
-    if (Voice.isVoiceOff()) return true;
-    if (!Voice.isMutedAll()) return true;
-    return Voice.hasFriendCall();
+    return Voice.isLoggedInView();
   }
 
   // Voice.init вызывается и до входа: на экране авторизации панели (с пустым ником) нет.
@@ -1571,6 +1568,10 @@ export class Voice {
     }
 
     panelBody.append(selfItem);
+    // «Мут всех и себя» включён — панель не прячется, а говорит об этом (снять — в «Настройках замка»)
+    if (Voice.isMutedAll()) {
+      panelBody.append(DOM({ style: 'voice-info-panel-muted-all' }, uiIcon('mic-off'), DOM({ tag: 'span' }, Lang.text('voiceEnabled'))));
+    }
     Voice.infoPanelLogin = String(App.storage?.data?.login || '');
 
     for (let id in Voice.manager) {
