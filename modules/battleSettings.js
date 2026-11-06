@@ -1169,3 +1169,163 @@ export async function battleSettings() {
   await show(CATEGORIES.some((c) => c.id === shownCategory) ? shownCategory : 'game');
   return root;
 }
+
+// ---------------------------------------------------------------- «Доп. настройки» замка
+
+// Тот же вид, что у «Настроек боя» (вкладки слева, разделы с заголовками, пояснения под пунктами),
+// но значения — настройки лаунчера (Settings.settings), а не user.cfg игры. Применяются сразу.
+// type: header | note | setting (галочка: get/set) | launcherKey | launcherMic;
+// dep — список id галочек, без которых пункт недоступен.
+const S = () => Settings.settings;
+const ADVANCED_PAGES = {
+  castle: [
+    { type: 'header', label: 'advHdrScreen' },
+    {
+      type: 'setting',
+      id: 'fullscreen',
+      label: 'advWindowModeF11',
+      get: () => !S().fullscreen,
+      set: (on) => {
+        S().fullscreen = !on;
+        Settings.ApplySettings({ render: false, audio: false });
+      },
+    },
+    { type: 'note', label: 'advNoteWindowMode' },
+    {
+      type: 'setting',
+      id: 'render',
+      label: 'threeD',
+      get: () => Boolean(S().render),
+      set: (on) => {
+        S().render = on;
+        Settings.ApplySettings({ audio: false, window: false });
+      },
+    },
+    { type: 'note', label: 'advNoteThreeD' },
+    { type: 'header', label: 'advHdrLight' },
+    // выкл — освещение и тени замка как до смены дня и ночи (Castle.updateDayNight)
+    { type: 'setting', id: 'dayNight', label: 'dayNight', get: () => S().dayNight !== false, set: (on) => (S().dayNight = on) },
+    { type: 'note', label: 'advNoteDayNight' },
+    // выкл — без огней зданий и отложенного освещения (CastleLighting), отрисовка как раньше
+    { type: 'setting', id: 'buildingLights', label: 'buildingLights', get: () => S().buildingLights !== false, set: (on) => (S().buildingLights = on) },
+    { type: 'note', label: 'advNoteBuildingLights' },
+    { type: 'header', label: 'advHdrWater' },
+    // выкл — в воде нет никакого отражения (ни геометрии, ни неба со звёздами)
+    { type: 'setting', id: 'waterReflect', label: 'waterReflect', get: () => S().waterReflect !== false, set: (on) => (S().waterReflect = on) },
+    // SSR трассирует G-buffer кадра: без огней зданий и смены дня/ночи его нет, без отражений — тем более
+    {
+      type: 'setting',
+      id: 'waterSsr',
+      label: 'waterSsr',
+      dep: ['waterReflect', 'dayNight', 'buildingLights'],
+      get: () => S().waterSsr !== false,
+      set: (on) => (S().waterSsr = on),
+    },
+    { type: 'note', label: 'advNoteWaterSsr' },
+    // выкл — нет ни слоя осадков, ни затемнения света/усиления ветра под погодой
+    { type: 'setting', id: 'weather', label: 'weather', get: () => S().weather !== false, set: (on) => (S().weather = on) },
+    { type: 'note', label: 'advNoteWeather' },
+    { type: 'header', label: 'advHdrInterface' },
+    // вкл — все режимы видны у «В бой», выкл — меню по наведению на круг режима
+    { type: 'setting', id: 'castleModesWings', label: 'castleModesWings', get: () => S().castleModesWings === true, set: (on, ctx) => ((S().castleModesWings = on), ctx.onModesWings?.()) },
+    { type: 'note', label: 'advNoteModesWings' },
+  ],
+  voice: [
+    { type: 'header', label: 'voiceHotkeys' },
+    { type: 'setting', id: 'novoice', label: 'voiceEnabled', get: () => Boolean(S().novoice), set: (on) => Voice.setMutedAll(on) },
+    { type: 'note', label: 'advNoteMuteAll' },
+    { type: 'setting', id: 'voiceOverlay', label: 'voiceOverlay', get: () => S().voiceOverlay !== false, set: (on) => (S().voiceOverlay = on) },
+    { type: 'note', label: 'advNoteVoiceOverlay' },
+    { type: 'setting', id: 'voiceRadioMode', label: 'voiceRadioMode', get: () => Boolean(S().voiceRadioMode), set: (on) => Voice.setRadioMode(on) },
+    { type: 'note', label: 'advNoteRadioMode' },
+    { type: 'header', label: 'advHdrVoiceKeys' },
+    { type: 'launcherKey', settingKey: 'voiceToggleHotkey', label: 'voiceEnableToggle' },
+    { type: 'launcherKey', settingKey: 'voiceDropHotkey', label: 'voiceDropCalls' },
+    { type: 'header', label: 'voiceMic' },
+    { type: 'launcherMic' },
+  ],
+};
+
+const ADVANCED_CATEGORIES = [
+  { id: 'castle', label: 'advCatCastle' },
+  { id: 'voice', label: 'advCatVoice' },
+];
+
+let shownAdvancedCategory = 'castle';
+
+function buildAdvancedPage(rowsDesc, ctx) {
+  const page = DOM({ style: 'bs-page' });
+  const checks = new Map();
+  const dependents = [];
+  const updateEnabled = () => {
+    for (const d of dependents) {
+      const enabled = d.dep.every((id) => checks.get(id) !== false);
+      d.element.classList.toggle('is-disabled', !enabled);
+      d.box.disabled = !enabled;
+    }
+  };
+  for (const desc of rowsDesc) {
+    if (desc.type === 'setting') {
+      checks.set(desc.id, desc.get());
+      const box = checkbox(desc.get(), (checked) => {
+        checks.set(desc.id, checked);
+        desc.set(checked, ctx);
+        updateEnabled();
+      });
+      const label = DOM({ tag: 'label', style: 'bs-row-label' }, Lang.text(desc.label));
+      label.addEventListener('click', () => {
+        if (!box.disabled) box.click();
+      });
+      const element = DOM({ style: ['bs-row', 'bs-row--check'] }, box, label);
+      page.append(element);
+      if (desc.dep) dependents.push({ dep: desc.dep, element, box });
+    } else {
+      // header, note, launcherKey, launcherMic — как на страницах «Настроек боя»
+      page.append(...buildRowsPage([desc], ctx).childNodes);
+    }
+  }
+  updateEnabled();
+  return page;
+}
+
+// onBack — «Назад» (в «Настройки замка»); onModesWings — перерисовать режимы у «В бой»
+export function advancedSettings({ onBack, onModesWings } = {}) {
+  NativeAPI.unregisterVoiceHotkeys?.();
+  const ctx = { onModesWings };
+  const content = DOM({ style: ['bs-content', 'wtop-list-scroll'] });
+  const footer = DOM({ style: 'bs-footer' });
+  const sidebar = DOM({ style: 'bs-sidebar' });
+  const catButtons = new Map();
+
+  const show = (id) => {
+    shownAdvancedCategory = id;
+    for (const [cid, el] of catButtons) el.classList.toggle('is-active', cid === id);
+    content.replaceChildren(buildAdvancedPage(ADVANCED_PAGES[id], ctx));
+    content.scrollTop = 0;
+    footer.replaceChildren(button(Lang.text('back'), () => (onBack ? onBack() : root.requestClose?.()), true));
+  };
+
+  for (const cat of ADVANCED_CATEGORIES) {
+    const el = DOM(
+      {
+        domaudio: domAudioPresets.bigButton,
+        style: ['castle-menu-item-button', 'bs-cat'],
+        event: ['click', () => show(cat.id)],
+      },
+      Lang.text(cat.label),
+    );
+    catButtons.set(cat.id, el);
+    sidebar.append(el);
+  }
+
+  // id окна — как у «Настроек боя»: весь вид (#wbattle-settings в main.css) общий
+  const root = DOM(
+    { id: 'wbattle-settings', style: ['wcastle-menu--quest-bg', 'wadvanced-settings'] },
+    DOM({ style: 'title-modal' }, DOM({ style: 'title-modal-text' }, Lang.text('advancedSettings'))),
+    DOM({ style: 'bs-body' }, sidebar, DOM({ style: 'bs-main' }, content, footer)),
+  );
+  root.cleanup = () => NativeAPI.refreshVoiceHotkeys?.();
+
+  show(ADVANCED_PAGES[shownAdvancedCategory] ? shownAdvancedCategory : 'castle');
+  return root;
+}
