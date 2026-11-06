@@ -128,13 +128,7 @@ const PAGES = {
     { type: 'note', label: 'bsAdvNoteAbilityStatus' },
     { type: 'check', id: 'bad_words', variable: 'use_badwords_filter', def: 1, label: 'bsPrefUseBadWordsFilter' },
     { type: 'check', id: 'chat_off', variable: 'session_chat_off', def: 0, label: 'bsPrefChatOff' },
-    { type: 'header', label: 'bsAdvHdrVoiceChat' },
-    { type: 'key', command: 'voice_overlay_unlock_on', label: 'bsKeyVoiceOverlayUnlock' },
-    // голосовая связь лаунчера (те же клавиши — в «Настройках замка»)
-    { type: 'launcherKey', settingKey: 'voiceToggleHotkey', label: 'voiceEnableToggle' },
-    { type: 'launcherKey', settingKey: 'voicePttHotkey', label: 'voicePttKey', allowMouse: true },
-    { type: 'launcherKey', settingKey: 'voiceDropHotkey', label: 'voiceDropCalls' },
-    { type: 'launcherMic' },
+    // голосовой чат — отдельной вкладкой «Голосовая связь» (battleVoiceRows)
   ],
   chatWheel: [
     { type: 'header', label: 'bsAdvHdrChatWheel' },
@@ -1110,6 +1104,7 @@ const CATEGORIES = [
   { id: 'game', label: 'bsCatGame' },
   { id: 'keys', label: 'bsCatKeys' },
   { id: 'comm', label: 'bsCatComm' },
+  { id: 'voice', label: 'advCatVoice' },
   { id: 'chatWheel', label: 'bsCatChatWheel' },
   { id: 'pingWheel', label: 'bsCatPingWheel' },
   { id: 'advanced', label: 'bsCatAdvanced' },
@@ -1159,7 +1154,8 @@ export async function battleSettings() {
           }),
         );
       }
-    } else page = buildRowsPage(PAGES[id], ctx);
+    } else if (id === 'voice') page = buildCastlePage(battleVoiceRows(), ctx);
+    else page = buildRowsPage(PAGES[id], ctx);
     content.append(page);
     footer.append(button(Lang.text('back'), () => root.requestClose?.(), true));
   };
@@ -1318,6 +1314,15 @@ const CASTLE_PAGES = {
     { type: 'launcherMic' },
   ],
 };
+
+// «Голосовая связь» в «Настройках боя» — та же вкладка, что в «Настройках замка», плюс игровая
+// клавиша «Управление войс-оверлеем» (input_new.cfg) в разделе «Клавиши»
+function battleVoiceRows() {
+  const rows = [...CASTLE_PAGES.voice];
+  const keysAt = rows.findIndex((r) => r.type === 'header' && r.label === 'advHdrVoiceKeys');
+  rows.splice(keysAt + 1, 0, { type: 'key', command: 'voice_overlay_unlock_on', label: 'bsKeyVoiceOverlayUnlock' });
+  return rows;
+}
 
 // «Интерфейс» — первая вкладка: на ней окно открывается в первый раз, потом — на последней открытой
 const CASTLE_CATEGORIES = [
