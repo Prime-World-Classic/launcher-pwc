@@ -134,7 +134,7 @@ export class View {
   static castleActiveTab = 'heroes';
   static castleOpenedBuildHeroId = 0;
   // версия страницы вкладки «Герой» и её каталога (content/heroes-preview.*)
-  static HEROES_TAB_VERSION = '20261105-castle-art-2';
+  static HEROES_TAB_VERSION = '20261106-cobr-final-5';
   static heroesCatalogueIdsPromise = null;
   // открыта вкладка «Герой» окна билда (View.attachBuildHeroesTab)
   static buildHeroesTabActive = false;
@@ -166,7 +166,7 @@ export class View {
   static castleFriendEditSelection = new Set();
   static castleFriendClearConfirm = false;
   static castleModeHeroAutoOpenHandler = null;
-  static castleHeroAutoOpenModes = new Set([1, 2, 5]);
+  static castleHeroAutoOpenModes = new Set([1, 2, 5, 99]);
   static castleAramMode = 3;
   static castlePartyHeroRequestInFlight = false;
   static castlePlayRefreshSeq = 0;
@@ -1001,7 +1001,7 @@ export class View {
   static castleTotalCrystal = DOM({ tag: 'div', style: ['question-icon'] }, DOM({ style: 'quest-counter' }, ''));
 
   static setCss(name = 'content/style.css') {
-    const cssVersion = '20261106-voice-status-2';
+    const cssVersion = '20261106-training-mode-1';
     const separator = name.includes('?') ? '&' : '?';
     const href = `${name}${separator}v=${cssVersion}`;
     // Каждый показ замка звал setCss заново и плодил одинаковые <link>: после

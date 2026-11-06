@@ -666,6 +666,7 @@ body.castle-cinematic {
 .castle-button-play-m4,
 .castle-button-play-m5,
 .castle-button-play-m6,
+.castle-button-play-m7,
 .castle-button-play-1,
 .castle-button-play-2,
 .castle-button-play-3,
@@ -690,7 +691,8 @@ body.castle-cinematic {
 .castle-button-play-m3:hover::after,
 .castle-button-play-m4:hover::after,
 .castle-button-play-m5:hover::after,
-.castle-button-play-m6:hover::after {
+.castle-button-play-m6:hover::after,
+.castle-button-play-m7:hover::after {
   display: flex;
   position: absolute;
   z-index: 13002;
@@ -716,7 +718,8 @@ body.castle-cinematic {
 .castle-button-play-m3:hover,
 .castle-button-play-m4:hover,
 .castle-button-play-m5:hover,
-.castle-button-play-m6:hover {
+.castle-button-play-m6:hover,
+.castle-button-play-m7:hover {
   border-radius: 50%;
   outline: 0.12cqh solid rgba(77, 235, 237, 0.94);
   outline-offset: 0.48cqh;
@@ -729,7 +732,8 @@ body.castle-cinematic {
 .castle-button-play-m3:hover::before,
 .castle-button-play-m4:hover::before,
 .castle-button-play-m5:hover::before,
-.castle-button-play-m6:hover::before {
+.castle-button-play-m6:hover::before,
+.castle-button-play-m7:hover::before {
   display: block;
   position: absolute;
   z-index: 13003;
@@ -760,6 +764,9 @@ body.castle-cinematic {
 }
 .castle-button-play-m6:hover::before {
   content: var(--filter-text-title, 'Дуэль');
+}
+.castle-button-play-m7:hover::before {
+  content: var(--filter-text-title, 'Training');
 }
 .castle-button-play-m1:hover::after {
   content: var(
@@ -797,6 +804,9 @@ body.castle-cinematic {
     'Сражение происходит на карте Пограничья, 1х1\AОсобенности: присутствуют задания внутри режима. Здесь игроки могут посоревноваться друг с другом.'
   );
 }
+.castle-button-play-m7:hover::after {
+  content: var(--filter-text-hover, '');
+}
 
 .castle-button-play-mode {
   z-index: 3;
@@ -814,7 +824,8 @@ body.castle-cinematic {
 .castle-button-play-m3,
 .castle-button-play-m4,
 .castle-button-play-m5,
-.castle-button-play-m6 {
+.castle-button-play-m6,
+.castle-button-play-m7 {
   z-index: 1;
   width: 4vh;
   aspect-ratio: 1/1;
@@ -825,41 +836,20 @@ body.castle-cinematic {
 
 .castle-button-play-m1 {
   z-index: 3;
-  right: 14vh;
-}
-
-.castle-button-play-m2 {
-  right: 10.6vh;
-}
-
-.castle-button-play-m3 {
-  left: 3.78vh;
-}
-
-.castle-button-play-m4 {
-  left: 7.2vh;
-}
-
-.castle-button-play-m5 {
-  left: 10.6vh;
-}
-
-.castle-button-play-m6 {
-  left: 13.78vh;
 }
 
 /* wings view (castleModesWings on): modes that are not selected sit in the sockets of the wings
    left and right of the party slots; left (vh) and display are set by CastleNAVBAR.layoutModes,
    the selected mode is hidden (it is in the circle) */
 .castle-button-play.is-mode-wings
-  :is(.castle-button-play-m1, .castle-button-play-m2, .castle-button-play-m3, .castle-button-play-m4, .castle-button-play-m5, .castle-button-play-m6) {
+  :is(.castle-button-play-m1, .castle-button-play-m2, .castle-button-play-m3, .castle-button-play-m4, .castle-button-play-m5, .castle-button-play-m6, .castle-button-play-m7) {
   z-index: 2;
   top: 0.6vh;
   right: auto;
 }
 
 .castle-button-play
-  :is(.castle-button-play-m1, .castle-button-play-m2, .castle-button-play-m3, .castle-button-play-m4, .castle-button-play-m5, .castle-button-play-m6):hover {
+  :is(.castle-button-play-m1, .castle-button-play-m2, .castle-button-play-m3, .castle-button-play-m4, .castle-button-play-m5, .castle-button-play-m6, .castle-button-play-m7):hover {
   z-index: 8;
 }
 
@@ -886,6 +876,10 @@ body.castle-cinematic {
 .castle-button-play-m6 {
   background-image: url('img/m6.png');
   background-size: 130%;
+}
+
+.castle-button-play-m7 {
+  background-image: url('img/m7.png');
 }
 
 /* wing: piece of the b8 strip with N sockets, cut as two halves (left end and right end of the
@@ -932,6 +926,7 @@ body.castle-cinematic {
 .castle-button-play-m4:after,
 .castle-button-play-m5:after,
 .castle-button-play-m6:after,
+.castle-button-play-m7:after,
 .account-rating-menu-item:after {
   font: 0.7vh/1 'DejaVuSans', sans-serif; /* Изменено с vw на vh */
   position: absolute;
@@ -946,7 +941,8 @@ body.castle-cinematic {
 .castle-button-play-m3:after,
 .castle-button-play-m4:after,
 .castle-button-play-m5:after,
-.castle-button-play-m6:after {
+.castle-button-play-m6:after,
+.castle-button-play-m7:after {
   top: 4.3vh;
   left: 50%;
   width: 4.8vh;
@@ -979,12 +975,17 @@ body.castle-cinematic {
   content: var(--filter-text, 'Дуэль');
 }
 
+.castle-button-play-m7:after {
+  content: var(--filter-text, 'Training');
+}
+
 .castle-button-play-m1:hover::after,
 .castle-button-play-m2:hover::after,
 .castle-button-play-m3:hover::after,
 .castle-button-play-m4:hover::after,
 .castle-button-play-m5:hover::after,
-.castle-button-play-m6:hover::after {
+.castle-button-play-m6:hover::after,
+.castle-button-play-m7:hover::after {
   display: flex;
   position: absolute;
   z-index: 13002;
@@ -1162,10 +1163,31 @@ body.castle-cinematic {
 .castle-button-play-9 {
   display: none;
   z-index: 0;
-  background-image: url('img/b8.png');
   top: 3.8vh; /* Изменено с vw на vh */
-  width: 21vh; /* Изменено с vw на vh */
-  aspect-ratio: 371/76;
+  width: 21vh; /* ширину и left ставит CastleNAVBAR.layoutMenu под число режимов */
+  height: 4.3vh;
+}
+
+.castle-button-play-9::before,
+.castle-button-play-9::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: url('img/b8.png') no-repeat;
+  background-size: auto 100%;
+}
+
+.castle-button-play-9::before {
+  left: 0;
+  width: calc(50% + 0.05vh);
+  background-position: left center;
+}
+
+.castle-button-play-9::after {
+  right: 0;
+  width: 50%;
+  background-position: right center;
 }
 .banner-icon.banner-icon--stat.button-outline {
   position: relative;

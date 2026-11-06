@@ -354,7 +354,37 @@ export class MM {
     }
   }
 
+  // Тренировка (режим 99): бой с манекенами и ботами сразу, без поиска. Бэкенд берёт
+  // героя из слота пати, поэтому сначала heroParty. Общая для «В бой!» в режиме
+  // «Тренировка» и кнопки «Тренировка» в билде (build/heroPanel.js).
+  static async startTraining(heroId) {
+    try {
+      if (MM.isBlockedByUpdate()) return;
+      if (!NativeAPI.status) return App.error(Lang.text('windowsLauncherRequired'));
+      await MM.gameStartCheck();
+      await App.api.request(App.CURRENT_MM, 'heroParty', { id: MM.partyId, hero: heroId });
+      await App.api.request(App.CURRENT_MM, 'start', {
+        version: App.PW_VERSION, mode: CastleNAVBAR.TRAINING_MODE, mac: await NativeAPI.getMACAdresses(), cache: await NativeAPI.getCacheIndex(), v: 2,
+      });
+    } catch (error) {
+      App.error(error);
+    }
+  }
+
   static async start() {
+    // «В бой!» в режиме «Тренировка»: герой выбран — сразу в бой, нет — выбор героя
+    if (!MM.active && CastleNAVBAR.isTraining()) {
+      const heroId = Number(MM.activeSelectHero) || 0;
+
+      if (heroId > 0) {
+        return MM.startTraining(heroId);
+      }
+
+      const myCard = document.querySelector(`.castle-play-lobby-player[data-id="${App.storage.data.id}"]`);
+
+      return View.openCastlePartyHeroPicker(myCard, 1100);
+    }
+
     if (!MM.active && MM.isBlockedByUpdate()) {
       return;
     }

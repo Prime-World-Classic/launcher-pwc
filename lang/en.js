@@ -291,6 +291,7 @@ export const en = {
     gm4: 'ARAM',
     gm5: 'Challenges',
     gm6: 'Duel',
+    gm7: 'Training',
     gmTeam: '{n}v{n}',
     gmPlayers: 'player|players',
     gm1_hover:
@@ -304,6 +305,8 @@ export const en = {
     gm5_hover:
       'Trial\\AA team of {players} must defend their starting area from waves of Chud’—AI-controlled monsters—on a specially designed map. Gold difficulty: the Chud’ are 1.5 times stronger than on red. Monsters spawn from four designated points. After each wave, players must destroy one of these points by activating a special switch.',
     gm6_hover: 'Duel\\AA {team} PvP battle mode featuring objectives that allow victory to be achieved in multiple ways.',
+    gm7_hover:
+      'Training\\AA battle against dummies and bots on the training map — starts right away, no queue and no rating. Build testing options are available: resetting skill cooldowns, adding Prime to your hero and to bots (when the button is pressed on Native Land). You play the hero selected in your party slot.',
     fight: 'Fight!',
     cancel: 'Cancel',
     titleСhildren17_1: 'Division - players grouped under the same rank,\ncompeting with similar matchmaking winrates.',
@@ -459,7 +462,7 @@ export const en = {
     buildLibraryTooltipTitle: 'Talent library and filtering',
     buildLibraryTooltipBody: 'All talents that can be installed in hero builds are listed below.\n\nSome talents cannot be installed together. Read their descriptions carefully.\n\nUse the filters below to find talents by color, active talents, or a manual talent search.\n\nYou can also filter talents by Health, Energy, Health regeneration, Energy regeneration, Health steal, Energy steal, Talent cooldown, Speed, Strength, Intellect, Agility, Cunning, Stamina and Will. Click the relevant stat on the left side of the build window.\n\nClick a build row number to filter the library by that row.',
     trainingBotsTooltipTitle: 'Training with bots',
-    trainingBotsTooltipBody: 'Training with dummies and bots is available through the Training button in the hero build. Additional build testing options include resetting skill cooldowns, adding Prime to your hero and adding Prime to bots when the button is pressed on Native Land.',
+    trainingBotsTooltipBody: 'Training with dummies and bots is available as the Training mode in the mode list or through the Training button in the hero build. Additional build testing options include resetting skill cooldowns, adding Prime to your hero and adding Prime to bots when the button is pressed on Native Land.',
     classTalent: 'Class Talent',
     talentConflict: 'The selected talent conflicts with another talent in the build!!',
     talentAnomalyUnknown: 'Talent action was rejected by backend. Build state has been restored.',

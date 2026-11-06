@@ -10,7 +10,6 @@ import { Window } from '../window.js';
 import { MM } from '../mm.js';
 import { Rank } from '../rank.js';
 import { Splash } from '../splash.js';
-import { NativeAPI } from '../nativeApi.js';
 import { HeroFrame } from '../heroFrame.js';
 import { PreloadImages } from '../preloadImages.js';
 import { domAudioPresets } from '../domAudioPresets.js';
@@ -323,19 +322,7 @@ export class HeroPanel {
     const ed = this.ed;
     const button = DOM({ tag: 'button', domaudio: domAudioPresets.defaultButton, style: ['btn-skins', 'btn-hover', 'color-3'] }, Lang.text('training'));
     setTooltip(button, Lang.text('titletraining'));
-    button.addEventListener('click', async () => {
-      try {
-        if (MM.isBlockedByUpdate()) return;
-        if (!NativeAPI.status) return App.error(Lang.text('windowsLauncherRequired'));
-        await MM.gameStartCheck();
-        await App.api.request(App.CURRENT_MM, 'heroParty', { id: MM.partyId, hero: ed.heroId });
-        await App.api.request(App.CURRENT_MM, 'start', {
-          version: App.PW_VERSION, mode: 99, mac: await NativeAPI.getMACAdresses(), cache: await NativeAPI.getCacheIndex(), v: 2,
-        });
-      } catch (error) {
-        App.error(error);
-      }
-    });
+    button.addEventListener('click', () => MM.startTraining(ed.heroId));
     return button;
   }
 
