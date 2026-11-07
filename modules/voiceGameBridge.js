@@ -207,6 +207,16 @@ export class VoiceGameBridge {
           VoiceGameBridge.sendConsumableBar(remote);
           break;
 
+        // Вкладка «Голосовая связь» в настройках игры (PreferencesProcessor.cpp): игра меняет
+        // настройку войса лаунчера ("vset voiceOff 1") или его клавишу ("vkey voicePttHotkey CTRL Z").
+        case 'vset':
+          VoiceGameBridge.applyVoiceSetting(parts[1], parts[2]);
+          break;
+
+        case 'vkey':
+          VoiceGameBridge.applyVoiceKey(parts[1], parts.slice(2));
+          break;
+
         case 'pos': {
           const x = Number(parts[1]);
           const y = Number(parts[2]);
@@ -363,6 +373,69 @@ export class VoiceGameBridge {
     Voice.setRadioPressed(false);
   }
 
+  // клавиша войса для окна настроек игры: "CTRL+Z", "MOUSE4" (без пробелов и табов)
+  static keyText(tokens) {
+    const list = Array.isArray(tokens) ? tokens.map((x) => String(x || '').trim().toUpperCase()).filter(Boolean) : [];
+    return list.join('+').replace(/[\s\t]/g, '') || '-';
+  }
+
+  // Имена клавиш игры (NivalInput) -> токены лаунчера
+  static GAME_KEY_TOKENS = {
+    LCTRL: 'CTRL',
+    RCTRL: 'CTRL',
+    LALT: 'ALT',
+    RALT: 'ALT',
+    LSHIFT: 'SHIFT',
+    RSHIFT: 'SHIFT',
+    LWIN: 'WIN',
+    RWIN: 'WIN',
+    MOUSE_BUTTON3: 'MOUSE4',
+    MOUSE_BUTTON4: 'MOUSE5',
+  };
+
+  static VOICE_SETTINGS = ['voiceOff', 'novoice', 'voiceOverlay', 'voiceRadioMode', 'voicePttReleaseMs'];
+
+  static VOICE_KEYS = ['voiceToggleHotkey', 'voicePttHotkey', 'voiceDropHotkey'];
+
+  static applyVoiceSetting(name, raw) {
+    if (!VoiceGameBridge.VOICE_SETTINGS.includes(name)) return;
+    const on = raw === '1';
+    if (name === 'voiceOff') {
+      Voice.setVoiceOff(on); // сама сохраняет настройки
+      return;
+    }
+    if (name === 'novoice') Voice.setMutedAll(on);
+    else if (name === 'voiceOverlay') Settings.settings.voiceOverlay = on;
+    else if (name === 'voiceRadioMode') {
+      Voice.setRadioMode(on);
+      NativeAPI.refreshVoiceHotkeys?.();
+    } else if (name === 'voicePttReleaseMs') {
+      const value = Number(raw);
+      if (!Number.isFinite(value)) return;
+      Settings.settings.voicePttReleaseMs = Math.min(2000, Math.max(0, Math.round(value)));
+    }
+    Voice.log('game-voice-setting', { name, value: String(raw) });
+    Promise.resolve(Settings.WriteSettings()).catch(() => {});
+  }
+
+  static applyVoiceKey(setting, rawTokens) {
+    if (!VoiceGameBridge.VOICE_KEYS.includes(setting)) return;
+    const tokens = (rawTokens || [])
+      .map((x) => String(x || '').trim().toUpperCase())
+      .filter(Boolean)
+      .slice(0, 4)
+      .map((x) => VoiceGameBridge.GAME_KEY_TOKENS[x] || x);
+    const modifiers = ['CTRL', 'ALT', 'SHIFT', 'WIN'];
+    // одни модификаторы или неизвестная лаунчеру клавиша — не меняем
+    if (!tokens.some((x) => !modifiers.includes(x))) return;
+    if (VoiceGameBridge.hotkeyToVk(tokens, []) === '-') return;
+    Settings.settings[setting] = tokens;
+    Voice.log('game-voice-key', { setting, keys: tokens.join('+') });
+    Promise.resolve(Settings.WriteSettings()).catch(() => {});
+    NativeAPI.refreshVoiceHotkeys?.();
+    Voice.updateInfoPanel?.();
+  }
+
   static hotkeyToVk(tokens, fallback) {
     const cleaned = Array.isArray(tokens) ? tokens.filter((x) => String(x || '').trim()) : [];
     const list = cleaned.length ? cleaned : fallback;
@@ -416,7 +489,7 @@ export class VoiceGameBridge {
 
     if (!enabled) {
       VoiceGameBridge.pruneMeters(new Set());
-      return lines.join('\n');
+      return [...lines, ...VoiceGameBridge.optionLines(settings, enabled)].join('\n');
     }
 
     const now = Date.now();
@@ -482,7 +555,17 @@ export class VoiceGameBridge {
     }
     VoiceGameBridge.syncMicState(micState, connectedIds);
 
-    return lines.join('\n');
+    return [...lines, ...VoiceGameBridge.optionLines(settings, enabled)].join('\n');
+  }
+
+  // Настройки войса для вкладки «Голосовая связь» в настройках игры — в конце состояния
+  // (старый exe эти строки пропускает): выключен, мут всех, оверлей, рация, задержка рации (мс);
+  // тексты клавиш через таб: вкл/выкл микрофон, рация, сброс звонков.
+  static optionLines(settings, enabled) {
+    return [
+      `vopt ${settings.voiceOff === true ? 1 : 0} ${settings.novoice ? 1 : 0} ${enabled ? 1 : 0} ${settings.voiceRadioMode ? 1 : 0} ${Voice.getPttReleaseMs?.() ?? 20}`,
+      `vkeys ${VoiceGameBridge.keyText(Voice.getVoiceToggleTokens?.())}\t${VoiceGameBridge.keyText(Voice.getPttTokens?.())}\t${VoiceGameBridge.keyText(settings.voiceDropHotkey)}`,
+    ];
   }
 
   static isSpeaking(stream, now) {
