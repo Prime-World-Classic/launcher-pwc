@@ -45,6 +45,26 @@ export function pickVideoCodecs(codecs) {
   return out;
 }
 
+// «srflx/udp» — вид кандидата для voice.log, адрес не нужен.
+export function candidateKind(candidate) {
+  const text = String(candidate?.candidate || '');
+  const type = text.match(/ typ (\w+)/)?.[1] || '?';
+  const protocol = text.split(' ')[2]?.toLowerCase() || '?';
+  return `${type}/${protocol}`;
+}
+
+// Ответ, в котором зритель — сервер DTLS, а не клиент: повторная попытка меняет роли шифрования.
+export function asDtlsServer(sdp) {
+  return String(sdp).replace(/a=setup:active/g, 'a=setup:passive');
+}
+
+const newIceInfo = () => ({ local: {}, remote: {}, errors: [] });
+
+function countKind(list, candidate) {
+  const kind = candidateKind(candidate);
+  list[kind] = (list[kind] || 0) + 1;
+}
+
 export class ScreenShareHub {
   // send(id, message) — доставка собеседнику; getIceServers() — STUN/TURN; capture() — поток экрана или null,
   // если игрок передумал; onChange() — перерисовать интерфейс; log(event, data) — запись в voice.log.
@@ -143,7 +163,7 @@ export class ScreenShareHub {
     id = Number(id);
     if (!this.available.has(id) || this.viewers.has(id)) return;
     const sid = this.nextSid++;
-    this.viewers.set(id, { pc: null, sid, pending: [], stream: null, state: 'connecting' });
+    this.viewers.set(id, { pc: null, sid, pending: [], stream: null, state: 'connecting', attempt: 0, ice: newIceInfo() });
     this.post(id, { type: 'request', sid });
     this.onChange();
   }
@@ -216,14 +236,63 @@ export class ScreenShareHub {
     }
   }
 
-  async makePeer(id, entry) {
+  async makePeer(id, entry, role) {
     const iceServers = await this.getIceServers();
     const pc = this.createPeer({ iceServers });
     entry.pc = pc;
     pc.onicecandidate = (event) => {
-      if (event.candidate) this.post(id, { type: 'candidate', sid: entry.sid, candidate: event.candidate });
+      if (!event.candidate) return;
+      countKind(entry.ice.local, event.candidate);
+      this.post(id, { type: 'candidate', sid: entry.sid, candidate: event.candidate });
+    };
+    pc.onicecandidateerror = (event) => {
+      const text = `${event.errorCode} ${event.url || ''}`.trim();
+      if (entry.ice.errors.length < 6 && !entry.ice.errors.includes(text)) entry.ice.errors.push(text);
+    };
+    // По времени этих строк видно этап сбоя: ICE не соединился или соединился, а не прошёл DTLS.
+    pc.oniceconnectionstatechange = () => {
+      this.log('screen-ice-state', { id, role, ice: pc.iceConnectionState, attempt: entry.attempt || 0 });
     };
     return pc;
+  }
+
+  // Строка voice.log для разбора: какие кандидаты были, какая пара выбрана, чем кончился DTLS.
+  async logIce(id, role, entry, pc, state) {
+    const info = {
+      id,
+      role,
+      state,
+      attempt: entry.attempt || 0,
+      ice: pc.iceConnectionState,
+      gathering: pc.iceGatheringState,
+      local: entry.ice.local,
+      remote: entry.ice.remote,
+      errors: entry.ice.errors,
+    };
+    try {
+      const stats = await pc.getStats();
+      stats.forEach((report) => {
+        if (report.type !== 'transport') return;
+        info.dtls = report.dtlsState;
+        info.dtlsRole = report.dtlsRole;
+        const pair = stats.get(report.selectedCandidatePairId);
+        if (!pair) return;
+        info.pair = `${stats.get(pair.localCandidateId)?.candidateType}<>${stats.get(pair.remoteCandidateId)?.candidateType}`;
+      });
+    } catch {}
+    this.log('screen-ice', info);
+  }
+
+  // Первая попытка не удалась: новое соединение, в котором зритель — сервер DTLS. Окно просмотра остаётся.
+  retryViewer(id, viewer) {
+    this.closePc(viewer.pc);
+    viewer.pc = null;
+    viewer.pending = [];
+    viewer.ice = newIceInfo();
+    viewer.attempt += 1;
+    viewer.state = 'connecting';
+    viewer.sid = this.nextSid++;
+    this.post(id, { type: 'request', sid: viewer.sid });
   }
 
   async onRequest(id, sid) {
@@ -237,9 +306,9 @@ export class ScreenShareHub {
       this.post(id, { type: 'full', sid });
       return;
     }
-    const entry = { pc: null, sid, pending: [], sender: null };
+    const entry = { pc: null, sid, pending: [], sender: null, ice: newIceInfo() };
     this.senders.set(id, entry);
-    const pc = await this.makePeer(id, entry);
+    const pc = await this.makePeer(id, entry, 'sender');
     // Показ остановили или зритель ушёл, пока ждали ICE-серверы.
     if (this.senders.get(id) !== entry || !this.localStream) {
       this.closePc(pc);
@@ -248,6 +317,7 @@ export class ScreenShareHub {
     pc.onconnectionstatechange = () => {
       const state = pc.connectionState;
       this.log('screen-sender-state', { id, state });
+      if (state === 'connected' || state === 'failed') this.logIce(id, 'sender', entry, pc, state);
       if ((state === 'failed' || state === 'closed') && this.senders.get(id) === entry) {
         this.closeSender(id);
         this.onChange();
@@ -290,7 +360,7 @@ export class ScreenShareHub {
     const viewer = this.viewers.get(id);
     // Предложение только в ответ на свой запрос: без него чужое видео не откроется.
     if (!viewer || viewer.sid !== sid || viewer.pc) return;
-    const pc = await this.makePeer(id, viewer);
+    const pc = await this.makePeer(id, viewer, 'viewer');
     if (this.viewers.get(id) !== viewer) {
       this.closePc(pc);
       return;
@@ -299,20 +369,25 @@ export class ScreenShareHub {
       viewer.stream = event.streams?.[0] || new MediaStream([event.track]);
       this.onChange();
     };
-    pc.onconnectionstatechange = () => {
+    pc.onconnectionstatechange = async () => {
       const state = pc.connectionState;
-      this.log('screen-viewer-state', { id, state });
-      if (this.viewers.get(id) !== viewer) return;
+      this.log('screen-viewer-state', { id, state, attempt: viewer.attempt });
+      if (this.viewers.get(id) !== viewer || viewer.pc !== pc) return;
       viewer.state = state;
-      if (state === 'failed') {
-        this.closeViewer(id);
+      if (state === 'connected' || state === 'failed') await this.logIce(id, 'viewer', viewer, pc, state);
+      if (state === 'failed' && this.viewers.get(id) === viewer && viewer.pc === pc) {
+        if (viewer.attempt === 0 && this.available.has(id)) {
+          this.retryViewer(id, viewer);
+        } else {
+          this.closeViewer(id);
+        }
       }
       this.onChange();
     };
     await pc.setRemoteDescription({ type: 'offer', sdp });
     await this.flushCandidates(viewer);
     const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
+    await pc.setLocalDescription(viewer.attempt > 0 ? { type: 'answer', sdp: asDtlsServer(answer.sdp) } : answer);
     this.post(id, { type: 'answer', sid, sdp: pc.localDescription.sdp });
   }
 
@@ -327,6 +402,7 @@ export class ScreenShareHub {
     const sender = this.senders.get(id);
     const entry = sender?.sid === sid ? sender : this.viewers.get(id)?.sid === sid ? this.viewers.get(id) : null;
     if (!entry || !candidate) return;
+    countKind(entry.ice.remote, candidate);
     // Кандидат может обогнать offer или answer.
     if (!entry.pc?.remoteDescription) {
       entry.pending.push(candidate);
@@ -344,6 +420,8 @@ export class ScreenShareHub {
   closePc(pc) {
     if (!pc) return;
     pc.onicecandidate = null;
+    pc.onicecandidateerror = null;
+    pc.oniceconnectionstatechange = null;
     pc.onconnectionstatechange = null;
     pc.ontrack = null;
     try {
