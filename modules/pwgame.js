@@ -177,6 +177,27 @@ export class PWGame {
     });
   }
 
+  // Сколько проб на адрес при выборе входа и шаг между ними. Одна проба могла
+  // попасть во всплеск задержки (на боксах до 200 мс примерно в 10% замеров)
+  // и перепутать порядок адресов.
+  static GAME_PROBE_COUNT = 3;
+
+  static GAME_PROBE_GAP_MS = 150;
+
+  // Лучшее (минимальное) время ответа из нескольких проб; null — ни одного ответа.
+  // Пробы идут внахлёст, а не подряд: адрес без ответа задерживает запуск на
+  // таймаут плюс 2 шага, а не на таймаут × число проб.
+  static async bestGameProbe(ip, port, timeoutMs = 2000) {
+    let rtts = await Promise.all(Array.from({ length: PWGame.GAME_PROBE_COUNT }, async (_, i) => {
+      if (i) {
+        await new Promise((resolve) => setTimeout(resolve, i * PWGame.GAME_PROBE_GAP_MS));
+      }
+      return PWGame.udpGameProbe(ip, port, timeoutMs);
+    }));
+    let answered = rtts.filter((rtt) => typeof rtt === 'number');
+    return answered.length ? Math.min(...answered) : null;
+  }
+
   // Orders the pool block for the client: reachable IPs first, sorted by
   // response time (fastest first); unreachable ones appended at the end in
   // their original order. The launcher never drops an address from the
@@ -192,7 +213,7 @@ export class PWGame {
     // The login port of the pool is the target base port + 1 (all pool
     // servers run the same offsets); without a port — the legacy 27301.
     let loginPort = port ? port + 1 : PWGame.GAME_SERVER_LOGIN_PORT;
-    let rtts = await Promise.all(ips.map((ip) => PWGame.udpGameProbe(ip, loginPort)));
+    let rtts = await Promise.all(ips.map((ip) => PWGame.bestGameProbe(ip, loginPort)));
     let reachable = [];
     let unreachable = [];
     for (let i = 0; i < ips.length; ++i) {
