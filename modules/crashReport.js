@@ -32,11 +32,10 @@ import { ReplayUpload } from './replayUpload.js';
 // Из каждого отчёта собирается один архив .tar.xz — дамп, exception.log, общий лог
 // (*-output.txt), fastfail.log, реплей боя, meta.json — и шлётся по WS:
 // crash.begin → crash.chunk × N → crash.finish. От игрока ничего не нужно.
-// В crash.begin идёт и краткая сводка (summary): код исключения и стек именами
-// функций — по Bin\PW_Game.sym.xz (таблица имён, собирается вместе с exe:
-// Tools/WineClientBuild/make_symbols.py), если она от того exe, что упал: отчёт могут
-// дослать уже после обновления игры, поэтому штамп exe берётся из дампа, а у отчёта
-// без дампа — из отметки лончера при выходе игры. Другой exe — вместо имён адреса.
+// В crash.begin идёт и краткая сводка (summary): код исключения, штамп exe и стек
+// адресами. Имена функций подставляет бэкенд (objects/crashSymbols.js): таблицу имён
+// игрокам не раздаём. Отчёт могут дослать уже после обновления игры, поэтому штамп
+// exe берётся из дампа, а у отчёта без дампа — из отметки лончера при выходе игры.
 // На бой бэкенд берёт один архив: у остальных игроков того же боя отказ ещё
 // на begin ({skip}), а пока архив боя грузит другой — {retry}, повтор позже.
 //
@@ -136,7 +135,6 @@ export class CrashReport {
 
   static logsDirCache = null;
 
-  static symbolsCache = null; // {key, table}
 
   static supported() {
     return !!NativeAPI.status && NativeAPI.platform === 'win32';
@@ -469,8 +467,7 @@ export class CrashReport {
     const asyncReport = asyncData ? CrashReport.parseAsyncReport(asyncData.toString('latin1')) : null;
     const crash = dump.kind === 'exception' ? CrashReport.parseExceptionLog(exceptionText) : CrashReport.parseFastfail(String(note.fastfail || ''));
     const exe = CrashReport.dumpExe(files.find((file) => file.name === dump.name)?.data) || note.exe || null;
-    const symbols = asyncReport ? null : await CrashReport.loadSymbols(exe).catch(() => null);
-    const stack = crash.frames.map((rva) => CrashReport.symbolize(symbols, rva));
+    const stack = crash.frames.map((rva) => CrashReport.frameAddress(rva));
     const summary = asyncReport
       ? CrashReport.asyncSummary(asyncReport, await CrashReport.exeStamp(), CrashReport.fpHash(fastfailTail))
       : CrashReport.summary(dump.kind, note.exitCode, crash, stack, exe);
@@ -488,7 +485,6 @@ export class CrashReport {
       summary,
       stack,
       async: asyncReport,
-      symbols: symbols ? `PW_Game.sym timestamp=${symbols.timestamp}` : 'нет таблицы имён для этого exe',
       os: `${NativeAPI.os.type()} ${NativeAPI.os.release()} ${NativeAPI.os.arch()}`,
       nw: (process.versions && process.versions.nw) || '',
     };
@@ -574,29 +570,6 @@ export class CrashReport {
     return CrashReport.peHeader(await CrashReport.readHead(NativeAPI.path.join(process.cwd(), CrashReport.GAME_BIN, 'PW_Game.exe'), 4096));
   }
 
-  // Таблица имён Bin\PW_Game.sym.xz, если и она, и установленный PW_Game.exe — от упавшего exe: {timestamp, rvas, names}
-  static async loadSymbols(crashed) {
-    if (!crashed) return null;
-    const fs = NativeAPI.fileSystem;
-    const bin = NativeAPI.path.join(process.cwd(), CrashReport.GAME_BIN);
-    const symPath = NativeAPI.path.join(bin, 'PW_Game.sym.xz');
-    let stat;
-    try {
-      stat = await fs.promises.stat(symPath);
-    } catch {
-      return null;
-    }
-    const exe = await CrashReport.installedExe();
-    if (!exe || exe.timestamp !== crashed.timestamp || exe.size !== crashed.size) return null;
-    const key = `${stat.mtimeMs}:${stat.size}:${exe.timestamp}:${exe.size}`;
-    if (CrashReport.symbolsCache && CrashReport.symbolsCache.key === key) return CrashReport.symbolsCache.table;
-
-    const text = (await CrashReport.decompress(symPath)).toString('utf8');
-    const table = CrashReport.parseSymbols(text, exe);
-    CrashReport.symbolsCache = { key, table };
-    return table;
-  }
-
   static async readHead(path, length) {
     let file;
     try {
@@ -611,7 +584,7 @@ export class CrashReport {
     }
   }
 
-  // TimeDateStamp и SizeOfImage из заголовка PE (hex, как в PW_Game.sym)
+  // TimeDateStamp и SizeOfImage из заголовка PE (hex)
   static peHeader(data) {
     if (!data || data.length < 0x40) return null;
     const pe = data.readUInt32LE(0x3c);
@@ -622,47 +595,9 @@ export class CrashReport {
     };
   }
 
-  // Заголовок «# PW_Game.sym v1 timestamp=… size=…», затем «<rva hex> <имя>» по возрастанию
-  static parseSymbols(text, exe) {
-    const lines = String(text).split('\n');
-    const head = /^# PW_Game\.sym v1 timestamp=([0-9a-f]+) size=([0-9a-f]+)/.exec(lines[0] || '');
-    if (!head || head[1] !== exe.timestamp || head[2] !== exe.size) return null;
-    const rvas = [];
-    const names = [];
-    for (let i = 1; i < lines.length; i++) {
-      const space = lines[i].indexOf(' ');
-      if (space <= 0) continue;
-      rvas.push(parseInt(lines[i].slice(0, space), 16));
-      names.push(lines[i].slice(space + 1));
-    }
-    return { timestamp: head[1], size: parseInt(head[2], 16), rvas, names };
-  }
-
-  static decompress(path) {
-    return new Promise((resolve, reject) => {
-      const exe = NativeAPI.path.join(process.cwd(), ReplayUpload.XZ_PATH);
-      const child = NativeAPI.childProcess.spawn(exe, ['-dc', '--', path], { windowsHide: true });
-      NativeAPI.trackChildBeforeReload(child);
-      const chunks = [];
-      child.stdout.on('data', (data) => chunks.push(data));
-      child.on('error', reject);
-      child.on('close', (code) => (code === 0 ? resolve(Buffer.concat(chunks)) : reject(new Error(`xz -d: code ${code}`))));
-    });
-  }
-
-  // RVA → «Класс::Метод+0x1A» (без таблицы — «PW_Game.exe+0x…»; за пределами образа — системная DLL)
-  static symbolize(table, rva) {
-    const raw = `PW_Game.exe+0x${rva.toString(16).toUpperCase()}`;
-    if (table && rva >= table.size) return `${raw} (вне PW_Game.exe)`;
-    if (!table || !table.rvas.length || rva < table.rvas[0]) return raw;
-    let lo = 0;
-    let hi = table.rvas.length - 1;
-    while (lo < hi) {
-      const mid = (lo + hi + 1) >> 1;
-      if (table.rvas[mid] <= rva) lo = mid;
-      else hi = mid - 1;
-    }
-    return `${table.names[lo]}+0x${(rva - table.rvas[lo]).toString(16).toUpperCase()}`;
+  // Адрес кадра; по нему бэкенд находит имя функции
+  static frameAddress(rva) {
+    return `PW_Game.exe+0x${rva.toString(16).toUpperCase()}`;
   }
 
   // Короткий текст для Telegram: что случилось и где
