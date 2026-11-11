@@ -1,50 +1,103 @@
-// Звуки «Мастерской свитков» (Data/Audio/Minigame02.fsb → content/easel/sounds/*.ogg), Web Audio
+// Звуки «Мастерской свитков» — события FMOD группы Minigame02 клиента PW (Data/Audio/PrimeWorld.fev + Minigame02.fsb →
+// content/easel/sfx/*.ogg + events.json, tools/pw-convert/build_easel_sounds.py), Web Audio.
+// Как в клиенте (PF_Minigames/EaselFModEvent.cpp, свойства событий из FMOD Designer):
+// - громкость события (volume) и разброс громкости/высоты (volumeRand/pitchRand) — при каждом запуске;
+// - высота и эффекты слоёв у разовых событий уже в файле (рендер самим FMOD), у зацикленных — rate;
+// - повторный запуск того же звука (тот же id, по умолчанию — имя события) перезапускает его, а зацикленный, пока
+//   звучит, не трогается;
+// - одновременно звучит не больше maxPlaybacks экземпляров события, лишний вытесняет старый (steal) или не звучит;
+// - остановка — сразу, без затухания: клиент останавливает события с fImmediately (fadeOut не нужен).
+// Тот же интерфейс (load/play/stop/stopAll/pause/setVolume/destroy) повторяет звук Android (easelNative.js,
+// SoundPool) — общие части ниже экспортируются для него.
 import { EASEL_BASE, fetchOk } from './easelRenderer.js';
 
-export const SOUNDS = [
-  'easel_drop_shot',
-  'easel_hit_color_match',
-  'easel_hit_color_missmatch',
-  'easel_miss',
-  'easel_platform_drops_swap',
-  'easel_drop_explosion',
-  'easel_paint_flow',
-  'easel_drop_slide_high',
-  'easel_drop_slide_low',
-  'easel_chain_merged',
-  'easel_chain_destroyed',
-  'easel_chain_near_exit',
-  'easel_chain_reach_end',
-  'easel_level_scroll_start',
-  'easel_level_win',
-  'easel_level_loose',
-  'easel_result_gold',
-  'easel_result_silver',
-  'easel_coin_catched',
-  'easel_ball_in_tunnel',
-  'easel_ball_out_tunnel',
-  'easel_boost_paintblast_clic',
-  'easel_boost_paintblas_explosion',
-  'easel_boost_freeze_click',
-  'easel_boost_joker_click',
-  'easel_boost_inspiration_cli',
-  'Magnet',
-  'Alchemist',
-];
+export const SFX_BASE = EASEL_BASE + 'sfx/';
 
-// Поправки громкости отдельных звуков (в PW все события Minigame02 одинаковые: −5 дБ)
-const TRIM = {
-  easel_platform_drops_swap: 0.12,
-  easel_chain_merged: 0.12,
-};
+// Таблица событий: имя → {file, volume, rate, loop, maxPlaybacks, steal, volumeRand, pitchRand, fadeIn, offset, ms}
+export async function loadEaselEvents() {
+  return (await fetchOk(SFX_BASE + 'events.json')).events || {};
+}
+
+// Громкость экземпляра: громкость события, разброс FMOD — только вниз, в дБ
+export function eventGain(ev) {
+  let g = ev.volume ?? 1;
+  if (ev.volumeRand) g *= 10 ** ((-Math.random() * ev.volumeRand) / 20);
+  return g;
+}
+
+// Скорость экземпляра: rate события и разброс высоты ± pitchRand полутонов
+export function eventRate(ev) {
+  let r = ev.rate || 1;
+  if (ev.pitchRand) r *= 2 ** (((Math.random() * 2 - 1) * ev.pitchRand) / 12);
+  return r;
+}
+
+// Учёт звучащих экземпляров: id → экземпляр, лимит повторов события. stopFn(handle) — заглушить экземпляр.
+// Время — в секундах любых часов (end — когда экземпляр доиграет сам, Infinity у зацикленных).
+export class EaselVoices {
+  constructor(stopFn) {
+    this.stopFn = stopFn;
+    this.list = [];
+  }
+
+  prune(now) {
+    this.list = this.list.filter((v) => v.end > now);
+  }
+
+  // Можно ли запустить событие name под id; заодно глушит тех, кого надо вытеснить
+  admit(name, ev, id, now) {
+    this.prune(now);
+    const same = this.list.find((v) => v.id === id);
+    if (same) {
+      if (ev.loop && same.name === name) return false; // зацикленный уже звучит
+      this.kill(same);
+    }
+    const mine = this.list.filter((v) => v.name === name);
+    if (mine.length >= Math.max(1, ev.maxPlaybacks || 1)) {
+      if (ev.steal === 'fail' || ev.steal === 'failIfQuietest') return false;
+      // quietest — громкость у всех экземпляров одна, вытесняем старый
+      this.kill(ev.steal === 'newest' ? mine[mine.length - 1] : mine[0]);
+    }
+    return true;
+  }
+
+  add(id, name, handle, end) {
+    this.list.push({ id, name, handle, end });
+  }
+
+  // Экземпляр доиграл сам
+  forget(handle) {
+    this.list = this.list.filter((v) => v.handle !== handle);
+  }
+
+  kill(v) {
+    this.list = this.list.filter((x) => x !== v);
+    this.stopFn(v.handle);
+  }
+
+  stop(id) {
+    for (const v of this.list.filter((x) => x.id === id)) this.kill(v);
+  }
+
+  stopAll() {
+    for (const v of [...this.list]) this.kill(v);
+  }
+}
 
 export class EaselSound {
   constructor() {
-    this.buffers = {};
-    this.playing = new Map(); // id → источник (для остановки)
+    this.events = {};
+    this.buffers = {}; // файл → AudioBuffer
     this.last = {};
     this.volume = 0.5;
     this.muted = false;
+    this.voices = new EaselVoices((src) => {
+      try {
+        src.stop();
+      } catch (e) {
+        // уже остановлен
+      }
+    });
     try {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       this.out = this.ctx.createGain();
@@ -56,13 +109,24 @@ export class EaselSound {
 
   async load() {
     if (!this.ctx) return;
+    try {
+      this.events = await loadEaselEvents();
+    } catch (e) {
+      console.warn('easel: sound events failed', e);
+      return;
+    }
+    const files = new Set(
+      Object.values(this.events)
+        .map((ev) => ev.file)
+        .filter(Boolean),
+    );
     await Promise.all(
-      SOUNDS.map(async (n) => {
+      [...files].map(async (f) => {
         try {
-          const buf = await fetchOk(`${EASEL_BASE}sounds/${n}.ogg`, 'buf');
-          this.buffers[n] = await this.ctx.decodeAudioData(buf);
+          const buf = await fetchOk(`${SFX_BASE}${f}.ogg`, 'buf');
+          this.buffers[f] = await this.ctx.decodeAudioData(buf);
         } catch (e) {
-          console.warn('easel: sound failed', n, e);
+          console.warn('easel: sound failed', f, e);
         }
       }),
     );
@@ -74,50 +138,44 @@ export class EaselSound {
     if (this.out) this.out.gain.value = muted ? 0 : v;
   }
 
-  // opts: {id — заменяет прежний звук с тем же id (по умолчанию — имя звука: как в PW, у каждого
-  // события FMOD один экземпляр, max playbacks = 1, повторный Play перезапускает), gap — не чаще
-  // чем раз в gap секунд, volume}
+  // name — событие FMOD (events.json). opts: {id — слот звука (по умолчанию имя события): новый запуск в том же
+  // слоте перезапускает звук, как EaselFModEvent::Play; gap — не чаще чем раз в gap секунд; volume — множитель}
   play(name, opts = {}) {
-    const b = this.buffers[name];
-    if (!b || !this.ctx || this.muted) return;
+    const ev = this.events[name];
+    const b = ev && this.buffers[ev.file];
+    if (!b || !this.ctx || this.muted || !(ev.volume > 0)) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
     const now = this.ctx.currentTime;
     if (opts.gap && this.last[name] !== undefined && now - this.last[name] < opts.gap) return;
+    const id = opts.id || name;
+    if (!this.voices.admit(name, ev, id, now)) return;
     this.last[name] = now;
     const src = this.ctx.createBufferSource();
     src.buffer = b;
-    let node = src;
-    const vol = (opts.volume ?? 1) * (TRIM[name] ?? 1);
-    if (vol !== 1) {
-      const g = this.ctx.createGain();
-      g.gain.value = vol;
-      src.connect(g);
-      node = g;
-    }
-    node.connect(this.out);
-    const id = opts.id || name;
-    this.stop(id);
-    this.playing.set(id, src);
-    src.onended = () => {
-      if (this.playing.get(id) === src) this.playing.delete(id);
-    };
-    src.start();
+    src.loop = !!ev.loop;
+    const rate = eventRate(ev);
+    src.playbackRate.value = rate;
+    const g = this.ctx.createGain();
+    const vol = eventGain(ev) * (opts.volume ?? 1);
+    if (ev.fadeIn > 0) {
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(vol, now + ev.fadeIn / 1000);
+    } else g.gain.value = vol;
+    src.connect(g);
+    g.connect(this.out);
+    const offset = Math.min(ev.offset || 0, b.duration);
+    const end = ev.loop ? Infinity : now + (b.duration - offset) / rate + 0.05;
+    this.voices.add(id, name, src, end);
+    src.onended = () => this.voices.forget(src);
+    src.start(0, offset);
   }
 
   stop(id) {
-    if (!id) return;
-    const s = this.playing.get(id);
-    if (!s) return;
-    this.playing.delete(id);
-    try {
-      s.stop();
-    } catch (e) {
-      // уже остановлен
-    }
+    if (id) this.voices.stop(id);
   }
 
   stopAll() {
-    for (const id of [...this.playing.keys()]) this.stop(id);
+    this.voices.stopAll();
   }
 
   pause(on) {

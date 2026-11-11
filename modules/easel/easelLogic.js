@@ -58,23 +58,31 @@ const trunc = Math.trunc;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const dist = (a, b) => trunc(Math.hypot(a.x - b.x, a.y - b.y)); // EaselMath CalculateDistance
 
-// NRandom: целые [min, max] включительно и float [min, max)
+// PF_Minigames::RandomGenerator (Random.cpp): тот же LCG и та же раскладка в диапазоны, что в клиенте,
+// поэтому при одном сиде цепочки, капли на тележке и монетки совпадают с игрой.
+// int(min, max) — [min, max] включительно, float(min, max) — [min, max) с округлением до float.
 export class Rng {
   constructor(seed) {
-    this.s = seed >>> 0 || 1;
+    this.s = seed | 0;
+  }
+  // RandomGenerator::Random(): 32-битная арифметика int с переполнением, как в MSVC
+  raw() {
+    this.s = (Math.imul(this.s, 214013) + 2531011) | 0;
+    let res = this.s >> 7;
+    this.s = (Math.imul(this.s, 214013) + 2531011) | 0;
+    res ^= this.s << 6;
+    return res | 0;
   }
   next() {
-    let t = (this.s = (this.s + 0x6d2b79f5) >>> 0);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    return (this.raw() >>> 0) / 4294967296;
   }
   int(min, max) {
-    if (max <= min) return min;
-    return min + Math.floor(this.next() * (max - min + 1));
+    const n = (max - min + 1) >>> 0; // Random( (unsigned int)(max - min + 1) )
+    if (n === 0) return min;
+    return (min + ((this.raw() >>> 0) % n)) | 0;
   }
   float(min, max) {
-    return min + this.next() * (max - min);
+    return Math.fround(min + Math.fround((this.raw() >>> 0) / 4294967296 * (max - min)));
   }
 }
 
@@ -87,7 +95,7 @@ class LogicTrajectory {
   coords(len) {
     if (len > this.length) return null; // LUX_LENGHT_TOO_BIG
     const c = this.poly.coords(len / M);
-    return { x: c[0] * M, y: c[1] * M };
+    return { x: trunc(c[0] * M), y: trunc(c[1] * M) }; // SVector — int
   }
   tangent(len) {
     const t = this.poly.tangent(len / M);
@@ -116,7 +124,7 @@ export class Ball {
   }
   // LuxBall::GetCollisionTime
   collisionTime(other) {
-    const L = this.size / 2 + other.size / 2;
+    const L = trunc(this.size / 2) + trunc(other.size / 2); // int size: целочисленные половины
     const dX = this.pos.x - other.pos.x;
     const dY = this.pos.y - other.pos.y;
     const a = this.velocity();
@@ -154,7 +162,7 @@ export class Ball {
   // GetCollisionPoint: в оригинале Interpolate(first, first) — позиция пули в момент столкновения
   collisionPoint(t) {
     const a = this.velocity();
-    return { x: this.pos.x + a.vx * t, y: this.pos.y + a.vy * t };
+    return { x: trunc(this.pos.x + a.vx * t), y: trunc(this.pos.y + a.vy * t) }; // SVector( X, Y ) — int
   }
   canCollide() {
     if (this.state === BALL.ROLL_IN || this.state === BALL.ROLL_OUT) return false;
@@ -1053,13 +1061,14 @@ class Platform {
     const y = p.y + FIELD_L / 2;
     const s = DIAM;
     const B = this.balls;
+    // SVector — int
     if (B.length === 2) {
-      if (B[0]) B[0].pos = { x: p.x, y: y + s };
-      if (B[1]) B[1].pos = { x: p.x, y: y + 2 * s };
+      if (B[0]) B[0].pos = { x: p.x, y: trunc(y + s) };
+      if (B[1]) B[1].pos = { x: p.x, y: trunc(y + 2 * s) };
     } else {
-      if (B[0]) B[0].pos = { x: p.x, y: y + 1.3 * s };
-      if (B[1]) B[1].pos = { x: p.x + 0.55 * s, y: y + 2.25 * s };
-      if (B[2]) B[2].pos = { x: p.x - 0.55 * s, y: y + 2.25 * s };
+      if (B[0]) B[0].pos = { x: p.x, y: trunc(y + 1.3 * s) };
+      if (B[1]) B[1].pos = { x: trunc(p.x + 0.55 * s), y: trunc(y + 2.25 * s) };
+      if (B[2]) B[2].pos = { x: trunc(p.x - 0.55 * s), y: trunc(y + 2.25 * s) };
     }
   }
   createBall(i, color, type) {
@@ -1130,7 +1139,7 @@ class Platform {
   }
   nextColor(except) {
     const w = this.colorWeights();
-    const low = this.game.data.common.platformGeneratorParams.lowActChance;
+    const low = Math.fround(this.game.data.common.platformGeneratorParams.lowActChance);
     if (this.rng.float(0, 1) <= low) return this.byWeight(except, w);
     return this.lowAct(w);
   }
@@ -1224,7 +1233,7 @@ class FallingBoard {
   constructor(game) {
     this.game = game;
     this.coin = game.data.common.coin;
-    this.rng = new Rng(game.seed + 17);
+    this.rng = new Rng(game.seed); // LuxFallingBoard: тот же сид, что у генератора и тележки
     this.objects = [];
     this.platformPos = { x: 0, y: 0 };
     this.prevPlatformPos = { x: 0, y: 0 };
@@ -1232,12 +1241,13 @@ class FallingBoard {
   dropCoin(from) {
     if (this.rng.int(0, 100) > this.coin.fallingPercentage) return;
     if (this.game.state !== BOARD.LEVEL_RUN) return;
-    const to = { x: this.rng.float(0, FIELD_L), y: FIELD_L * 1.2 };
-    const up = DIAM * this.coin.jumpSpeed;
-    const g = DIAM * this.coin.gravity;
-    const o = { id: ++ballIds, pos: { x: from.x, y: from.y }, vel: { x: 0, y: -up }, acc: { x: 0, y: g }, picked: false, time: 0 };
-    const s = to.y - from.y;
-    const D = up * up + 2 * g * s;
+    // SVector — int, SInitialConditions(from, to, int upvelocity, int gravity)
+    const to = { x: trunc(this.rng.float(0, FIELD_L)), y: trunc(FIELD_L * 1.2) };
+    const up = trunc(DIAM * this.coin.jumpSpeed);
+    const g = trunc(DIAM * this.coin.gravity);
+    const o = { id: ++ballIds, pos: { x: trunc(from.x), y: trunc(from.y) }, vel: { x: 0, y: -up }, acc: { x: 0, y: g }, picked: false, time: 0 };
+    const s = to.y - o.pos.y;
+    const D = Math.fround(up * up) + 2 * g * s; // sqr( float )
     if (D > 1e-3) {
       const t0 = (up + Math.sqrt(D)) / g;
       const t1 = (up - Math.sqrt(D)) / g;
@@ -1245,7 +1255,7 @@ class FallingBoard {
       if (t0 > 0 && t1 > 0) t = Math.min(t0, t1);
       else if (t0 > 0) t = t0;
       else if (t1 > 0) t = t1;
-      if (t >= 1e-3) o.vel.x = (to.x - from.x) / t;
+      if (t >= 1e-3) o.vel.x = trunc((to.x - o.pos.x) / t);
     }
     this.objects.push(o);
     this.game.emit({ type: 'coinDropped', obj: o });
@@ -1690,7 +1700,17 @@ export class EaselGame {
   fireBoost(type) {
     this.boosts.fire(type);
   }
+  // Шаг мира. Клиент (EaselLocal::StepInterval, EaselMinigame::DoStep) на каждом шаге вызывает
+  // EaselWorld::StepM дважды: сначала с deltaTime = 0 («хак, позволяет провести инпут»), потом с
+  // длиной шага. Нулевой шаг — полноценный: тележка стреляет, цепочки делают подшаг пружин
+  // MoveBallsAndChangeSizes(0 - 20), счётчики взрыва (CanExplode) и магниты срабатывают ещё раз.
+  // Ввод (input) приходит до шага, как ProcessInput в начале нулевого шага.
   step(dt = STEP_MS) {
+    this._tick(0);
+    this._tick(dt);
+  }
+  // EaselWorld::StepM: LuxGameLogic::ProcessStep + PaintLogic::ProcessStep
+  _tick(dt) {
     this.platform.step(dt);
     this.falling.step(dt);
     this._boardStep(dt);

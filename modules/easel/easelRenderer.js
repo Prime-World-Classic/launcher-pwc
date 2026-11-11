@@ -2,22 +2,26 @@
 // (конвертер: tools/pw-convert/pwmodel.py), скелетная анимация 30 fps, спрайты.
 import * as mat4 from '../glMatrix/mat4.js';
 import * as quat from '../glMatrix/quat.js';
+import { EaselPlatform } from './easelPlatform.js';
 
 // Пути — относительно самого модуля (content/modules/easel/), а не документа. Путь — через переменную:
 // литерал в new URL('...', import.meta.url) dev-сервер Vite переписывает как ассет и теряет «/» на конце.
+// В Android-сборке (webpack) адрес модуля может быть недоступен — тогда пути относительные, их разрешает платформа.
 const CONTENT_REL = '../../';
-export const CONTENT_BASE = new URL(CONTENT_REL, import.meta.url).href;
+export const CONTENT_BASE = contentBase();
 export const EASEL_BASE = CONTENT_BASE + 'easel/';
 
-export async function fetchOk(url, type = 'json') {
-  let res;
+function contentBase() {
   try {
-    res = await fetch(url);
+    return new URL(CONTENT_REL, import.meta.url).href;
   } catch (e) {
-    throw new Error(`Не удалось загрузить ${url}`);
+    return '';
   }
-  if (!res.ok) throw new Error(`Не удалось загрузить ${url} (${res.status})`);
-  return type === 'json' ? res.json() : type === 'blob' ? res.blob() : res.arrayBuffer();
+}
+
+// Загрузка файла — через платформу (браузер: fetch, Android: файлы приложения)
+export function fetchOk(url, type = 'json') {
+  return EaselPlatform.fetch(url, type);
 }
 const MAX_BONES = 32;
 const ANIM_FPS = 30;
@@ -415,15 +419,15 @@ export class EaselRenderer {
     if (this.textures[id]) return this.textures[id];
     const gl = this.gl;
     try {
-      const blob = await fetchOk(url, 'blob');
-      const bmp = await createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+      const bmp = await EaselPlatform.image(url, true);
+      if (!bmp) throw new Error('no image');
       const t = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, t);
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
       gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
       gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.BROWSER_DEFAULT_WEBGL);
-      if (bmp.close) bmp.close();
+      EaselPlatform.releaseImage(bmp);
       if (opts.nearest) {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -455,30 +459,30 @@ export class EaselRenderer {
     return ids;
   }
 
-  loadTexture(id, url) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const gl = this.gl;
-        const t = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, t);
-        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-        gl.generateMipmap(gl.TEXTURE_2D);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-        this.textures[id] = t;
-        resolve(t);
-      };
-      img.onerror = () => {
-        console.warn('easel: texture failed', url);
-        this.textures[id] = this.white;
-        resolve(this.white);
-      };
-      img.src = url;
-    });
+  async loadTexture(id, url) {
+    let img = null;
+    try {
+      img = await EaselPlatform.image(url, false);
+    } catch (e) {
+      img = null;
+    }
+    if (!img) {
+      console.warn('easel: texture failed', url);
+      return (this.textures[id] = this.white);
+    }
+    const gl = this.gl;
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    EaselPlatform.releaseImage(img);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    this.textures[id] = t;
+    return t;
   }
 
   _makeTex(w, h, data) {
@@ -593,7 +597,7 @@ export class EaselRenderer {
   }
 
   resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = EaselPlatform.pixelRatio();
     const w = Math.max(1, Math.round(this.canvas.clientWidth * dpr));
     const h = Math.max(1, Math.round(this.canvas.clientHeight * dpr));
     if (this.canvas.width !== w || this.canvas.height !== h) {
@@ -606,19 +610,28 @@ export class EaselRenderer {
   // Камера PW: target + anchor, yaw/pitch (град.), rod — расстояние, fov — вертикальный
   setCamera({ target = [0, 0, 0], yaw = 0, pitch = -47, rod = 12, fov = 50 }) {
     const [w, h] = this.resize();
+    // Узкий экран (телефон, окно уже 4:3): камера отъезжает, чтобы поле влезло по ширине
+    const dist = rod * Math.max(1, FIT_ASPECT / (w / h));
     const p = (pitch * Math.PI) / 180;
     const y = (yaw * Math.PI) / 180;
     const dir = [Math.sin(y) * Math.cos(p), Math.cos(y) * Math.cos(p), Math.sin(p)];
-    this.eye = [target[0] - dir[0] * rod, target[1] - dir[1] * rod, target[2] - dir[2] * rod];
+    this.eye = [target[0] - dir[0] * dist, target[1] - dir[1] * dist, target[2] - dir[2] * dist];
     mat4.lookAt(this.view, this.eye, target, [0, 0, 1]);
     mat4.perspective(this.proj, (fov * Math.PI) / 180, w / h, 0.1, 200);
     mat4.multiply(this.viewProj, this.proj, this.view);
     this.cameraTarget = target;
   }
 
+  // Прямоугольник канвы в CSS-пикселях (на Android — в dip, без DOM: координаты касаний относительно канвы)
+  _rect() {
+    const c = this.canvas;
+    if (typeof c.getBoundingClientRect === 'function' && EaselPlatform.name === 'web') return c.getBoundingClientRect();
+    return { left: 0, top: 0, width: c.clientWidth || 1, height: c.clientHeight || 1 };
+  }
+
   // Луч из экранной точки (px в CSS-пикселях) на плоскость z = planeZ
   screenToPlane(px, py, planeZ) {
-    const rect = this.canvas.getBoundingClientRect();
+    const rect = this._rect();
     const nx = ((px - rect.left) / rect.width) * 2 - 1;
     const ny = 1 - ((py - rect.top) / rect.height) * 2;
     const inv = mat4.invert(mat4.create(), this.viewProj);
@@ -639,7 +652,7 @@ export class EaselRenderer {
     const x = m[0] * p[0] + m[4] * p[1] + m[8] * p[2] + m[12];
     const y = m[1] * p[0] + m[5] * p[1] + m[9] * p[2] + m[13];
     const w = m[3] * p[0] + m[7] * p[1] + m[11] * p[2] + m[15];
-    const rect = this.canvas.getBoundingClientRect();
+    const rect = this._rect();
     return [rect.left + ((x / w + 1) / 2) * rect.width, rect.top + ((1 - y / w) / 2) * rect.height];
   }
 
@@ -790,6 +803,8 @@ export class EaselRenderer {
   }
 }
 
+// Соотношение сторон, при котором поле влезает целиком; уже — камера отъезжает
+const FIT_ASPECT = 4 / 3;
 const IDENTITY = mat4.create();
 const ZERO2 = new Float32Array(2);
 const ZERO2I = [0, 0];
