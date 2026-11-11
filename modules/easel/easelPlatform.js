@@ -19,7 +19,8 @@ export const EaselPlatform = {
   },
 
   // Картинка для gl.texImage2D. raw — без премультипликации альфы и цветокоррекции (альфа — данные, напр. карта
-  // растекания краски); null — не загрузилась
+  // растекания краски); для raw платформа может вернуть сырые байты { width, height, data: Uint8Array RGBA };
+  // null — не загрузилась
   async image(url, raw = false) {
     if (raw) {
       const blob = await EaselPlatform.fetch(url, 'blob');

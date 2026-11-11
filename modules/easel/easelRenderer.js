@@ -425,7 +425,12 @@ export class EaselRenderer {
       gl.bindTexture(gl.TEXTURE_2D, t);
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
       gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
+      if (bmp.data) {
+        // Сырые байты RGBA от платформы (Android: Bitmap без премультипликации) — { width, height, data }
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, bmp.width, bmp.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, bmp.data);
+      } else {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
+      }
       gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.BROWSER_DEFAULT_WEBGL);
       EaselPlatform.releaseImage(bmp);
       if (opts.nearest) {
