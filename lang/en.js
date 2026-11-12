@@ -124,6 +124,8 @@ export const en = {
     advWindowModeF11: 'Windowed mode (F11)',
     advNoteWindowMode: 'The launcher runs in a window instead of full screen. F11 also toggles it.',
     advNoteThreeD: 'Off — the castle is not rendered and the GPU stays idle.',
+    castlePanorama: 'Panorama mode',
+    advNoteCastlePanorama: 'After 15 seconds without mouse or keyboard input the interface hides and the camera flies around the castle. Any movement brings everything back.',
     advNoteDayNight: 'Castle lighting and shadows follow the time of day. Off — always day.',
     advNoteBuildingLights: 'Windows, lanterns and building lights glow at night.',
     advNoteWaterSsr: 'Buildings and trees are reflected in the water. Needs water reflections, day and night cycle and building lights.',

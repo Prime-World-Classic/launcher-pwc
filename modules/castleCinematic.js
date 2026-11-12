@@ -12,6 +12,7 @@
 // режима, тоже снимает режим (Window.show → exit).
 
 import { Castle } from './castle.js';
+import { Settings } from './settings.js';
 
 export const CASTLE_CINEMATIC_CLASS = 'castle-cinematic';
 
@@ -162,6 +163,8 @@ export class CastleCinematic {
   // Замок должен реально рисоваться (3D выключено в настройках, идёт бой, открыта мини-игра —
   // не на что смотреть) и под интерфейсом не должно быть окна лончера или диалога фермы.
   static canEnter() {
+    // «Панорамный режим» в «Настройках замка» → «Замок (3D)»
+    if (Settings.settings?.castlePanorama === false) return false;
     if (!document.getElementById('castle-body')) return false;
     if (Castle.render.includes(false)) return false;
     if (document.querySelector('#castle-body > [id^="w"], #castle-body > .window__overlay, dialog[open], .launcher-notifications-panel.is-open')) return false;

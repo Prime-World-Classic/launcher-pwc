@@ -1227,6 +1227,9 @@ const CASTLE_PAGES = {
       },
     },
     { type: 'note', label: 'advNoteThreeD' },
+    // CastleCinematic: 15 с без мыши и клавиш — интерфейс гаснет, камера облетает замок
+    { type: 'setting', id: 'castlePanorama', label: 'castlePanorama', dep: ['render'], get: () => S().castlePanorama !== false, set: (on) => (S().castlePanorama = on) },
+    { type: 'note', label: 'advNoteCastlePanorama' },
     { type: 'header', label: 'advHdrLight' },
     // выкл — освещение и тени замка как до смены дня и ночи (Castle.updateDayNight)
     { type: 'setting', id: 'dayNight', label: 'dayNight', get: () => S().dayNight !== false, set: (on) => (S().dayNight = on) },
