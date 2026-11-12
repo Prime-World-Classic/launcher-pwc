@@ -218,7 +218,13 @@ export class BuildClientTooltip {
       talentRefineRate: (pid) => (list.has(pid) ? BuildClientTooltip.refineRate(Build, list.get(pid)) : null),
     });
     const recommended = new Set(BuildClientTooltip.heroData?.recommended || []);
-    const baseStat = (key) => (Number(Build.initialStats?.[key]) || 0) + (Number(Build.heroStatsFromPower?.[key]) || 0);
+    // База стата как в бою (GetUnmodifiedValue): прибавки талантов в игре постоянные
+    // (PermanentStatModApplicator пишет в базу), поэтому «от Разума»/«от Силы» по sBase… растёт
+    // вместе с ними. Без движка статов — только база героя и прирост.
+    const baseStat = (key) =>
+      typeof Build.baseStat === 'function'
+        ? Number(Build.baseStat(key)) || 0
+        : (Number(Build.initialStats?.[key]) || 0) + (Number(Build.heroStatsFromPower?.[key]) || 0);
     const model = {
       stat(name) {
         if (name === 'NaftaLevel') return 0;

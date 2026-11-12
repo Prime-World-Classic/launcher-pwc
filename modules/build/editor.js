@@ -106,6 +106,8 @@ export class BuildEditor {
       get heroStatsFromPower() {
         return ed.engine?.fromPower || {};
       },
+      // базовый стат как в бою: с постоянными прибавками талантов (sBase…/rBase… в формулах)
+      baseStat: (key) => ed.engine?.base(key) ?? 0,
       get profileStats() {
         return ed.engine?.profile || {};
       },
