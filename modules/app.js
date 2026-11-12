@@ -39,7 +39,7 @@ export class App {
   // было зашито в ветку (test → mmtest, main → mm) и терялось при синках.
   static CURRENT_MM = mmMode();
 
-  static RVPN = 'ws://26.187.55.30:3737';
+  static RVPN = 'ws://26.148.239.204:3737';
   static VPS = 'wss://pw-classic.ru';
   // Резервный API-хост (тот же бэкенд на второй VPS, Let's Encrypt сертификат
   // валиден). Гонка параллельная — он просто ещё один кандидат: если основной
@@ -139,7 +139,8 @@ export class App {
   }
 
   static async init(socket = null, host = null, latencyMs = 0, buffered = null) {
-    // ws://26.187.55.30:3737 - Radmin VPN relay (DOK)
+    // ws://26.148.239.204:3737 - Radmin VPN relay (radmin-relay на боксе BACKEND;
+    // адрес назначен RVPN-сетью хабу, при переносе релея меняется — скил pw-radmin-relay)
     // wss://pw-classic.ru - VPS
     // wss://pw-classic-backup.ru - VPS2 (резерв)
     // wss://api2.zone-play.com:2096/api - Cloudflare edge (DOK), только с пробой
