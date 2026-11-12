@@ -3395,11 +3395,12 @@ export class App {
     View.show('providerRegistration');
   }
 
-  // POST JSON на хост авторизации (Window.authBase). Запрос идёт нативным
-  // http/https: окно лончера лежит на своём origin, CORS для чужого хоста не
-  // работает (тот же путь, что у запросов уведомлений).
+  // POST JSON на хост авторизации (Window.authBaseUrl() — та же база, что у
+  // попапа: основной край, резервный край, для стенда — Window.authBase). Запрос
+  // идёт нативным http/https: окно лончера лежит на своём origin, CORS для чужого
+  // хоста не работает (тот же путь, что у запросов уведомлений).
   static async authJsonRequest(path, body) {
-    const url = `${Window.authBase}${path}`;
+    const url = `${Window.authBaseUrl()}${path}`;
     const payload = JSON.stringify(body || {});
 
     if (NativeAPI.status && (NativeAPI.https || NativeAPI.http)) {

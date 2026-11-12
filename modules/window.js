@@ -380,7 +380,36 @@ export class Window {
   // редирект на провайдера, результат возвращается postMessage'ом opener'у
   // (ParentEvent). Base один на всех провайдеров — раньше URL был
   // захардкожен в трёх местах.
-  static authBase = 'https://api.zone-play.com:2087';
+  // Адрес сервиса входа через провайдера (Steam/Яндекс). Раньше это была ОДНА
+  // строка на DOK-край (https://api.zone-play.com:2087): DOK лежит, публичного
+  // маршрута к steam.js на прод-бэкенде не было — попап не открывался ни у кого,
+  // включая оба живых канала. Теперь сервис доступен со своих WS-краёв: nginx
+  // края отдаёт путь /steam/ в реверс-SSH-туннель бэкенда, тот — на steam.js
+  // (конфиги и разбор адреса — pw-api-docker/nginx/{ws-edge-steam,backend-box}.conf,
+  // steam.js::domainFor по allow-list STEAM_DOMAINS).
+  //
+  // База выбирается по хосту, к которому лончер ДЕЙСТВИТЕЛЬНО подключился
+  // (Api.MAIN_HOST через connectionInfo()): вход идёт тем же краем, что и WS,
+  // поэтому отказ одного канала не превращается в «кнопка Steam не работает».
+  // Хостов RVPN/Cloudflare/старых установок в списке нет — для них значение
+  // authBase по умолчанию (публичный основной канал с нормальным сертификатом).
+  static authBase = 'https://pw-classic.ru/steam';
+  static authBases = {
+    'wss://pw-classic.ru': 'https://pw-classic.ru/steam',
+    'wss://pw-classic-backup.ru': 'https://pw-classic-backup.ru/steam',
+  };
+  // Единственная точка, откуда адрес берёт и попап (authPopup), и POST шага
+  // регистрации (App.authJsonRequest): realm/return_to/Origin на бэкенде
+  // строятся из одного и того же хоста, поэтому разъезд базы = отказ входа.
+  static authBaseUrl() {
+    let host = '';
+
+    try {
+      host = `${(App.api && App.api.connectionInfo && App.api.connectionInfo().host) || ''}`.trim();
+    } catch (error) {}
+
+    return Window.authBases[host] || Window.authBase;
+  }
   // Провайдеры входа/регистрации. popup — путь попапа (initiator), register —
   // путь JSON-шага регистрации (POST из основного окна). Режим регистрации —
   // query-параметр ?mode=register: вход нового игрока аккаунт НЕ создаёт
@@ -412,7 +441,7 @@ export class Window {
   static authPopup(path, name) {
     const sep = path.includes('?') ? '&' : '?';
     ParentEvent.children = window.open(
-      `${Window.authBase}${path}${sep}lang=${encodeURIComponent(Lang.target)}`,
+      `${Window.authBaseUrl()}${path}${sep}lang=${encodeURIComponent(Lang.target)}`,
       name,
       'width=1280, height=720, top=' +
         (screen.height - 720) / 2 +
