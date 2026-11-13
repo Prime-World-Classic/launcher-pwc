@@ -373,7 +373,7 @@ export class Chat {
 
   static sourceOf(data) {
     const source = String(data?.source || '').toLowerCase();
-    if (source === 'steam' || source === 'phone' || source === 'telegram') return source;
+    if (source === 'steam' || source === 'phone' || source === 'telegram' || source === 'vk') return source;
     if (Number(data?.client) === 2) return 'steam';
     if (Number(data?.client) === 1) return 'phone';
     return '';
@@ -430,7 +430,8 @@ export class Chat {
 
   static canEdit(message) {
     if (!message || !Chat.isOwn(message) || !Chat.items.has(message.id)) return false;
-    if (message.source === 'telegram' && !Chat.canModerate) return false;
+    // Сообщения из Telegram и беседы ВКонтакте правят только модераторы (как и в pw-api).
+    if ((message.source === 'telegram' || message.source === 'vk') && !Chat.canModerate) return false;
     return Date.now() - message.date <= Chat.EDIT_WINDOW_MS;
   }
 
@@ -693,7 +694,7 @@ export class Chat {
       parts.push(flag);
     }
 
-    const sourceLabels = { phone: 'titlePhone', steam: 'titleSteamClient', telegram: 'titleTelegram' };
+    const sourceLabels = { phone: 'titlePhone', steam: 'titleSteamClient', telegram: 'titleTelegram', vk: 'titleVk' };
     if (sourceLabels[message.source]) {
       const icon = DOM({ tag: 'span', style: ['chat-source-icon', `chat-source-icon-${message.source}`] });
       icon.dataset.tooltipSource = Lang.text(sourceLabels[message.source]);

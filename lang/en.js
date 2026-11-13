@@ -18,6 +18,7 @@ export const en = {
     enterTextAndPressEnter: 'Enter a message',
     titleOwner: 'Chief Administrator',
     titleTelegram: 'Telegram Chat',
+    titleVk: 'VK Chat',
     titleAdministration: 'Administrator',
     titleHelper: 'Helper',
     titlePhone: 'Phone',

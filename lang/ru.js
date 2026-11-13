@@ -19,6 +19,7 @@ export const ru = {
     enterTextAndPressEnter: 'Введите сообщение',
     titleOwner: 'Главный Администратор',
     titleTelegram: 'Telegram Чат',
+    titleVk: 'ВКонтакте Чат',
     titleAdministration: 'Администратор',
     titleHelper: 'Поддержка',
     titlePhone: 'Телефон',
