@@ -3629,7 +3629,7 @@ export class App {
   }
 
   static isAdmin(id = 0) {
-    const adminIds = [1, 2, 24, 134, 865, 2220, 292, 1853, 12781];
+    const adminIds = [1, 2, 24, 134, 865, 935, 2220, 292, 1853, 12781];
     const adminLogins = ['kot04ka'];
     // в DEV-превью (?previewBuild=1) входа нет и App.storage не создан
     const targetId = Number(id ? id : App.storage?.data?.id);
