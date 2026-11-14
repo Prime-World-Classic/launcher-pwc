@@ -258,6 +258,7 @@ export const en = {
     nicknameInvalidCharacters: 'Only Russian or English letters, numbers and regular spaces are allowed in login, try another one',
     nicknameMixedLanguages: 'Nickname can only consist of Russian or English letters, try to come up with another one',
     nicknameTaken: 'Nickname is taken',
+    nicknameForbidden: 'This nickname is not allowed: it contains profanity, an insult or a banned topic. Please choose another one',
     userNotFound: 'User not found',
     nicknameAlreadyUsed: 'You are already using this nickname or have used it before',
     accountNotFound: 'Account not found',
