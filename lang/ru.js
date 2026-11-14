@@ -1615,6 +1615,7 @@ export const ru = {
     minigameEaselSub: 'Зума: закрасьте картину каплями',
     minigameMatch3: 'Фарм талантов',
     minigameMatch3Sub: 'Три в ряд: дуэли и осколки талантов',
+    minigameMatch3Queue: 'Ищут дуэль «3 в ряд»: {n}',
     match3TabDuel: 'Дуэль',
     match3TabFarm: 'Фарм',
     match3DuelTitle: 'Дуэль «Три в ряд»',

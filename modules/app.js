@@ -1748,12 +1748,13 @@ export class App {
         DOM({ style: 'launcher-minigames-item-text' }, DOM({ tag: 'b' }, name), DOM({ tag: 'small' }, sub)),
       );
     };
+    // «Фарм талантов» (здание talent_farm, Window.farm → View.game / game.js): три в ряд из талантов
+    const match3Item = item('is-match3', Lang.text('minigameMatch3'), Lang.text('minigameMatch3Sub'), () => Window.show('main', 'farm'));
     const list = DOM(
       { style: 'launcher-minigames-list' },
       DOM({ style: 'launcher-minigames-title' }, title),
       item('is-easel', Lang.text('easel_doct'), Lang.text('minigameEaselSub'), () => App.openEasel()),
-      // «Фарм талантов» (здание talent_farm, Window.farm → View.game / game.js): три в ряд из талантов
-      item('is-match3', Lang.text('minigameMatch3'), Lang.text('minigameMatch3Sub'), () => Window.show('main', 'farm')),
+      match3Item,
     );
     const button = DOM({
       tag: 'button',
@@ -1769,9 +1770,36 @@ export class App {
       ],
     });
     button.setAttribute('aria-label', title);
-    App.minigamesQuickTab = DOM({ style: 'launcher-minigames-quick' }, button, list);
+    // бейджи «ищут дуэль 3 в ряд» — как у режимов боя в замке (MMQueueV2.match3)
+    App.match3QueueBadges = [
+      DOM({ style: ['launcher-minigames-queue', 'is-tab'] }),
+      DOM({ style: ['launcher-minigames-queue', 'is-item'] }),
+    ];
+    match3Item.firstChild.append(App.match3QueueBadges[1]);
+    App.minigamesQuickTab = DOM({ style: 'launcher-minigames-quick' }, button, App.match3QueueBadges[0], list);
     App.minigamesQuickTab.addEventListener('mouseleave', () => App.minigamesQuickTab?.classList.remove('is-open', 'is-picked'));
     document.body.append(App.minigamesQuickTab);
+    App.renderMatch3Queue();
+  }
+
+  // Сколько игроков ищут дуэль «3 в ряд»; null — бэкенд ещё не прислал (старый бэкенд — бейджей нет)
+  static match3Queue = null;
+
+  static setMatch3Queue(value) {
+    const count = Number(value);
+    App.match3Queue = Number.isFinite(count) && count >= 0 ? Math.floor(count) : null;
+    App.renderMatch3Queue();
+  }
+
+  static renderMatch3Queue() {
+    const count = App.match3Queue;
+    const tooltip = Lang.text('minigameMatch3Queue').replace('{n}', count ?? 0);
+    for (const badge of App.match3QueueBadges || []) {
+      badge.style.display = count == null ? 'none' : '';
+      badge.textContent = String(count ?? 0);
+      badge.classList.toggle('is-empty', !count);
+      badge.dataset.tooltip = tooltip;
+    }
   }
 
   static async openEasel() {

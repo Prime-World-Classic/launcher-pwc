@@ -363,6 +363,8 @@ export class Events {
   static MMQueueV2(data) {
     View.mmQueueMap = data;
     CastleNAVBAR.queue(data);
+    // ищут дуэль «3 в ряд» — бейджи на «Мини-играх»
+    App.setMatch3Queue(data?.match3);
   }
 
   // Админ включил/выключил поиск боя; mm и mmtest шлют каждый своё — берём свой канал.

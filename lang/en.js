@@ -1620,6 +1620,7 @@ export const en = {
     minigameEaselSub: 'Zuma: paint the picture with drops',
     minigameMatch3: 'Talent farm',
     minigameMatch3Sub: 'Match three: duels and talent shards',
+    minigameMatch3Queue: 'Searching for a match-three duel: {n}',
     match3TabDuel: 'Duel',
     match3TabFarm: 'Farm',
     match3DuelTitle: 'Match-3 duel',

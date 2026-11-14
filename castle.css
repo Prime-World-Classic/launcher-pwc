@@ -4161,7 +4161,48 @@ body > :has(> #wbuild) .castle-bottom-content {
 }
 
 .launcher-minigames-item-icon.is-match3 {
+  position: relative;
   background-image: url('icons/minigame-match3-glass.png');
+}
+
+/* ищут дуэль «3 в ряд»: бейдж как у режимов боя в замке (.castle-button-play-queue-mode) */
+.launcher-minigames-queue {
+  position: absolute;
+  z-index: 1;
+  box-sizing: border-box;
+  min-width: 3cqh;
+  height: 1.9cqh;
+  padding: 0 0.55cqh 0 1.7cqh;
+  border: 0.1cqh solid #d0b776;
+  border-radius: 0.95cqh;
+  background:
+    url('icons/ui/people.svg') no-repeat 0.4cqh 50% / 1.15cqh 1.15cqh,
+    linear-gradient(#1f7380, #0a3c46);
+  color: #fff3c9;
+  font:
+    600 1.2cqh / 1.7cqh 'DejaVuSans',
+    sans-serif;
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 0.15cqh rgba(0, 0, 0, 0.9);
+  box-shadow: 0 0.1cqh 0.3cqh rgba(0, 0, 0, 0.55);
+}
+
+.launcher-minigames-queue.is-tab {
+  top: -0.3cqh;
+  right: -0.6cqh;
+  pointer-events: auto;
+}
+
+.launcher-minigames-queue.is-item {
+  top: -0.5cqh;
+  right: -0.9cqh;
+}
+
+.launcher-minigames-queue.is-empty {
+  opacity: 0.55;
+  filter: grayscale(0.6);
 }
 
 .launcher-minigames-item-text {
@@ -6295,11 +6336,12 @@ body > :has(> #wbuild) .castle-bottom-content {
   box-shadow: 0 0.08vh 0.25vh rgba(0, 0, 0, 0.55);
 }
 
-/* upper right shoulder of the mode circle, between the circle and the right party slot */
+/* upper right corner of the mode circle box, inside it: further right it covered the ring of the
+   right party slot; higher it leaves the screen (the circle touches the top edge) */
 .castle-button-play-queue {
   z-index: 6;
-  top: 0.15vh;
-  right: -1.05vh;
+  top: 0;
+  right: 0;
   min-width: 2vh;
   height: 1.2vh;
   padding: 0 0.32vh 0 1vh;
