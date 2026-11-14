@@ -3,7 +3,7 @@ import { NativeAPI } from './nativeApi.js';
 
 // Реплей боя → бэкенд (objects/replay.model.js в pw-api).
 //
-// Клиент пишет реплей в «Документы\My Games\Prime World Classic\Replays» и
+// Клиент пишет реплей в «<папка игры, NativeAPI.getGameUserDir>\Replays» и
 // называет его токеном веб-сессии (первые 32 символа ключа запуска):
 //   PW-pwclassic-<версия>-<ГГГГ.ММ.ДД-ЧЧ.ММ.СС UTC>-<token>[-N].pwrp
 // После реконнекта у сессии есть ещё файл (с другим временем). После выхода
@@ -18,7 +18,7 @@ import { NativeAPI } from './nativeApi.js';
 export class ReplayUpload {
   static XZ_PATH = 'content/tools/xz/xz.exe';
 
-  static REPLAYS_SUBDIR = ['My Games', 'Prime World Classic', 'Replays'];
+  static REPLAYS_SUBDIR = ['Replays'];
 
   static STORAGE_KEY = 'pwReplayUploadQueue';
 
@@ -137,11 +137,10 @@ export class ReplayUpload {
   }
 
   static replaysDir() {
-    if (ReplayUpload.replaysDirCache === null) {
-      const documents = NativeAPI.getDocumentsDir();
-      ReplayUpload.replaysDirCache = documents ? NativeAPI.path.join(documents, ...ReplayUpload.REPLAYS_SUBDIR) : '';
-    }
-    return ReplayUpload.replaysDirCache;
+    if (ReplayUpload.replaysDirCache !== null) return ReplayUpload.replaysDirCache; // подмена папки (тесты)
+    // без кэша: папка игры меняется, когда апдейтер привозит новый exe (NativeAPI.getGameUserDir)
+    const folder = NativeAPI.getGameUserDir();
+    return folder ? NativeAPI.path.join(folder, ...ReplayUpload.REPLAYS_SUBDIR) : '';
   }
 
   static namePattern(session) {

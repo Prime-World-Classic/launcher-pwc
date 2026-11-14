@@ -1791,6 +1791,60 @@ export class NativeAPI {
     return dir;
   }
 
+  // Папка игры с user.cfg, input_new.cfg, логами и реплеями. До 3.0.x — «Документы\My Games\Prime World Classic»,
+  // где OneDrive затирал файлы облачной копией; новый PW_Game.exe (рядом с ним Bin/PW_UserDir.txt) держит её в
+  // «%LOCALAPPDATA%\My Games\Prime World Classic» (ProfileManager.cpp GetUserFolder). Признак проверяется при
+  // каждом вызове: апдейтер может привезти новый exe, пока лончер открыт.
+  static GAME_USER_DIR_MARKER = 'PW_UserDir.txt';
+  static GAME_USER_DIR_MOVED = 'moved_from_documents.txt';
+
+  static getOldGameUserDir() {
+    const documents = NativeAPI.getDocumentsDir();
+    return documents ? NativeAPI.path.join(documents, 'My Games', 'Prime World Classic') : undefined;
+  }
+
+  static getGameUserDir() {
+    if (!NativeAPI.status) return;
+    const old = NativeAPI.getOldGameUserDir();
+    if (NativeAPI.platform !== 'win32' || !process.env.LOCALAPPDATA) return old;
+    try {
+      if (!NativeAPI.fileSystem.existsSync(NativeAPI.path.join(PWGame.WORKING_DIR_PATH, NativeAPI.GAME_USER_DIR_MARKER))) return old;
+      const dir = NativeAPI.path.join(process.env.LOCALAPPDATA, 'My Games', 'Prime World Classic');
+      if (NativeAPI.gameUserDirReady !== dir) {
+        NativeAPI.fileSystem.mkdirSync(dir, { recursive: true });
+        NativeAPI.moveGameUserFiles(old, dir);
+        NativeAPI.gameUserDirReady = dir;
+      }
+      return dir;
+    } catch (e) {
+      console.error('game user dir failed', e);
+      return old;
+    }
+  }
+
+  // Как MoveFromDocuments в ProfileManager.cpp (кто запустился первым, тот и переносит): файлы из корня старой
+  // папки до 1 МБ, которых нет в новой; логи, реплеи и папки остаются. Старая папка не трогается.
+  static moveGameUserFiles(from, to) {
+    const fs = NativeAPI.fileSystem;
+    const marker = NativeAPI.path.join(to, NativeAPI.GAME_USER_DIR_MOVED);
+    if (fs.existsSync(marker)) return;
+    if (from) {
+      let names = [];
+      try {
+        names = fs.readdirSync(from);
+      } catch {}
+      for (const name of names) {
+        try {
+          const source = NativeAPI.path.join(from, name);
+          const stat = fs.lstatSync(source);
+          if (!stat.isFile() || stat.size > 1024 * 1024) continue;
+          fs.copyFileSync(source, NativeAPI.path.join(to, name), fs.constants.COPYFILE_EXCL);
+        } catch {}
+      }
+    }
+    fs.writeFileSync(marker, from || '');
+  }
+
   static findDocumentsDir() {
     switch (NativeAPI.platform) {
       case 'win32': {

@@ -7,6 +7,7 @@ import { parseKeybindCfg } from './keybindings.parser.js';
 import { serializeCfg } from './keybindings.serializer.js';
 import { NativeAPI } from '../nativeApi.js';
 import { BindParseError } from './keybindings.validator.js';
+import { GameSettingsSync } from '../gameSettingsSync.js';
 
 async function createDefaultConfigFile(targetPath) {
   if (!NativeAPI.status) return false;
@@ -49,11 +50,11 @@ async function createDefaultConfigFile(targetPath) {
 }
 
 export async function findConfigFile() {
-  const documentsPath = NativeAPI.getDocumentsDir();
-  if (documentsPath) {
+  const folder = NativeAPI.getGameUserDir();
+  if (folder) {
     console.log('Searching for native config file...');
-    const configPath = NativeAPI.path.join(documentsPath, 'My Games', 'Prime World Classic', 'input_new.cfg');
-	const backupPath = NativeAPI.path.join(documentsPath, 'My Games', 'Prime World Classic', 'input_new_backup.cfg');
+    const configPath = NativeAPI.path.join(folder, 'input_new.cfg');
+    const backupPath = NativeAPI.path.join(folder, 'input_new_backup.cfg');
 
     try {
       await NativeAPI.fileSystem.promises.access(configPath);
@@ -121,6 +122,7 @@ export async function repairNativeCfg(cfgOverride = null) {
   if (!fixes.length) return { changed: false };
 
   await NativeAPI.fileSystem.promises.writeFile(cfg.path, serializeCfg(model), 'utf8');
+  GameSettingsSync.launcherWrote(cfg.path);
   console.log('input_new.cfg repaired:', fixes);
   return { changed: true, configPath: cfg.path, fixes };
 }
@@ -133,6 +135,7 @@ export async function loadKeybindsNative(cfg) {
   const { model, fixes } = modelFromText(data);
   if (fixes.length) {
     await NativeAPI.fileSystem.promises.writeFile(cfg.path, serializeCfg(model), 'utf8');
+    GameSettingsSync.launcherWrote(cfg.path);
     console.log('input_new.cfg repaired:', fixes);
   }
 
@@ -191,6 +194,7 @@ export async function saveKeybinds() {
     console.log(data);
     if (KeybindStore.source === 'native') {
       await NativeAPI.fileSystem.promises.writeFile(KeybindStore.configPath, data, 'utf8');
+      GameSettingsSync.launcherWrote(KeybindStore.configPath);
     } else {
       const blob = new Blob([data], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);

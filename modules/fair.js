@@ -118,21 +118,20 @@ function loadscreenRotation(state) {
   return list.map(String).filter((name) => /^[A-Za-z0-9_-]{1,64}$/.test(name));
 }
 
-// Файлы игры (My Games/Prime World Classic): номер выбранной похвалы и имя загрузочного экрана в user.cfg,
+// Файлы игры (папка NativeAPI.getGameUserDir()): номер выбранной похвалы и имя загрузочного экрана в user.cfg,
 // тексты всех похвал в praises.txt (у получателя похвалы должен быть текст её номера). Вызывается при входе
 // в замок, при выборе экрана или похвалы и перед каждым запуском игры (PWGame.start).
 export async function syncFairGameFiles() {
   try {
     if (!NativeAPI.status) return;
-    const documents = NativeAPI.getDocumentsDir();
-    if (!documents) return;
+    const folder = NativeAPI.getGameUserDir();
+    if (!folder) return;
     const words = { ...(Lang.list[Lang.default]?.word || {}), ...(Lang.list[Lang.target]?.word || {}) };
     const lines = [];
     for (const key of Object.keys(words)) {
       const m = /^praise_(\d+)$/.exec(key);
       if (m && typeof words[key] === 'string') lines.push(`${m[1]}\t${words[key].replace(/[\t\r\n]+/g, ' ')}`);
     }
-    const folder = NativeAPI.path.join(documents, 'My Games', 'Prime World Classic');
     await NativeAPI.fileSystem.promises.mkdir(folder, { recursive: true });
     await NativeAPI.fileSystem.promises.writeFile(NativeAPI.path.join(folder, 'praises.txt'), lines.join('\n') + '\n', 'utf8');
 

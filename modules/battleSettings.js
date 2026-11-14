@@ -12,6 +12,7 @@ import { domAudioPresets } from './domAudioPresets.js';
 import { KeybindStore } from './keybindings/keybindings.store.js';
 import { loadKeybinds, saveKeybinds } from './keybindings/keybindings.io.js';
 import { normalizeKey, attachGameKeyCapture } from './keybindings/keybindings.input.js';
+import { GameSettingsSync } from './gameSettingsSync.js';
 
 // ---------------------------------------------------------------- user.cfg
 
@@ -32,9 +33,9 @@ export const UserCfg = {
     this.lines = [...USER_CFG_HEADER];
     this.path = null;
     if (!NativeAPI.status) return;
-    const documents = NativeAPI.getDocumentsDir();
-    if (!documents) return;
-    this.path = NativeAPI.path.join(documents, 'My Games', 'Prime World Classic', 'user.cfg');
+    const folder = NativeAPI.getGameUserDir();
+    if (!folder) return;
+    this.path = NativeAPI.path.join(folder, 'user.cfg');
     let text = '';
     try {
       text = await NativeAPI.fileSystem.promises.readFile(this.path, 'utf8');
@@ -84,6 +85,7 @@ export const UserCfg = {
     try {
       await NativeAPI.fileSystem.promises.mkdir(NativeAPI.path.dirname(this.path), { recursive: true });
       await NativeAPI.fileSystem.promises.writeFile(this.path, this.lines.join(this.eol) + this.eol, 'utf8');
+      GameSettingsSync.launcherWrote(this.path); // изменение лончера — в копию на сервере
     } catch (e) {
       console.error('battleSettings: user.cfg write failed', e);
       App.error(Lang.text('bsSaveError'));

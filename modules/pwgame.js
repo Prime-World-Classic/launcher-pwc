@@ -3,6 +3,7 @@ import { Lang } from './lang.js';
 import { NativeAPI } from './nativeApi.js';
 import { ReplayUpload } from './replayUpload.js';
 import { CrashReport } from './crashReport.js';
+import { GameSettingsSync } from './gameSettingsSync.js';
 import { renderBackendToken } from './gameRender.js';
 
 export class PWGame {
@@ -259,14 +260,24 @@ export class PWGame {
       }
     }
 
-    // загрузочный экран «Ярмарки»: каждый бой — случайный из ротации (пишется в user.cfg до запуска игры)
-    await import('./fair.js').then(({ syncFairGameFiles }) => syncFairGameFiles()).catch((e) => console.error('fair: sync before game failed', e));
+    // копия настроек с сервера на диск (чужие изменения файлов не уходят в базу) — параллельно с замером серверов
+    const pulling = Promise.race([GameSettingsSync.pull(), new Promise((resolve) => setTimeout(resolve, 3000))]).catch((e) =>
+      console.error('game settings pull before game failed', e),
+    );
 
     if (ips) {
       // The whole block always goes to the client, reordered by the probes:
       // fastest reachable first, unreachable at the end.
       ips = await PWGame.orderServerIps(ips, port);
     }
+
+    await pulling;
+
+    // загрузочный экран «Ярмарки»: каждый бой — случайный из ротации (пишется в user.cfg до запуска игры)
+    await import('./fair.js').then(({ syncFairGameFiles }) => syncFairGameFiles()).catch((e) => console.error('fair: sync before game failed', e));
+
+    // что изменится в файлах настроек до выхода из игры — изменения игры (уйдут в копию на сервере)
+    const settingsBefore = GameSettingsSync.beforeGame();
 
     PWGame.currentPlayPwProtocol = PWGame.GetPlayPwProtocol(id, ips, port, method);
 
@@ -277,6 +288,7 @@ export class PWGame {
 
     // игра закрыта — реплей этого боя на бэкенд (replayUpload.js), зрителю не нужно
     const onGameExit = (error = null) => {
+      GameSettingsSync.afterGame(settingsBefore);
       CrashReport.afterGame(error && error.code);
       if (method !== 'spectate') {
         ReplayUpload.afterGame(id);

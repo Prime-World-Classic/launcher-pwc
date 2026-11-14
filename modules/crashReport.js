@@ -4,7 +4,7 @@ import { ReplayUpload } from './replayUpload.js';
 
 // Отчёт о краше игры → бэкенд (objects/crash.model.js в pw-api).
 //
-// Отчёты в папке запуска «Документы\My Games\Prime World Classic\Session\Logs\
+// Отчёты в папке запуска «<папка игры, NativeAPI.getGameUserDir>\Session\Logs\
 // <ГГГГ.ММ.ДД-ЧЧ.ММ.СС UTC запуска>» бывают трёх видов:
 //  - PW-pwclassic-<версия>-<время>-exception.dmp (+ -exception.log): обычный краш.
 //    Игра пишет их ДО окна «Unhandled Exception»; окно висит, пока игрок его не
@@ -43,7 +43,7 @@ import { ReplayUpload } from './replayUpload.js';
 // <отчёт>.sent рядом с ним. Не отправленное (нет связи, лончер закрыли) досылается
 // при следующем показе замка — отчёты не старше MAX_AGE_MS.
 export class CrashReport {
-  static LOGS_SUBDIR = ['My Games', 'Prime World Classic', 'Session', 'Logs'];
+  static LOGS_SUBDIR = ['Session', 'Logs'];
 
   static GAME_BIN = '../Game/Bin';
 
@@ -284,11 +284,10 @@ export class CrashReport {
   }
 
   static logsDir() {
-    if (CrashReport.logsDirCache === null) {
-      const documents = NativeAPI.getDocumentsDir();
-      CrashReport.logsDirCache = documents ? NativeAPI.path.join(documents, ...CrashReport.LOGS_SUBDIR) : '';
-    }
-    return CrashReport.logsDirCache;
+    if (CrashReport.logsDirCache !== null) return CrashReport.logsDirCache; // подмена папки (тесты)
+    // без кэша: папка игры меняется, когда апдейтер привозит новый exe (NativeAPI.getGameUserDir)
+    const folder = NativeAPI.getGameUserDir();
+    return folder ? NativeAPI.path.join(folder, ...CrashReport.LOGS_SUBDIR) : '';
   }
 
   static replaysDir() {

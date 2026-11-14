@@ -23,6 +23,7 @@ import { Timer } from './timer.js';
 import { HelpSplash } from './helpSpalsh.js';
 import { Shop } from './shop.js';
 import { syncFairGameFiles } from './fair.js';
+import { GameSettingsSync } from './gameSettingsSync.js';
 import { DomAudio } from './domAudio.js';
 import { domAudioPresets } from './domAudioPresets.js';
 import { SOUNDS_LIBRARY } from './soundsLibrary.js';
@@ -1553,7 +1554,8 @@ export class View {
     document.body.classList.add('noselect');
 
     Shop.retrieveLastUpdate();
-    syncFairGameFiles(); // номер выбранной похвалы и тексты похвал — в файлы игры
+    // копия настроек игры с сервера на диск, потом номер выбранной похвалы и тексты похвал — в файлы игры
+    GameSettingsSync.pullOnLogin().finally(() => syncFairGameFiles());
     ReplayUpload.resume(); // недосланные реплеи боёв (после перезапуска лончера тоже)
     CrashReport.resume(); // недосланные отчёты о крашах игры
 
