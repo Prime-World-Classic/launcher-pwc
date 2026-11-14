@@ -1750,9 +1750,48 @@ export class NativeAPI {
     await NativeAPI.fileSystem.promises.writeFile('../Game/Bin/bridgelog', NativeAPI.testbridgelog.join('\n'));
   }
 
+  // Значение реестра (REG_SZ / REG_EXPAND_SZ) через `reg export`: файл в UTF-16, путь с кириллицей не портится.
+  // `reg query` печатает в OEM-кодировке консоли (cp866), и «C:\Users\Андрей\OneDrive\Документы» читался
+  // мусором: user.cfg, praises.txt, клавиши шли в несуществующую папку, игра их не видела.
+  static readRegString(key, name) {
+    const file = NativeAPI.path.join(NativeAPI.os.tmpdir(), `pw-reg-${process.pid}-${Date.now()}.reg`);
+    try {
+      NativeAPI.childProcess.execFileSync('reg', ['export', key, file, '/y'], { stdio: 'ignore', windowsHide: true });
+      const utf16 = new TextDecoder('utf-16le');
+      const text = utf16
+        .decode(NativeAPI.fileSystem.readFileSync(file))
+        .replace(/^\uFEFF/, '')
+        .replace(/\\\r?\n\s*/g, ''); // переносы длинных hex-строк
+      const quoted = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const line = text.split(/\r?\n/).find((l) => new RegExp(`^"${quoted}"=`, 'i').test(l));
+      if (!line) return;
+      const value = line.slice(line.indexOf('=') + 1);
+      if (value.startsWith('"')) {
+        return value.slice(1, value.lastIndexOf('"')).replace(/\\(["\\])/g, '$1');
+      }
+      const hex = /^hex\((?:1|2)\):(.*)$/i.exec(value);
+      if (!hex) return;
+      const bytes = Uint8Array.from(hex[1].split(',').filter(Boolean).map((b) => parseInt(b.trim(), 16)));
+      return utf16.decode(bytes).replace(/\0+$/, '');
+    } catch {
+      return;
+    } finally {
+      try {
+        NativeAPI.fileSystem.unlinkSync(file);
+      } catch {}
+    }
+  }
+
   static getDocumentsDir() {
     if (!NativeAPI.status) return;
+    if (NativeAPI.documentsDirCache) return NativeAPI.documentsDirCache;
 
+    const dir = NativeAPI.findDocumentsDir();
+    if (dir) NativeAPI.documentsDirCache = dir;
+    return dir;
+  }
+
+  static findDocumentsDir() {
     switch (NativeAPI.platform) {
       case 'win32': {
         const regPaths = [
@@ -1760,46 +1799,38 @@ export class NativeAPI {
           'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders',
         ];
         for (const regPath of regPaths) {
-          try {
-            const out = NativeAPI.childProcess.execFileSync('reg', ['query', regPath, '/v', 'Personal'], {
-              encoding: 'utf8',
-            });
-            const line = out
-              .split(/\r?\n/)
-              .map((x) => x.trim())
-              .find((x) => /^Personal\s+REG_\w+\s+.+$/i.test(x));
-            if (!line) continue;
-            const m = line.match(/^Personal\s+REG_\w+\s+(.+)$/i);
-            if (!m || !m[1]) continue;
-            const expanded = m[1].trim().replace(/%([^%]+)%/g, (full, name) => {
-              const v = process.env[name] || process.env[String(name).toUpperCase()];
-              return v || full;
-            });
-            if (expanded && !/%[^%]+%/.test(expanded)) {
-              return expanded;
-            }
-          } catch {}
+          const raw = NativeAPI.readRegString(regPath, 'Personal');
+          if (!raw) continue;
+          const expanded = raw.trim().replace(/%([^%]+)%/g, (full, name) => {
+            const v = process.env[name] || process.env[String(name).toUpperCase()];
+            return v || full;
+          });
+          if (expanded && !/%[^%]+%/.test(expanded)) {
+            return expanded;
+          }
         }
 
-        const home = NativeAPI.os.homedir();
-        if (home) {
-          return NativeAPI.path.join(home, 'Documents');
-        }
-        const profile = process.env.USERPROFILE;
-        if (profile) {
-          return NativeAPI.path.join(profile, 'Documents');
-        }
+        // как SHGetFolderPath в игре; вывод — в UTF-8, иначе кириллица снова портится
         const sysRoot = process.env.SystemRoot || 'C:\\Windows';
         const ps = NativeAPI.path.join(sysRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
         try {
-          return NativeAPI.childProcess
-            .execFileSync(ps, ['-NoProfile', '-NoLogo', '-Command', '[Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)'], {
-              encoding: 'utf8',
-            })
+          const out = NativeAPI.childProcess
+            .execFileSync(
+              ps,
+              [
+                '-NoProfile',
+                '-NoLogo',
+                '-Command',
+                '[Console]::OutputEncoding=[Text.Encoding]::UTF8; [Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)',
+              ],
+              { encoding: 'utf8', windowsHide: true },
+            )
             .trim();
-        } catch {
-          return undefined;
-        }
+          if (out) return out;
+        } catch {}
+
+        const home = NativeAPI.os.homedir() || process.env.USERPROFILE;
+        return home ? NativeAPI.path.join(home, 'Documents') : undefined;
       }
 
       case 'linux':
