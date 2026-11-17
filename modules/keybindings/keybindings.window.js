@@ -115,6 +115,7 @@ function buildTalents(ui) {
 function buildVoiceHotkeys() {
   const rows = [];
   rows.push(createRow(Lang.text('voiceEnableToggle'), createSettingsKeyInput({ settingKey: 'voiceToggleHotkey' })));
+  rows.push(createRow(Lang.text('voicePttKey'), createSettingsKeyInput({ settingKey: 'voicePttHotkey' })));
   rows.push(createRow(Lang.text('voiceDropCalls'), createSettingsKeyInput({ settingKey: 'voiceDropHotkey' })));
   rows.push(createRow(Lang.text('voiceOverlayUnlock'), createKeyInput({ command: 'voice_overlay_unlock_on' })));
   return createGroup(Lang.text('voiceHotkeys'), rows);
@@ -197,6 +198,7 @@ export async function keybindings() {
   NativeAPI.unregisterVoiceHotkeys?.();
   let initialVoiceToggleHotkey = JSON.stringify(Array.isArray(Settings.settings?.voiceToggleHotkey) ? Settings.settings.voiceToggleHotkey : []);
   let initialVoiceDropHotkey = JSON.stringify(Array.isArray(Settings.settings?.voiceDropHotkey) ? Settings.settings.voiceDropHotkey : []);
+  let initialVoicePttHotkey = JSON.stringify(Settings.settings?.voicePttHotkey || []);
 
   const content = DOM(
     { style: 'keybindings-wrapper' },
@@ -225,12 +227,17 @@ export async function keybindings() {
           NativeAPI.refreshVoiceHotkeys?.();
           const currentVoiceToggleHotkey = JSON.stringify(Array.isArray(Settings.settings?.voiceToggleHotkey) ? Settings.settings.voiceToggleHotkey : []);
           const currentVoiceDropHotkey = JSON.stringify(Array.isArray(Settings.settings?.voiceDropHotkey) ? Settings.settings.voiceDropHotkey : []);
+          // клавиша рации тоже видна в подсказке панели войса
+          const currentVoicePttHotkey = JSON.stringify(Settings.settings?.voicePttHotkey || []);
           const voiceHotkeysChanged =
-            currentVoiceToggleHotkey !== initialVoiceToggleHotkey || currentVoiceDropHotkey !== initialVoiceDropHotkey;
+            currentVoiceToggleHotkey !== initialVoiceToggleHotkey ||
+            currentVoiceDropHotkey !== initialVoiceDropHotkey ||
+            currentVoicePttHotkey !== initialVoicePttHotkey;
           if (voiceHotkeysChanged) {
             Voice.updateInfoPanel?.();
             initialVoiceToggleHotkey = currentVoiceToggleHotkey;
             initialVoiceDropHotkey = currentVoiceDropHotkey;
+            initialVoicePttHotkey = currentVoicePttHotkey;
           }
           await saveKeybinds();
         },

@@ -48,9 +48,6 @@ varying vec4 v_projectedTexcoord;
 #ifdef PS_GRID
 varying vec2 posXZ;
 #endif
-#ifdef SNOW
-varying float posDepth;
-#endif
 
 uniform mat4 mWorld;
 uniform mat4 mViewProj;
@@ -59,6 +56,14 @@ uniform vec4 startFreq;
 uniform vec4 endAmp;
 uniform vec4 animDirVertFreq;
 uniform vec4 time;
+
+// Покачивание на ветру (шейдеры *_wind: деревья и кусты). Вершины мешей сцены — мировые
+// координаты, поэтому и фаза, и смещение берутся в мире.
+#ifdef VS_WIND
+uniform vec4 wind; // x: амплитуда макушки (доля высоты объекта), y: скорость (рад/с), z: частота по позиции (1/м), w: степень профиля высоты
+uniform vec4 windBase; // x: мировой Y низа объекта, y: 1/высота объекта, z: высота объекта, w: резерв
+uniform vec2 windDir; // мировое направление ветра (XZ, единичное)
+#endif
 
 // Pizdos. Ebaniy webgl cannot convert half to float natively
 // Also there's no bitwise operations so I had to use floats only
@@ -130,17 +135,62 @@ void main()
 #endif
 // Vertex animation
   vec3 animatedVertPosition = skinnedPosition;
+// Блок компилируется только для программы с VS_VERTANIM (объекты с startFreq/endAmp/animDir
+// из scenes.json). Для объекта без анимации он НЕ даёт «умножения на ноль»: вес
+// minimum_distance(0, 0, vertPosition) равен длине вершины (у мешей в абсолютных координатах
+// — тысячи единиц), и gl_Position такой вершины в кадр не попадает — объект не рисует ни одного
+// пикселя при корректном draw-call (замер: статика doct — 1.1% покрытия кадра, без блока —
+// 82.8%; адорния — те же водопад/хайленд/террайн). Защита деления (l2+1.0) и t=0 не помогают,
+// помогает только отсутствие блока.
+#ifdef VS_VERTANIM
 // 1. Weight animation
   float weight = minimum_distance(startFreq.xyz, endAmp.xyz, vertPosition);
 // 2. Wave animation
   float animation = sin((fract((vertPosition.x + vertPosition.y + vertPosition.z) * animDirVertFreq.w) + time.x) * startFreq.w) * endAmp.w * weight;
 // 3. Add up animated value
   animatedVertPosition += (animDirVertFreq.xyz * animation);
+#endif
 
 // Transforms
   
   vec4 worldPos = mWorld * vec4(animatedVertPosition, 1.0);
+#ifdef VS_WIND
+// Ветер: ствол у земли стоит, макушка ходит. Профиль — (высота/высота объекта)^w, поэтому
+// у высокого дерева амплитуда в метрах больше, чем у куста, а внутри одного дерева она
+// меняется только с высотой.
+// Фаза берётся от мировой позиции вдоль направления ветра: соседние деревья качаются
+// РАЗНОВРЕМЕННО (иначе весь лес дышит как один объект), но у кроны одного дерева фаза
+// почти одинаковая — иначе крона «ползёт» по вершинам.
+  float windH = clamp((worldPos.y - windBase.x) * windBase.y, 0.0, 1.0);
+  windH = pow(windH, max(wind.w, 1.0));
+  float windPh = dot(worldPos.xz, windDir) * wind.z + time.x * wind.y;
+  // два хода с несоразмерными частотами — неровность («порывы») без шума и без ветвлений
+  float windS = sin(windPh) * 0.75 + sin(windPh * 0.41 + 2.1) * 0.25;
+  worldPos.xz += windDir * (windS * wind.x * windBase.z * windH);
+#endif
+#if defined(SKY_STARS) || defined(WATER_REFLECT)
+// Мировая позиция фрагмента нужна, чтобы построить НАПРАВЛЕНИЕ на точку неба (звёзды и
+// отражение привязаны к миру, а не к экрану).
+  fragWorldPos = worldPos.xyz;
+#endif
   gl_Position = mViewProj * worldPos;
+#ifdef SNOW
+// Погодный квад (CastleWeather, shader_pos_color_uv_falloff_snow). Колонки 0 и 1 mWorld — это
+// полуширина и полувысота квада в мире (мировые оси right/up камеры, умноженные на них), поэтому
+// локальная вершина ±1 даёт смещение точки квада ОТ ОСИ ЗРЕНИЯ прямо в метрах.
+// Абсолютные мировые координаты точки (dot(worldPos, ось)) здесь НЕ берутся: вычитание чисел
+// ~1400 ед. даёт ошибку 1e-4 м, а шейдер погоды домножает её на z/D (до ~4) — на дальних слоях
+// это пиксели лишнего «скольжения» узора при каждой панораме.
+  vec3 snowE1 = mWorld[0].xyz;
+  vec3 snowE2 = mWorld[1].xyz;
+  float snowW = length(snowE1), snowH = length(snowE2);
+  fragPlaneOff = vec2(animatedVertPosition.x * snowW, animatedVertPosition.y * snowH);
+  fragCamR = snowE1 / snowW;
+  fragCamU = snowE2 / snowH;
+  // ось зрения: базис (right, up, forward) у viewMatrix2 ЛЕВЫЙ (в него замешан flipMatr),
+  // поэтому forward = cross(right, up), а не cross(up, right) — знак сверен с invert(viewMatrix2)
+  fragCamF = cross(fragCamR, fragCamU);
+#endif
 #ifdef VS_NORMAL
   vec4 worldNormal = mWorld * vec4(normalize(skinnedNormal), 0.0);
   fragNormal = (worldNormal.xyz);
@@ -161,8 +211,5 @@ void main()
 
 #ifdef PS_GRID
 posXZ = vertPosition.xz;
-#endif
-#ifdef SNOW
-posDepth = gl_Position.w;
 #endif
 }

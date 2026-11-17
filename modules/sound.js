@@ -100,12 +100,13 @@ export class Sound {
       }
     }
 
+    // Предзагрузка могла не дойти (таймаут на медленном диске, см. preload) — тогда
+    // раньше звука просто не было. Играем прямо с файла: начнёт чуть позже, но начнёт.
     if (!baseAudio) {
-      console.error("Sound not preloaded:", source);
-      return;
+      console.warn("Sound not preloaded, playing from file:", source);
     }
 
-    const audio = baseAudio.cloneNode(true);
+    const audio = baseAudio ? baseAudio.cloneNode(true) : new Audio(source);
 
     if ("loop" in object) {
       audio.loop = object.loop ? true : false;
@@ -127,7 +128,13 @@ export class Sound {
       audio.addEventListener("ended", callback);
     }
 
-    audio.play();
+    const playing = audio.play();
+
+    if (playing && typeof playing.catch === "function") {
+      playing.catch((error) => console.warn("Sound: не проигрался", source, error?.name || error));
+    }
+
+    return audio;
   }
 
   static stop(id) {

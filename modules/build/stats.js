@@ -3,7 +3,7 @@
 // растёт по мере добавления; в конце — бонусы сетов. В боевом режиме — в порядке изучения.
 // Есть данные игры (hero.growth) — прирост статов за таланты считается как в клиенте.
 
-import { LINE_WEIGHTS, REFINE_BY_RARITY, talentPower, statWithRefine } from './talents.js';
+import { LINE_WEIGHTS, REFINE_BY_RARITY, talentPower, statWithRefine, isConditionalStatKey } from './talents.js';
 import { Sets } from './sets.js';
 import { SLOTS, levelOfSlot, num } from './grid.js';
 
@@ -36,6 +36,9 @@ export class StatEngine {
   constructor(hero) {
     this.initial = {};
     this.calc = {};
+    // постоянные прибавки талантов и сетов (без условий: стаки, родная земля, бафы…) — в игре
+    // PermanentStatModApplicator пишет их в базовое значение стата (sBase…/rBase… формул)
+    this.permanent = {};
     // строки панели, которые считаются формулами, и статы, которых у героя в базе нет
     const stats = {
       ...hero.stats,
@@ -69,8 +72,20 @@ export class StatEngine {
   // копия для расчётов «что если» (подсветка по стату), без пересчёта
   clone() {
     const copy = Object.create(StatEngine.prototype);
-    Object.assign(copy, this, { calc: { ...this.calc }, fromPower: { ...this.fromPower } });
+    Object.assign(copy, this, { calc: { ...this.calc }, fromPower: { ...this.fromPower }, permanent: { ...this.permanent } });
     return copy;
+  }
+
+  // Базовое значение стата как в бою (GetUnmodifiedValue): база героя, прирост и постоянные
+  // прибавки талантов и сетов, без бафов. От него считают формулы с sBase…/rBase…
+  base(key) {
+    return num(this.initial[key]) + (key in this.fromPower ? num(this.fromPower[key]) : 0) + num(this.permanent[key]);
+  }
+
+  // прибавка в базу: только безусловный ключ и только стат, который есть в расчёте
+  addPermanent(rawKey, key, value) {
+    if (!key || isConditionalStatKey(rawKey) || !(key in this.calc) || !Number.isFinite(value)) return;
+    this.permanent[key] = num(this.permanent[key]) + value;
   }
 
   total(key, { uncapped = false } = {}) {
@@ -234,7 +249,10 @@ export class StatEngine {
       else if (resolved === 'speedd') {
         speed ??= -Infinity;
         if (Number.isFinite(value)) speedBonus += value;
-      } else if (resolved in this.calc) this.calc[resolved] += value;
+      } else if (resolved in this.calc) {
+        this.calc[resolved] += value;
+        this.addPermanent(key, resolved, value);
+      }
     }
     // скорость не суммируется: наибольшая из талантов (+ надбавка speedd этого таланта)
     if (speed !== null) {
@@ -281,7 +299,10 @@ export class StatEngine {
           const key = this.alias(rawKey);
           resolved[key] = (resolved[key] || 0) + value;
         }
-        for (const [key, value] of Object.entries(resolved)) this.add(this.conditional(key), value);
+        for (const [key, value] of Object.entries(resolved)) {
+          this.add(this.conditional(key), value);
+          this.addPermanent(key, this.resource(this.conditional(key)), value);
+        }
       }
     }
     for (const [mainId, bonus] of speedByMain) {
@@ -293,6 +314,7 @@ export class StatEngine {
   reset() {
     this.heroPower = 0;
     for (const key in this.calc) this.calc[key] = 0;
+    this.permanent = {};
   }
 
   // Полный расчёт. installed — 36 слотов поля (null — пусто).

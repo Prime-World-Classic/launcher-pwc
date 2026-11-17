@@ -4,6 +4,7 @@ import { Api } from './api.js';
 import { View } from './view.js';
 import { CastleFarm } from './castleFarm.js';
 import { CastleNAVBAR } from './castleNavBar.js';
+import { CastleCinematic } from './castleCinematic.js';
 import { Events } from './events.js';
 import { Voice } from './voice.js';
 import { Chat } from './chat.js';
@@ -30,15 +31,15 @@ export class App {
   // PW_VERSION обязан совпадать с версией модели того режима, в который идёт
   // клиент: mm ↔ objects/mm.model.js, mmtest ↔ objects/mmtest.model.js
   // (`this.version`) — иначе каждый mm-запрос даёт «Вышло обновление …».
-  // С 2.16.0 обе модели одной версии (сейчас 3.0.3).
-  static PW_VERSION = '3.0.3';
+  // С 2.16.0 обе модели одной версии (сейчас 3.1.0).
+  static PW_VERSION = '3.1.0';
 
   // Режим матчмейкинга — по манифесту (clientChannel.js): тестовая сборка
   // (package.json.name с «Dev») → mmtest, публичная → mm. До 2026-10-19 значение
   // было зашито в ветку (test → mmtest, main → mm) и терялось при синках.
   static CURRENT_MM = mmMode();
 
-  static RVPN = 'ws://26.187.55.30:3737';
+  static RVPN = 'ws://26.148.239.204:3737';
   static VPS = 'wss://pw-classic.ru';
   // Резервный API-хост (тот же бэкенд на второй VPS, Let's Encrypt сертификат
   // валиден). Гонка параллельная — он просто ещё один кандидат: если основной
@@ -138,7 +139,8 @@ export class App {
   }
 
   static async init(socket = null, host = null, latencyMs = 0, buffered = null) {
-    // ws://26.187.55.30:3737 - Radmin VPN relay (DOK)
+    // ws://26.148.239.204:3737 - Radmin VPN relay (radmin-relay на боксе BACKEND;
+    // адрес назначен RVPN-сетью хабу, при переносе релея меняется — скил pw-radmin-relay)
     // wss://pw-classic.ru - VPS
     // wss://pw-classic-backup.ru - VPS2 (резерв)
     // wss://api2.zone-play.com:2096/api - Cloudflare edge (DOK), только с пробой
@@ -264,7 +266,13 @@ export class App {
           Sound.play(SOUNDS_LIBRARY.CLICK_CLOSE, { id: 'ui-close', volume: Castle.GetVolume(Castle.AUDIO_SOUNDS) });
           return;
         }
-        // 3. Экран «Статистика» (аудит) — Esc работает как его крестик: назад в замок.
+        // 3. Кинематографичный вид замка: Esc возвращает интерфейс, а не открывает меню.
+        if (CastleCinematic.active) {
+          CastleCinematic.exit();
+          Sound.play(SOUNDS_LIBRARY.CLICK_CLOSE, { id: 'ui-close', volume: Castle.GetVolume(Castle.AUDIO_SOUNDS) });
+          return;
+        }
+        // 4. Экран «Статистика» (аудит) — Esc работает как его крестик: назад в замок.
         // Открытое окно аудита (репорт, харизма…) закрывает сам аудит, экран остаётся.
         if (View.active?.classList?.contains('stats-screen')) {
           if (handledInside || Stats.hasOpenWindow()) return;
@@ -272,7 +280,7 @@ export class App {
           Sound.play(SOUNDS_LIBRARY.CLICK_CLOSE, { id: 'ui-close', volume: Castle.GetVolume(Castle.AUDIO_SOUNDS) });
           return;
         }
-        // 4. Если окон нет - открываем настройки
+        // 5. Если окон нет - открываем настройки
         else {
           if (typeof Window !== 'undefined' && Window.show) {
             Window.show('main', 'menu');
@@ -326,6 +334,62 @@ export class App {
       await Window.show('main', 'farm', { preview: true });
     } else if (initialWindow === 'audit') await CastleFarm.openAudit();
     else if (CastleFarm.isFarm(initialWindow) || initialWindow === CastleFarm.STORAGE) CastleFarm.openInfo(initialWindow);
+  }
+
+  // TEMP-стенд (снять): отчёт о GL-контексте, шейдерах и позе камеры — для сверки контуров
+  // (nwjs нативный / Wine / tiny10). Поза задаётся ?previewPose=ступень,x,y.
+  static async castlePreviewProbe(Castle, params) {
+    const gl = Castle.gl;
+    const pose = params.get('previewPose');
+    if (pose) {
+      const [v, x, y] = pose.split(',').map(Number);
+      Castle.cameraAnimationSpeed = 0;
+      Castle.camDeltaPosMinMax = [[-999, 999], [-999, 999]];
+      Castle.initialFixedValue = v;
+      Castle.targetFixedValue = v;
+      Castle.currentFixedValue = v;
+      Castle.camDeltaPos = [x, y];
+    }
+    const CL = (await import('./castleLighting.js')).CastleLighting;
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    const has = (n) => !!gl.getExtension(n);
+    const failed = [];
+    (Castle.sceneShaders || []).forEach((s, i) => {
+      if (!s || s.PSO === 1 || s.PSO_SM === 1) failed.push(i);
+      else if (s.anim && (s.anim.PSO === 1 || s.anim.PSO_SM === 1)) failed.push(i + ':anim');
+    });
+    const report = {
+      scene: Castle.currentSceneName,
+      unmasked: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : '',
+      apiRenderer: gl.getParameter(gl.RENDERER),
+      version: gl.getParameter(gl.VERSION),
+      canvas: [Castle.canvas.width, Castle.canvas.height, gl.drawingBufferWidth, gl.drawingBufferHeight],
+      limits: {
+        uniVec: gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS),
+        texSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
+        attribs: gl.getParameter(gl.MAX_VERTEX_ATTRIBS),
+        varyings: gl.getParameter(gl.MAX_VARYING_VECTORS),
+        texUnits: gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS),
+      },
+      ext: {
+        depthTex: has('WEBGL_depth_texture'),
+        drawBuffers: has('WEBGL_draw_buffers'),
+        halfFloat: has('OES_texture_half_float'),
+        halfFloatLinear: has('OES_texture_half_float_linear'),
+        fragDepth: has('EXT_frag_depth'),
+        parallel: has('KHR_parallel_shader_compile'),
+      },
+      sm: Castle.isSMEnabled,
+      deferred: CL.supported,
+      shaders: (Castle.sceneShaders || []).length,
+      animShaders: (Castle.sceneShaders || []).filter((s) => s && s.anim).length,
+      failedShaders: failed,
+      objects: (Castle.sceneObjects || []).length,
+      buildings: Object.keys(Castle.sceneBuildings || {}).length,
+      render: Castle.render,
+      pose: [Castle.currentFixedValue, Castle.camDeltaPos, Castle.fov, Castle.cameraHeight, Castle.rotationTilt],
+    };
+    console.log('PWPROBE ' + JSON.stringify(report));
   }
 
   static isChatPreviewEnabled() {
@@ -387,11 +451,25 @@ export class App {
       }
     }
     Castle.dayTimeOverride = Castle.dayModeTime[params.get('previewTime') === 'night' ? 'night' : 'day'];
+    // ?previewWeather=snow|rain|off — погодный fullscreen-оверлей (CastleWeather) на стенде:
+    // переопределяет расписание по часам; в рантайме тот же переключатель —
+    // Castle.weather.setMode('rain'), вернуть расписание — Castle.weather.clearOverride()
+    const weatherParam = params.get('previewWeather');
+    if (weatherParam) Castle.weather.setMode(weatherParam);
+    // DEV-хук только для ?previewCastle=1 (localhost): камерой нужно позировать со стороны
+    // стенда/консоли — модули ES-скоупа странице иначе недоступны.
+    window.__castlePreview = Castle;
+    // TEMP-стенд (снять): ?previewPose=ступень,x,y — фиксированная поза камеры без кинематографа
+    const poseParam = params.get('previewPose');
+    // в preview-ветке View.castle() не строится, а замок тот же — наблюдение за бездействием
+    // (кинематографичный вид) поднимаем вручную
+    if (!poseParam) CastleCinematic.start();
     const loading = DOM({ style: 'castle-preview-status', role: 'status' }, 'Загрузка замка...');
     View.active.append(loading);
     try {
       if (await Castle.initDemo(faction, Castle.canvas, { preview: true }) === 1) throw new Error('WebGL unavailable');
       loading.remove();
+      App.castlePreviewProbe(Castle, params); // TEMP-стенд (снять)
     } catch (error) {
       loading.setAttribute('role', 'alert');
       loading.textContent = 'Не удалось загрузить замок. Обновите страницу или проверьте поддержку WebGL.';
@@ -414,7 +492,7 @@ export class App {
   static async showSettingsPreview() {
     View.active = DOM({ style: 'view' });
     document.body.append(View.active);
-    const navigation = new Set(['account', 'preferences', 'battleSettings', 'advancedSettings', 'back'].map((key) => Lang.text(key)));
+    const navigation = new Set(['account', 'preferences', 'battleSettings', 'back'].map((key) => Lang.text(key)));
     View.active.addEventListener('click', (event) => {
       if (event.target.closest('.close-button, .bs-cat, .window__overlay')) return;
       const button = event.target.closest('.castle-menu-item-button');
@@ -447,7 +525,7 @@ export class App {
       }
     }, true);
     const requested = new URLSearchParams(window.location.search).get('settingsPage');
-    const method = ['menu', 'accountPanel', 'settings', 'advancedSettings', 'battleSettings'].includes(requested) ? requested : 'menu';
+    const method = ['menu', 'accountPanel', 'settings', 'battleSettings'].includes(requested) ? requested : 'menu';
     await Window.show('main', method);
   }
 
@@ -767,6 +845,8 @@ export class App {
 
   static onApiReconnected() {
     Chat.onReconnect?.();
+    // сервер мог перезапуститься и забыть «Выключить войс»
+    Voice.syncVoiceOffToServer?.(true);
     Events.onApiReconnected?.();
   }
 
@@ -1668,12 +1748,13 @@ export class App {
         DOM({ style: 'launcher-minigames-item-text' }, DOM({ tag: 'b' }, name), DOM({ tag: 'small' }, sub)),
       );
     };
+    // «Фарм талантов» (здание talent_farm, Window.farm → View.game / game.js): три в ряд из талантов
+    const match3Item = item('is-match3', Lang.text('minigameMatch3'), Lang.text('minigameMatch3Sub'), () => Window.show('main', 'farm'));
     const list = DOM(
       { style: 'launcher-minigames-list' },
       DOM({ style: 'launcher-minigames-title' }, title),
       item('is-easel', Lang.text('easel_doct'), Lang.text('minigameEaselSub'), () => App.openEasel()),
-      // «Фарм талантов» (здание talent_farm, Window.farm → View.game / game.js): три в ряд из талантов
-      item('is-match3', Lang.text('minigameMatch3'), Lang.text('minigameMatch3Sub'), () => Window.show('main', 'farm')),
+      match3Item,
     );
     const button = DOM({
       tag: 'button',
@@ -1689,9 +1770,36 @@ export class App {
       ],
     });
     button.setAttribute('aria-label', title);
-    App.minigamesQuickTab = DOM({ style: 'launcher-minigames-quick' }, button, list);
+    // бейджи «ищут дуэль 3 в ряд» — как у режимов боя в замке (MMQueueV2.match3)
+    App.match3QueueBadges = [
+      DOM({ style: ['launcher-minigames-queue', 'is-tab'] }),
+      DOM({ style: ['launcher-minigames-queue', 'is-item'] }),
+    ];
+    match3Item.firstChild.append(App.match3QueueBadges[1]);
+    App.minigamesQuickTab = DOM({ style: 'launcher-minigames-quick' }, button, App.match3QueueBadges[0], list);
     App.minigamesQuickTab.addEventListener('mouseleave', () => App.minigamesQuickTab?.classList.remove('is-open', 'is-picked'));
     document.body.append(App.minigamesQuickTab);
+    App.renderMatch3Queue();
+  }
+
+  // Сколько игроков ищут дуэль «3 в ряд»; null — бэкенд ещё не прислал (старый бэкенд — бейджей нет)
+  static match3Queue = null;
+
+  static setMatch3Queue(value) {
+    const count = Number(value);
+    App.match3Queue = Number.isFinite(count) && count >= 0 ? Math.floor(count) : null;
+    App.renderMatch3Queue();
+  }
+
+  static renderMatch3Queue() {
+    const count = App.match3Queue;
+    const tooltip = Lang.text('minigameMatch3Queue').replace('{n}', count ?? 0);
+    for (const badge of App.match3QueueBadges || []) {
+      badge.style.display = count == null ? 'none' : '';
+      badge.textContent = String(count ?? 0);
+      badge.classList.toggle('is-empty', !count);
+      badge.dataset.tooltip = tooltip;
+    }
   }
 
   static async openEasel() {
@@ -1754,6 +1862,7 @@ export class App {
   }
 
   static openNotificationsPanel() {
+    CastleCinematic.exit();
     if (!App.notificationsPanel) App.notificationsPanel = App.createNotificationsPanel();
     if (!App.notificationsPanelBackdrop) {
       App.notificationsPanelBackdrop = DOM({
@@ -2072,7 +2181,7 @@ export class App {
   }
 
   static async loadSteamNotificationNews({ forceUpdate = false } = {}) {
-    const cacheKey = `pwclassic_steam_news_${App.notificationsSteamAppId}`;
+    const cacheKey = `pwclassic_steam_news_v2_${App.notificationsSteamAppId}`;
     const cached = App.readSteamNewsCache(cacheKey);
     if (!forceUpdate && cached && Date.now() - Number(cached.updatedAt || 0) < App.notificationsSteamNewsCacheMs) {
       return cached.news;
@@ -2177,7 +2286,8 @@ export class App {
       const link = App.getXmlNodeText(item, 'link');
       const pubDate = App.getXmlNodeText(item, 'pubDate');
       const image = App.extractFirstSteamImage(rawDescription);
-      const message = App.htmlToPlainText(rawDescription) || Lang.text('newsSteamNoDescription');
+      const contentHtml = App.processSteamNewsMarkup(rawDescription);
+      const message = App.htmlToPlainText(contentHtml) || Lang.text('newsSteamNoDescription');
       const id = App.stablePositiveHash(`steam:${link || title}:${pubDate}`);
 
       return {
@@ -2185,7 +2295,7 @@ export class App {
         title,
         message,
         details: '',
-        content_html: App.processSteamNewsMarkup(rawDescription),
+        content_html: contentHtml,
         type: 'steam',
         source: 'steam',
         banner_url: App.normalizeAuditAssetUrl(image || ''),
@@ -2206,7 +2316,9 @@ export class App {
   }
 
   static processSteamNewsMarkup(content) {
-    return App.sanitizeNewsHtml(String(content || ''));
+    return App.sanitizeNewsHtml(String(content || '')
+      .replace(/\[carousel\]/gi, '<div data-news-gallery>')
+      .replace(/\[\/carousel\]/gi, '</div>'));
   }
 
   static htmlToPlainText(content) {
@@ -2258,7 +2370,7 @@ export class App {
   static isMajorNotificationNews(item) {
     if (item?.is_major === true || item?.release_type === 'major') return true;
     const title = String(item?.title || '').trim();
-    return /^(?:(?:крупное|большое|глобальное|major)\s+)?(?:обновление|update|release)\s+(?:v\s*)?[1-9]\d*\.0(?:\.0)?(?=$|[\s:!\u2013\u2014-])/iu.test(title);
+    return /^(?:(?:(?:крупное|большое|глобальное|major)\s+)?(?:обновление|update|release)\s+)?(?:v\s*)?[1-9]\d*\.0(?:\.0)?(?=$|[\s:!\u2013\u2014-]|\.(?!\d))/iu.test(title);
   }
 
   static normalizeNotificationNews(item) {
@@ -2458,7 +2570,8 @@ export class App {
     if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent || '');
     if (node.nodeType !== Node.ELEMENT_NODE) return null;
 
-    const tag = node.tagName.toLowerCase();
+    const sourceTag = node.tagName.toLowerCase();
+    const tag = ({ b: 'strong', i: 'em' })[sourceTag] || sourceTag;
     if (tag === 'script' || tag === 'style') return null;
     if (tag === 'img') {
       const src = App.normalizeAuditAssetUrl(node.getAttribute('src') || '');
@@ -2489,8 +2602,10 @@ export class App {
       return link;
     }
 
+    const gallery = tag === 'div' && (node.hasAttribute('data-news-gallery') || node.classList.contains('launcher-news-gallery'));
     const allowedTags = new Set(['p', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br']);
-    const element = document.createElement(allowedTags.has(tag) ? tag : 'span');
+    const element = document.createElement(gallery ? 'div' : allowedTags.has(tag) ? tag : 'span');
+    if (gallery) element.className = 'launcher-news-gallery';
     [...node.childNodes].forEach((child) => {
       const cleanChild = App.cloneAllowedNewsNode(child, state);
       if (cleanChild) element.append(cleanChild);
@@ -3308,11 +3423,12 @@ export class App {
     View.show('providerRegistration');
   }
 
-  // POST JSON на хост авторизации (Window.authBase). Запрос идёт нативным
-  // http/https: окно лончера лежит на своём origin, CORS для чужого хоста не
-  // работает (тот же путь, что у запросов уведомлений).
+  // POST JSON на хост авторизации (Window.authBaseUrl() — та же база, что у
+  // попапа: основной край, резервный край, для стенда — Window.authBase). Запрос
+  // идёт нативным http/https: окно лончера лежит на своём origin, CORS для чужого
+  // хоста не работает (тот же путь, что у запросов уведомлений).
   static async authJsonRequest(path, body) {
-    const url = `${Window.authBase}${path}`;
+    const url = `${Window.authBaseUrl()}${path}`;
     const payload = JSON.stringify(body || {});
 
     if (NativeAPI.status && (NativeAPI.https || NativeAPI.http)) {
@@ -3541,7 +3657,7 @@ export class App {
   }
 
   static isAdmin(id = 0) {
-    const adminIds = [1, 2, 24, 134, 865, 2220, 292, 1853, 12781];
+    const adminIds = [1, 2, 24, 134, 865, 935, 2220, 292, 1853, 12781];
     const adminLogins = ['kot04ka'];
     // в DEV-превью (?previewBuild=1) входа нет и App.storage не создан
     const targetId = Number(id ? id : App.storage?.data?.id);

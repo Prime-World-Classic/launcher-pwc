@@ -580,6 +580,45 @@ body {
   height: 0.1cqh;
 }
 
+/* Кинематографичный вид замка (CastleCinematic): 15 с бездействия — интерфейс гаснет, в кадре
+   остаётся только рендер canvas. Гаснет АНИМАЦИЕЙ, поэтому возврат мгновенный: любое действие
+   игрока снимает класс, анимация исчезает вместе с ней, opacity сразу становится своим.
+   Окна лончера живут внутри #castle-body (Window.show, View.adoptOrphanWindows) — гаснут этим же
+   правилом; Window.show к тому же снимает режим до открытия окна. #castle-background-img не
+   трогаем: это небо сцены под холстом. */
+@keyframes castle-cinematic-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+body.castle-cinematic #castle-body > :not(#castle-game-surface):not(#castle-background-img) {
+  animation: castle-cinematic-fade 900ms ease-in forwards;
+  pointer-events: none;
+}
+
+/* Вне замка лончер держит свои панели (быстрые вкладки, новости, войс, плашка обновления,
+   админ-статистика). Списком, а не «всё, кроме #castle-body»: зацепило бы игровой экран
+   (Game.*, <dialog> фермы) и всплывающие сообщения об ошибках. */
+body.castle-cinematic > .launcher-notifications-quick-tab,
+body.castle-cinematic > .launcher-hall-of-fame-quick-tab,
+body.castle-cinematic > .launcher-minigames-quick,
+body.castle-cinematic > .launcher-restart-quick-tab,
+body.castle-cinematic > .launcher-notifications-toast-root,
+body.castle-cinematic > .launcher-notifications-panel,
+body.castle-cinematic > .launcher-notifications-panel-backdrop,
+body.castle-cinematic > .launcher-news-reader-overlay,
+body.castle-cinematic > .voice-info-panel,
+body.castle-cinematic > .update-indicator,
+body.castle-cinematic > #ADMStat {
+  animation: castle-cinematic-fade 900ms ease-in forwards;
+  pointer-events: none;
+}
+
+body.castle-cinematic {
+  cursor: none;
+}
+
 .button-outline:hover {
   filter: drop-shadow(-0.1cqh 0.1cqh 0cqh rgba(221, 255, 0, 0.5)) drop-shadow(0.1cqh -0.1cqh 0cqh rgba(221, 255, 0, 0.5));
   transition: 300ms;
@@ -627,6 +666,7 @@ body {
 .castle-button-play-m4,
 .castle-button-play-m5,
 .castle-button-play-m6,
+.castle-button-play-m7,
 .castle-button-play-1,
 .castle-button-play-2,
 .castle-button-play-3,
@@ -651,7 +691,8 @@ body {
 .castle-button-play-m3:hover::after,
 .castle-button-play-m4:hover::after,
 .castle-button-play-m5:hover::after,
-.castle-button-play-m6:hover::after {
+.castle-button-play-m6:hover::after,
+.castle-button-play-m7:hover::after {
   display: flex;
   position: absolute;
   z-index: 13002;
@@ -677,7 +718,8 @@ body {
 .castle-button-play-m3:hover,
 .castle-button-play-m4:hover,
 .castle-button-play-m5:hover,
-.castle-button-play-m6:hover {
+.castle-button-play-m6:hover,
+.castle-button-play-m7:hover {
   border-radius: 50%;
   outline: 0.12cqh solid rgba(77, 235, 237, 0.94);
   outline-offset: 0.48cqh;
@@ -690,7 +732,8 @@ body {
 .castle-button-play-m3:hover::before,
 .castle-button-play-m4:hover::before,
 .castle-button-play-m5:hover::before,
-.castle-button-play-m6:hover::before {
+.castle-button-play-m6:hover::before,
+.castle-button-play-m7:hover::before {
   display: block;
   position: absolute;
   z-index: 13003;
@@ -721,6 +764,9 @@ body {
 }
 .castle-button-play-m6:hover::before {
   content: var(--filter-text-title, 'Дуэль');
+}
+.castle-button-play-m7:hover::before {
+  content: var(--filter-text-title, 'Training');
 }
 .castle-button-play-m1:hover::after {
   content: var(
@@ -758,6 +804,9 @@ body {
     'Сражение происходит на карте Пограничья, 1х1\AОсобенности: присутствуют задания внутри режима. Здесь игроки могут посоревноваться друг с другом.'
   );
 }
+.castle-button-play-m7:hover::after {
+  content: var(--filter-text-hover, '');
+}
 
 .castle-button-play-mode {
   z-index: 3;
@@ -768,71 +817,107 @@ body {
   transform: scale(0.7);
 }
 
-.castle-button-play-m1 {
-  z-index: 3;
-  background-image: url('img/m1.png');
-  width: 4vh; /* Изменено с vw на vh */
+/* default view (Settings castleModesWings off): the mode list on the b8 strip under the circle,
+   opened on hover over the circle (CastleNAVBAR.viewMode) */
+.castle-button-play-m1,
+.castle-button-play-m2,
+.castle-button-play-m3,
+.castle-button-play-m4,
+.castle-button-play-m5,
+.castle-button-play-m6,
+.castle-button-play-m7 {
+  z-index: 1;
+  width: 4vh;
   aspect-ratio: 1/1;
-  top: 3.9vh; /* Изменено с vw на vh */
-  right: 14vh; /* Изменено с vw на vh */
+  top: 3.9vh;
   transform: scale(0.6);
   display: none;
+}
+
+.castle-button-play-m1 {
+  z-index: 3;
+}
+
+/* wings view (castleModesWings on): modes that are not selected sit in the sockets of the wings
+   left and right of the party slots; left (vh) and display are set by CastleNAVBAR.layoutModes,
+   the selected mode is hidden (it is in the circle) */
+.castle-button-play.is-mode-wings
+  :is(.castle-button-play-m1, .castle-button-play-m2, .castle-button-play-m3, .castle-button-play-m4, .castle-button-play-m5, .castle-button-play-m6, .castle-button-play-m7) {
+  z-index: 2;
+  top: 0.6vh;
+  right: auto;
+}
+
+.castle-button-play
+  :is(.castle-button-play-m1, .castle-button-play-m2, .castle-button-play-m3, .castle-button-play-m4, .castle-button-play-m5, .castle-button-play-m6, .castle-button-play-m7):hover {
+  z-index: 8;
+}
+
+.castle-button-play-m1 {
+  background-image: url('img/m1.png');
 }
 
 .castle-button-play-m2 {
-  z-index: 1;
   background-image: url('img/m2.png');
-  width: 4vh; /* Изменено с vw на vh */
-  aspect-ratio: 1/1;
-  top: 3.9vh; /* Изменено с vw на vh */
-  right: 10.6vh; /* Изменено с vw на vh */
-  transform: scale(0.6);
-  display: none;
 }
 
 .castle-button-play-m3 {
-  z-index: 1;
   background-image: url('img/m3.png');
-  width: 4vh; /* Изменено с vw на vh */
-  aspect-ratio: 1/1;
-  top: 3.9vh; /* Изменено с vw на vh */
-  left: 3.78vh; /* Изменено с vw на vh */
-  transform: scale(0.6);
-  display: none;
 }
 
 .castle-button-play-m4 {
-  z-index: 1;
   background-image: url('img/m4.png');
-  width: 4vh; /* Изменено с vw на vh */
-  aspect-ratio: 1/1;
-  top: 3.9vh; /* Изменено с vw на vh */
-  left: 7.2vh; /* Изменено с vw на vh */
-  transform: scale(0.6);
-  display: none;
 }
 
 .castle-button-play-m5 {
-  z-index: 1;
   background-image: url('img/m5_gold.png');
-  width: 4vh;
-  aspect-ratio: 1/1;
-  top: 3.9vh;
-  left: 10.6vh;
-  transform: scale(0.6);
-  display: none;
 }
 
 .castle-button-play-m6 {
-  z-index: 1;
   background-image: url('img/m6.png');
   background-size: 130%;
-  width: 4vh;
-  aspect-ratio: 1/1;
-  top: 3.9vh;
-  left: 13.78vh;
-  transform: scale(0.6);
+}
+
+.castle-button-play-m7 {
+  background-image: url('img/m7.png');
+}
+
+/* wing: piece of the b8 strip with N sockets, cut as two halves (left end and right end of the
+   strip) that meet at the middle, so any N keeps both rounded ends; the socket next to the circle
+   is covered by the party slot pill (b5/b4); left and width are set from JS */
+.castle-button-play-wing {
+  position: absolute;
+  z-index: 0;
+  top: 0.45vh;
+  height: 4.3vh;
   display: none;
+  pointer-events: none;
+}
+
+.castle-button-play.is-mode-wings .castle-button-play-wing {
+  display: block;
+}
+
+.castle-button-play-wing::before,
+.castle-button-play-wing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: url('img/b8.png') no-repeat;
+  background-size: auto 100%;
+}
+
+.castle-button-play-wing::before {
+  left: 0;
+  width: calc(50% + 0.05vh);
+  background-position: left center;
+}
+
+.castle-button-play-wing::after {
+  right: 0;
+  width: 50%;
+  background-position: right center;
 }
 
 .castle-button-play-m1:after,
@@ -841,6 +926,7 @@ body {
 .castle-button-play-m4:after,
 .castle-button-play-m5:after,
 .castle-button-play-m6:after,
+.castle-button-play-m7:after,
 .account-rating-menu-item:after {
   font: 0.7vh/1 'DejaVuSans', sans-serif; /* Изменено с vw на vh */
   position: absolute;
@@ -855,7 +941,8 @@ body {
 .castle-button-play-m3:after,
 .castle-button-play-m4:after,
 .castle-button-play-m5:after,
-.castle-button-play-m6:after {
+.castle-button-play-m6:after,
+.castle-button-play-m7:after {
   top: 4.3vh;
   left: 50%;
   width: 4.8vh;
@@ -888,12 +975,17 @@ body {
   content: var(--filter-text, 'Дуэль');
 }
 
+.castle-button-play-m7:after {
+  content: var(--filter-text, 'Training');
+}
+
 .castle-button-play-m1:hover::after,
 .castle-button-play-m2:hover::after,
 .castle-button-play-m3:hover::after,
 .castle-button-play-m4:hover::after,
 .castle-button-play-m5:hover::after,
-.castle-button-play-m6:hover::after {
+.castle-button-play-m6:hover::after,
+.castle-button-play-m7:hover::after {
   display: flex;
   position: absolute;
   z-index: 13002;
@@ -1020,15 +1112,82 @@ body {
   filter: brightness(1.24) saturate(1.08);
 }
 
+/* selected mode circle: title and description on hover, same look and place as the modes in the
+   wings (they are scaled 0.6, the circle is not, so sizes here are 0.6 of theirs); not while the
+   queue badge shows its own tooltip */
+.castle-button-play.is-mode-wings .castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover)) {
+  z-index: 8;
+}
+
+.castle-button-play.is-mode-wings .castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover))::before {
+  content: var(--filter-text-title, '');
+  position: absolute;
+  z-index: 2;
+  top: 4.94vh;
+  left: 50%;
+  width: 21cqh;
+  transform: translateX(-50%);
+  color: rgb(220, 182, 70);
+  font: 0.78cqh / 1.2 'DejaVuSans', sans-serif;
+  text-align: center;
+  text-shadow: rgba(0, 0, 0, 0.9) 0 0.07cqh 0.11cqh;
+  pointer-events: none;
+}
+
+.castle-button-play.is-mode-wings .castle-button-play-8:hover:not(:has(.castle-button-play-queue:hover))::after {
+  content: var(--filter-text-hover, '');
+  display: flex;
+  position: absolute;
+  z-index: 1;
+  top: 4.77vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 21cqh;
+  background: rgba(14, 31, 33, 0.85);
+  border: 0.11cqh solid rgba(90, 133, 130, 0.62);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 1.23cqh 0.6cqh 0.39cqh;
+  border-radius: 0.6cqh;
+  font: 0.75cqh / 1.3 'DejaVuSans', sans-serif;
+  white-space: pre;
+  text-wrap: balance;
+  text-align: center;
+  box-shadow:
+    inset 0 0 0.27cqh rgba(138, 194, 188, 0.15),
+    0 0.27cqh 0.75cqh rgba(0, 0, 0, 0.48);
+  pointer-events: none;
+}
+
 
 
 .castle-button-play-9 {
   display: none;
   z-index: 0;
-  background-image: url('img/b8.png');
   top: 3.8vh; /* Изменено с vw на vh */
-  width: 21vh; /* Изменено с vw на vh */
-  aspect-ratio: 371/76;
+  width: 21vh; /* ширину и left ставит CastleNAVBAR.layoutMenu под число режимов */
+  height: 4.3vh;
+}
+
+.castle-button-play-9::before,
+.castle-button-play-9::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: url('img/b8.png') no-repeat;
+  background-size: auto 100%;
+}
+
+.castle-button-play-9::before {
+  left: 0;
+  width: calc(50% + 0.05vh);
+  background-position: left center;
+}
+
+.castle-button-play-9::after {
+  right: 0;
+  width: 50%;
+  background-position: right center;
 }
 .banner-icon.banner-icon--stat.button-outline {
   position: relative;
@@ -1073,7 +1232,6 @@ body {
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  pointer-events: none;
 }
 
 .banner-stat-circle .banner-icon--stat {
@@ -1642,6 +1800,15 @@ body {
   border-width: 0.08vh;
   border-radius: 0.42vh;
   font-size: 0.7vh;
+}
+
+/* Подсказка дивизии: под значком, как у кармы, и без увеличения панели в 1.9 раза —
+   иначе при поиске боя она огромная и уходит за верх экрана. */
+.castle-button-play-division[data-tooltip]::after {
+  top: calc(100% + 0.35vh);
+  bottom: auto;
+  transform: translateX(-50%) scale(0.5263);
+  transform-origin: top center;
 }
 
 .castle-button-play-karma .karma-tooltip {
@@ -4002,7 +4169,48 @@ body > :has(> #wbuild) .castle-bottom-content {
 }
 
 .launcher-minigames-item-icon.is-match3 {
+  position: relative;
   background-image: url('icons/minigame-match3-glass.png');
+}
+
+/* ищут дуэль «3 в ряд»: бейдж как у режимов боя в замке (.castle-button-play-queue-mode) */
+.launcher-minigames-queue {
+  position: absolute;
+  z-index: 1;
+  box-sizing: border-box;
+  min-width: 3cqh;
+  height: 1.9cqh;
+  padding: 0 0.55cqh 0 1.7cqh;
+  border: 0.1cqh solid #d0b776;
+  border-radius: 0.95cqh;
+  background:
+    url('icons/ui/people.svg') no-repeat 0.4cqh 50% / 1.15cqh 1.15cqh,
+    linear-gradient(#1f7380, #0a3c46);
+  color: #fff3c9;
+  font:
+    600 1.2cqh / 1.7cqh 'DejaVuSans',
+    sans-serif;
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 0.15cqh rgba(0, 0, 0, 0.9);
+  box-shadow: 0 0.1cqh 0.3cqh rgba(0, 0, 0, 0.55);
+}
+
+.launcher-minigames-queue.is-tab {
+  top: -0.3cqh;
+  right: -0.6cqh;
+  pointer-events: auto;
+}
+
+.launcher-minigames-queue.is-item {
+  top: -0.5cqh;
+  right: -0.9cqh;
+}
+
+.launcher-minigames-queue.is-empty {
+  opacity: 0.55;
+  filter: grayscale(0.6);
 }
 
 .launcher-minigames-item-text {
@@ -5039,6 +5247,28 @@ body > :has(> #wbuild) .castle-bottom-content {
   background:
     linear-gradient(180deg, rgba(181, 55, 43, 0.98), rgba(95, 20, 23, 0.98)),
     url('icons/activeBorder.webp') center / cover no-repeat;
+}
+
+.launcher-news-item.is-major-release .launcher-news-thumb {
+  border: .22cqh double #f5d37b;
+  outline: .12cqh solid rgba(173, 120, 39, .8);
+  outline-offset: .16cqh;
+  box-shadow: inset 0 0 .4cqh rgba(255, 226, 151, .35), 0 0 .55cqh rgba(245, 195, 83, .25);
+}
+.launcher-news-rich-content .launcher-news-gallery {
+  display: flex;
+  align-items: center;
+  gap: 1cqh;
+  max-width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+.launcher-news-gallery > .launcher-news-inline-image {
+  flex: 0 0 95%;
+  width: 95%;
+  max-height: 60vh;
+  object-fit: contain;
+  scroll-snap-align: center;
 }
 
 .launcher-news-item:hover {
@@ -6114,11 +6344,12 @@ body > :has(> #wbuild) .castle-bottom-content {
   box-shadow: 0 0.08vh 0.25vh rgba(0, 0, 0, 0.55);
 }
 
-/* upper right shoulder of the mode circle, between the circle and the right party slot */
+/* upper right corner of the mode circle box, inside it: further right it covered the ring of the
+   right party slot; higher it leaves the screen (the circle touches the top edge) */
 .castle-button-play-queue {
   z-index: 6;
-  top: 0.15vh;
-  right: -1.05vh;
+  top: 0;
+  right: 0;
   min-width: 2vh;
   height: 1.2vh;
   padding: 0 0.32vh 0 1vh;
@@ -7297,7 +7528,7 @@ body > :has(> #wbuild) .castle-bottom-content {
 
 /* corner: resource at the storage limit */
 .farm-corner-item.farm-corner-full .farm-corner-value {
-  color: #ffb36b;
+  color: #ff7777;
   opacity: 1;
 }
 

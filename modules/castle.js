@@ -25,6 +25,7 @@ import { redrawShadowRect, rotatingShadowRect } from './castleSkin.js';
 import { CastlePets } from './castlePets.js';
 import { CastleLighting } from './castleLighting.js';
 import { CastleFireflies } from './castleFireflies.js';
+import { CastleWeather } from './castleWeather.js';
 import { CastleSceneFade, FrameBudget, forEachLimited, yieldFrame } from './castleSceneFade.js';
 
 export class Castle {
@@ -108,7 +109,12 @@ export class Castle {
 
   static zNear = 10.0;
 
-  static zFar = 4500.0;
+  // Дальняя плоскость обязана переживать самый далёкий угол неба: скайбокс (меши sky_*, центр
+  // (1442,-500,1504), полусторона ~3000) в максимальном удалении от камеры даёт 5235 м, а при
+  // обходе камеры вокруг pivot (CASTLE_CINEMATIC_PIVOT, радиус ~280) и панораме — до ~5700.
+  // При 4500 небо и горы за ним срезались плоскостью отсечения, и в верхней части кадра
+  // (особенно в переходе между кадрами) появлялся бледный клин цвета очистки.
+  static zFar = 6200.0;
 
   static canvasWidth;
 
@@ -165,6 +171,19 @@ export class Castle {
   static cursorDeltaPos = [0.0, 0.0];
 
   static camDeltaPos = [0.0, 0.0];
+
+  // кинематографичный обход: угол вокруг camPivot (рад) и сам pivot (мировые X/Z);
+  // 0 / [0,0] — штатная камера
+  static camYaw = 0;
+
+  static camPivot = [0, 0];
+
+  static camOrbitMatr = mat4.create();
+
+  // наклон и высота постановочного кадра (CastleCinematic); null — штатная ступень
+  static cinematicTilt = null;
+
+  static cinematicHeight = null;
 
   // было [-50, 10]: область сдвига расширена на 50% в каждую сторону от центра (-20)
   static camDeltaPosMinMax = [
@@ -1458,6 +1477,12 @@ export class Castle {
 
     const ext = Castle.gl.getExtension('WEBGL_depth_texture');
 
+    // SSR в воде стоит трёх новых сэмплеров и ~7 новых vec4 uniform-ов фрагментной программы
+    // (в программе воды их и без того ~22 — гарантированный WebGL1 минимум 16 давно не граница).
+    Castle.ssrCapsOk =
+      Castle.gl.getParameter(Castle.gl.MAX_TEXTURE_IMAGE_UNITS) >= 5 &&
+      Castle.gl.getParameter(Castle.gl.MAX_FRAGMENT_UNIFORM_VECTORS) >= 40;
+
     if (!ext) {
       Castle.isSMEnabled = false;
     }
@@ -1652,6 +1677,7 @@ export class Castle {
   static ambientLight = [1, 1, 1, 0.001];
   static lighting = CastleLighting; // для отладки из консоли: Castle.lighting.debugMarkers = true
   static fireflies = CastleFireflies;
+  static weather = CastleWeather; // для отладки из консоли: Castle.weather.setMode('rain')
   static glowNightFloor = 1.0; // яркость свечений ночью (множитель освещения, днём на солнце ~1.6)
   static deferredPass = false;
   static sceneTextureAvg = [];
@@ -1850,9 +1876,27 @@ export class Castle {
     }
   }
 
+  // Погода (дождь/снег) затемняет и обесцвечивает свет сцены. Вызывается ПОСЛЕ того, как
+  // посчитан штатный свет (или база «день без цикла»), и всегда от базы — иначе множение
+  // накопилось бы по кадрам. Сила — по фейду смены слота, поэтому погода «нарастает» и
+  // «сходит» вместе с самими осадками.
+  static applyWeatherLight(sunBase, ambientBase) {
+    const wet = CastleWeather.strength();
+    if (wet <= 0) {
+      Castle.sunLight = sunBase;
+      Castle.ambientLight = ambientBase;
+      return;
+    }
+    const [sun, amb] = CastleWeather.tintLight(wet, sunBase, ambientBase);
+    Castle.sunLight = sun;
+    Castle.ambientLight = amb;
+  }
+
   static updateDayNight() {
     if (!Castle.dayNightEnabled) {
       if (Castle.dayNightActive) Castle.disableDayNight();
+      // день без цикла: солнце белое, фон нейтральный — но под дождём и они темнеют
+      Castle.applyWeatherLight([1, 1, 1, 1], [1, 1, 1, 0.001]);
       return;
     }
     const axes = Castle.getCamAxes();
@@ -1911,6 +1955,8 @@ export class Castle {
     Castle.sunLight = [sun[0], sun[1], sun[2], exposure];
     // ночной фон голубоватый, дневной нейтральный
     Castle.ambientLight = [0.62 + 0.38 * daylight, 0.72 + 0.28 * daylight, 1.0, 0.0004];
+    // осадки: тучи гасят прямое солнце, тон становится мрачнее и бледнее
+    Castle.applyWeatherLight(Castle.sunLight, Castle.ambientLight);
     // огни зданий загораются на закате, пока солнце ещё не ушло, и гаснут после рассвета
     CastleLighting.nightLevel = 1 - Castle.smoothstep(-0.08, 0.2, altitude);
 
@@ -1958,6 +2004,10 @@ export class Castle {
     let shaderNames = [],
       texNames = [];
 
+    // имена шейдеров, у которых есть анимируемые объекты — им собирается отдельная программа
+    // с блоком vertex-animation (VS_VERTANIM), остальным — без блока
+    let animShaderNames = new Set();
+
     let sceneMeshesToLoadCount = -1; // Initial value. Scene must have objects
 
     let result = await HTTP.request('content/scenes.json');
@@ -1978,6 +2028,12 @@ export class Castle {
         tintColor: obj.tintColor,
         uvScale: obj.uvScale,
         uvScroll: obj.uvScroll,
+        weather: obj.weather,
+        weather2: obj.weather2,
+        weather3: obj.weather3,
+        weather4: obj.weather4,
+        weather5: obj.weather5,
+        weather6: obj.weather6,
         texture: obj.texture,
         texture_2: obj.texture_2,
         texture_3: obj.texture_3,
@@ -1995,7 +2051,7 @@ export class Castle {
         indexCount: obj.indexCount,
       });
 
-      Castle.loadObjectResources(shaderNames, texNames, obj);
+      Castle.loadObjectResources(shaderNames, texNames, obj, animShaderNames);
 
       sceneMeshesToLoadCount--; // Decrement after each loaded object
     }
@@ -2029,6 +2085,12 @@ export class Castle {
           tintColor: obj.tintColor,
           uvScale: obj.uvScale,
           uvScroll: obj.uvScroll,
+          weather: obj.weather,
+          weather2: obj.weather2,
+          weather3: obj.weather3,
+          weather4: obj.weather4,
+          weather5: obj.weather5,
+          weather6: obj.weather6,
           texture: obj.texture,
           texture_2: obj.texture_2,
           texture_3: obj.texture_3,
@@ -2046,14 +2108,14 @@ export class Castle {
           indexCount: obj.indexCount,
         });
 
-        Castle.loadObjectResources(shaderNames, texNames, obj);
+        Castle.loadObjectResources(shaderNames, texNames, obj, animShaderNames);
       }
 
       sceneMeshesToLoadCount--;
     }
 
     const budget = new FrameBudget(budgetMs);
-    await Castle.loadResources(scene, shaderNames, texNames, budget);
+    await Castle.loadResources(scene, shaderNames, texNames, budget, animShaderNames);
     // карта высот рельефа для светлячков — до подмены сцены, порциями
     await CastleFireflies.buildHeightField(scene, () => budget.slice());
 
@@ -2081,6 +2143,8 @@ export class Castle {
     CastleLighting.buildTemplates(Castle);
     // места светлячков (по карте высот из buildScene)
     CastleFireflies.spawn(Castle);
+    // объекты погоды текущей сцены (fullscreen-квады weather_*.bin)
+    CastleWeather.bind(Castle);
 
     Castle.updateGridTranslation();
     // иконки ресурсов фермы в углу и на карточках — свои у каждой фракции
@@ -2195,10 +2259,13 @@ export class Castle {
       if (texture) gl.deleteTexture(texture);
     }
     for (const shader of scene.sceneShaders || []) {
-      for (const program of [shader?.PSO, shader?.PSO_SM, shader?.PSO_GB]) {
-        if (!program?.prog) continue;
-        gl.deleteProgram(program.prog);
-        delete Castle.uniformLocationCache[program.progId];
+      // у анимируемых шейдеров своя копия программ (shader.anim) — её тоже надо освободить
+      for (const set of [shader, shader?.anim]) {
+        for (const program of [set?.PSO, set?.PSO_SM, set?.PSO_GB]) {
+          if (!program?.prog) continue;
+          gl.deleteProgram(program.prog);
+          delete Castle.uniformLocationCache[program.progId];
+        }
       }
     }
     // Отрисовка только включает атрибуты (enableVertexAttribArray) и не выключает. После удаления
@@ -2211,8 +2278,16 @@ export class Castle {
 
   static sceneLoading = false;
 
-  static loadObjectResources(shaderNames, texNames, obj) {
+  // Есть ли у объекта анимация вершин (startFreq/endAmp/animDir приходят из scenes.json,
+  // в рантайме их никто не назначает — решение статично на весь объект)
+  static hasVertexAnimation(obj) {
+    return !!(obj.startFreq || obj.endAmp || obj.animDir);
+  }
+
+  static loadObjectResources(shaderNames, texNames, obj, animShaderNames) {
     shaderNames.push(obj.shader);
+
+    if (animShaderNames && Castle.hasVertexAnimation(obj)) animShaderNames.add(obj.shader);
 
     texNames.push(obj.texture);
 
@@ -2267,6 +2342,24 @@ export class Castle {
       endAmp: u('endAmp'),
       animDirVertFreq: u('animDirVertFreq'),
       uvScroll: u('uvScroll'),
+      weather: u('weather'),
+      weather2: u('weather2'),
+      weather3: u('weather3'),
+      weather4: u('weather4'),
+      weather5: u('weather5'),
+      weather6: u('weather6'),
+      wind: u('wind'),
+      windBase: u('windBase'),
+      windDir: u('windDir'),
+      camPos: u('camPos'),
+      nightStars: u('nightStars'),
+      ssrHdr: u('ssrHdr'),
+      ssrDepth: u('ssrDepth'),
+      ssrNormal: u('ssrNormal'),
+      ssrParams: u('ssrParams'),
+      ssrParams2: u('ssrParams2'),
+      ssrInvSize: u('ssrInvSize'),
+      ssrUnit: -1, // какой юнит уже записан в ssrHdr/ssrDepth/ssrNormal
       mWorld: u('mWorld'),
       bones: u('bones'),
       smDebugColor: u('smDebugColor'),
@@ -2292,7 +2385,7 @@ export class Castle {
 
   // Шейдеры, текстуры и меши сцены. Файлы грузятся параллельно, работа на главном потоке
   // (загрузка в GPU, разбор мешей) идёт порциями по budget, шейдеры компилируются в фоне.
-  static async loadResources(scene, notUniqeShaderNames, notUniqeTexNames, budget) {
+  static async loadResources(scene, notUniqeShaderNames, notUniqeTexNames, budget, animShaderNames) {
     const gl = Castle.gl;
     let shaderNames = [...new Set(notUniqeShaderNames)];
     let texNames = [...new Set(notUniqeTexNames)];
@@ -2331,7 +2424,7 @@ export class Castle {
     ]);
 
     // компиляция идёт, пока грузятся текстуры и меши
-    const shadersReady = Castle.compileSceneShaders(scene, shaderNames, definesTexts, vsText, fsText, budget);
+    const shadersReady = Castle.compileSceneShaders(scene, shaderNames, definesTexts, vsText, fsText, budget, animShaderNames);
 
     const texturesReady = forEachLimited(texNames, 8, async (name, i) => {
       let image = await PreloadImages.loadAsync(`content/textures/${name}.webp`);
@@ -2366,7 +2459,7 @@ export class Castle {
   // Программы шейдеров сцены: цвет, карта теней и G-buffer (если есть отложенное освещение).
   // С KHR_parallel_shader_compile драйвер компилирует их в своих потоках, а мы только опрашиваем
   // готовность раз в кадр; без расширения — по одной программе за порцию бюджета.
-  static async compileSceneShaders(scene, shaderNames, definesTexts, vsText, fsText, budget) {
+  static async compileSceneShaders(scene, shaderNames, definesTexts, vsText, fsText, budget, animShaderNames) {
     const gl = Castle.gl;
     const parallel = gl.getExtension('KHR_parallel_shader_compile');
     const fd = scene.factionDef;
@@ -2391,14 +2484,22 @@ export class Castle {
       programGB: p.programGB ? Castle.finishProgram(p.programGB) : null,
     });
 
-    const jobs = shaderNames.map((name, i) => {
+    const jobs = [];
+    for (let i = 0; i < shaderNames.length; ++i) {
       let definesText = definesTexts[i];
       // Скиннинг (VS_SKIN) — размер массива костей. Если шейдер со скиннингом не собрался (например, не хватило
       // uniform-векторов: нужно 3 на кость), собираем без VS_SKIN — такие объекты стоят в позе привязки.
       const skinned = /#define VS_SKIN\b/.test(definesText);
       if (skinned) definesText += `\n#define SKIN_MAX_BONES ${Castle.SKIN_MAX_BONES}\n`;
-      return { name, definesText, skinned, started: null };
-    });
+      // базовая программа — БЕЗ блока vertex-animation (он нужен не всем объектам шейдера,
+      // а ломает позицию всем, у кого анимации нет)
+      jobs.push({ i, name: shaderNames[i], definesText, skinned, started: null });
+      // вторая программа того же шейдера — с блоком, только если в сцене есть анимируемые
+      // объекты этого шейдера (в текущем контенте — 11 объектов: флаги Доктов и птицы)
+      if (animShaderNames && animShaderNames.has(shaderNames[i])) {
+        jobs.push({ i, name: shaderNames[i], definesText: definesText + '\n#define VS_VERTANIM\n', skinned, anim: true, started: null });
+      }
+    }
 
     if (parallel) {
       for (const job of jobs) job.started = startPrograms(job.definesText);
@@ -2412,8 +2513,8 @@ export class Castle {
       }
     }
 
-    for (let i = 0; i < jobs.length; ++i) {
-      const job = jobs[i];
+    for (let j = 0; j < jobs.length; ++j) {
+      const job = jobs[j];
       if (!job.started) {
         await budget.slice();
         job.started = startPrograms(job.definesText);
@@ -2426,13 +2527,17 @@ export class Castle {
         ({ programColor, programSM, programGB } = finishPrograms(startPrograms(job.definesText.replace(/#define VS_SKIN\b/, ''))));
       }
 
-      scene.sceneShaders[i] = {
+      const programs = {
         PSO: programColor,
         PSO_SM: programSM,
         PSO_GB: programGB && programGB !== 1 ? programGB : null,
         attributes: scene.scenesJson.shaderLayouts.find((value) => value.name === job.name).layout,
         vertStride: 0,
       };
+      // анимируемая копия кладётся в тот же слот (объекты одного шейдера различаются признаком
+      // анимации, а не индексом программы)
+      if (job.anim) scene.sceneShaders[job.i].anim = programs;
+      else scene.sceneShaders[job.i] = programs;
     }
   }
 
@@ -2547,6 +2652,128 @@ export class Castle {
     return texture;
   }
 
+  // Ветер покачивания деревьев и кустов (шейдеры *_wind, блок VS_WIND в shader.vs.glsl).
+  // amp — ДОЛЯ высоты объекта: у дерева в ~220 условных единиц макушка ходит на amp*высоту.
+  // 0.05 ≈ 2,5 м у дерева в 50 единиц — заметно, но не «пляшущий лес» (замер кадра:
+  // 0.018 почти не видно, 0.15 уже перекашивает крону). speed — как быстро меняется фаза во
+  // времени (период ~7 с), freq — как быстро она меняется с расстоянием (вдоль ветра).
+  static windAmp = 0.05;
+
+  static windSpeed = 0.9;
+
+  static windFreq = 0.012;
+
+  // степень профиля высоты: 1 — наклон пропорционален высоте, больше — низ жёстче
+  static windProfile = 1.7;
+
+  // мировое направление ветра (XZ, единичное)
+  static windDirXY = [0.88, 0.47];
+
+  // Ночное небо и отражение неба в воде (shader_pos_uv_sky, shader_pos_water_reflect).
+  // starBrightness — множитель звёзд; waterReflect — сила отражения неба в воде (у скользящих
+  // лучей она растёт сама, см. fresnel в шейдере); waterStarGain — насколько звёзды в
+  // отражении ярче звёзд самого неба (у воды свой множитель: отражённое поле тусклее прямого,
+  // и площадка блоба в отражении меньше — с WATER_STAR_SIZE 1.0 этот множитель держит
+  // суммарный свет бликов на уровне прежнего при 3.0: замер суммы пиков 15.4k ↔ 15.5k).
+  static starBrightness = 1.0;
+
+  static waterReflect = 0.85;
+
+  static waterStarGain = 9.0;
+
+  // ---------------- Screen Space Reflections в воде (shader_pos*_water_reflect + SSR) -------
+  // Источник трассировки — G-buffer отложенного освещения (hdr / глубина / нормаль), поэтому
+  // SSR живёт ровно пока кадр шёл отложенным путём. Флаг — Castle.ssrFrame: к моменту
+  // отрисовки воды Castle.deferredPass уже false, проверять его в drawObject — значит получить
+  // «SSR никогда не включается» без единой строки в логе.
+  // ssrStrength = 0 — трассировка в шейдере не выполняется вовсе, отражение остаётся ровно тем
+  // же процедурным небом, что и до SSR.
+  static ssrStrength = 1.0;
+
+  // Дальше этой дистанции луч обрывается фолбэком на небо. Порог обязан заведомо не доставать
+  // до стенки скайбокса (центр (1442,-500,1504), полусторона ~3000 — см. комментарий к zFar):
+  // иначе SSR начнёт отражать панораму, а поверх ляжет фолбэк-градиент — двойное небо.
+  static ssrMaxDist = 1500.0;
+
+  // отступ старта трассировки по лучу (м): снимает ложные попадания о берег впритык к глади
+  static ssrStartOffset = 6.0;
+
+  // Потолок веса смешивания цвета (НЕ звёзд): 1.0 — где SSR нашёл данные, отражение целиком
+  // берётся из геометрии кадра, а звёздное небо там гасится отдельно (ssrHas в шейдере).
+  // Ниже 1 — оставляет долю градиента неба в цвете; на звёзды это уже не влияет.
+  static ssrConfMax = 1.0;
+
+  // Размыв выборки (px): без него гладкое зеркало показывает марш полосами — у скользящего
+  // луча попадание растягивается на десятки пикселей. Радиус = база + прирост·(доля
+  // дистанции)·(1.5 − 0.5·facing). Замер на кадре doct yaw −90 (река + дамба): при 0 —
+  // читается квантование марша, при 12 — отражение стены смазано; 1.5/8 — структура стены
+  // видна, ступенек нет.
+  static ssrBlurBase = 1.5;
+
+  static ssrBlurSlope = 8.0;
+
+  // карта уверенности вместо отражения (ssrParams.w): красный — где SSR, синий — где фолбэк
+  static ssrDebug = false;
+
+  static ssrFrame = false;
+
+  // возможности GL под новые сэмплеры и uniform-ы фрагмента (снимаются один раз при init)
+  static ssrCapsOk = false;
+
+  static get ssrActive() {
+    return (
+      Castle.ssrFrame &&
+      Castle.ssrCapsOk &&
+      CastleLighting.supported &&
+      // без LINEAR-фильтрации half-float выборки SSR — лесенка по пикселям
+      !!CastleLighting.ext.halfFloatLinear &&
+      // отладка теней биндит smColor на тот же юнит, что и нормаль G-buffer
+      !Castle.shadowDebugMode &&
+      // общий выключатель отражений в воде (гасит и SSR, и небо) + отдельный — SSR
+      Settings.settings.waterReflect !== false &&
+      Settings.settings.waterSsr !== false &&
+      Castle.ssrStrength > 0
+    );
+  }
+
+  // мировая позиция камеры кадра (из invert(viewMatrix2), см. updateMainCam)
+  static camMat = mat4.create();
+
+  static camWorld = [0, 0, 0];
+
+  // Состояние ветра на кадр. Порывы — медленные синусы: крона набирает ход и отходит, но
+  // не дрожит. Под осадками ветер сильнее (та же погода, что затемняет свет, гонит и ветер).
+  static windState() {
+    const t = Castle.currentTime;
+    const gust = 0.72 + 0.28 * Math.sin(t * 0.23) + 0.16 * Math.sin(t * 0.071 + 2.1);
+    const wet = 1 + 0.5 * CastleWeather.strength();
+    return {
+      amp: Castle.windAmp * gust * wet,
+      speed: Castle.windSpeed,
+      freq: Castle.windFreq,
+      profile: Castle.windProfile,
+      dir: Castle.windDirXY,
+    };
+  }
+
+  // Нижняя граница и высота объекта в МИРЕ — профиль покачивания (windBase в шейдере).
+  // Мировой Y вершины = вторая строка transform (он хранится построчно, как в шейдере);
+  // считаем по восьми углам локального bbox.
+  static windBaseOf(obj, bboxMin, bboxMax) {
+    const t = obj.transform || Castle.DEFAULT_TRANSFORM;
+    let lo = Infinity,
+      hi = -Infinity;
+    for (let corner = 0; corner < 8; corner++) {
+      const p = [corner & 1 ? bboxMax[0] : bboxMin[0], corner & 2 ? bboxMax[1] : bboxMin[1], corner & 4 ? bboxMax[2] : bboxMin[2]];
+      const wy = t[4] * p[0] + t[5] * p[1] + t[6] * p[2] + t[7];
+      if (wy < lo) lo = wy;
+      if (wy > hi) hi = wy;
+    }
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) return null;
+    const h = Math.max(hi - lo, 1);
+    return [lo, 1 / h, h];
+  }
+
   // Меш из загруженного файла: буфер вершин в GPU, границы, средний цвет вершин
   static uploadMesh(scene, shaderNames, sceneObjectsContainer, objectId, meshData) {
     let vertices = Castle.gl.createBuffer();
@@ -2612,7 +2839,11 @@ export class Castle {
       bboxMin: bboxMin,
       bboxMax: bboxMax,
       avgColor: avgColor,
+      windBase: Castle.windBaseOf(sceneObjectsContainer[objectId], bboxMin, bboxMax),
     };
+    // гладь, на которой работает SSR (defines-файл *_water_reflect) — признак для отладочной
+    // карты уверенности (drawObject меняет у неё смешивание на замену)
+    sceneObjectsContainer[objectId].waterSsr = /_water_reflect$/.test(sceneObjectsContainer[objectId].shader || '');
     // вершины рельефа, деревьев и кустов — для карты высот светлячков (CastleFireflies)
     CastleFireflies.keepGroundPositions(sceneObjectsContainer[objectId], meshFloat, vertStride, posOffset);
 
@@ -2697,6 +2928,14 @@ export class Castle {
 
     Castle.cameraHeight = Castle.lerp(targetCHVs[0], targetCHVs[1], camLerp);
 
+    // Постановочный наклон/высота кинематографичного кадра (CastleCinematic): ступень зума
+    // задаёт fov, а наклон и высоту кадр может требовать свои — только ими можно убрать из
+    // верхней части кадра дугу неба (верхний край цилиндрической панорамы на текстуре sky_*).
+    // null — штатная ступень, обычный вид игрока не меняется.
+    if (Castle.cinematicTilt !== null) Castle.rotationTilt = Castle.cinematicTilt;
+
+    if (Castle.cinematicHeight !== null) Castle.cameraHeight = Castle.cinematicHeight;
+
     let buildingsToDraw = [];
 
     for (let building of Castle.placedBuildings) {
@@ -2734,6 +2973,16 @@ export class Castle {
     }
 
     Castle.updateMainCam();
+
+    // Погода считается ДО света: наклон квада берётся из готовой камеры этого кадра, а
+    // Castle.updateDayNight затемняет солнце и фон по уже посчитанному fade (tintLight).
+    // Яркость самих частиц (NIGHT_FLOOR по Castle.daylight) при этом отстаёт на кадр — незаметно.
+    // Настройка «Дождь и снег» — тот же ручной выключатель (CastleWeather.enabled): через
+    // strength() от него же зависят затемнение света и усиление ветра, так что выключение
+    // гасит весь погодный вклад, а не только слой капель. Стенд ?previewWeather=off живёт на
+    // CastleWeather.override и его не трогает.
+    CastleWeather.enabled = Settings.settings.weather !== false;
+    CastleWeather.update(Castle);
 
     Castle.updateDayNight();
 
@@ -2817,6 +3066,8 @@ export class Castle {
     // (CastleLighting.finish), прозрачное — как раньше, поверх, с глубиной из G-buffer.
     const clearColor = [0.75, 0.85, 0.8];
     Castle.deferredPass = Castle.deferredActive && CastleLighting.beginGBuffer(Castle.gl, clearColor);
+    // G-buffer этого кадра ещё не написан — SSR (источник — он же) до finish недоступен
+    Castle.ssrFrame = false;
     if (!Castle.deferredPass) {
       Castle.gl.bindFramebuffer(Castle.gl.FRAMEBUFFER, null);
       Castle.gl.viewport(0, 0, Castle.gl.canvas.width, Castle.gl.canvas.height);
@@ -2876,6 +3127,9 @@ export class Castle {
         CastleLighting.lights.push(...CastleFireflies.lights(fireflyLevel));
         CastleLighting.finish(Castle.gl, Castle);
         Castle.deferredPass = false;
+        // G-buffer кадра жив и после композита (меняется только привязка FBO) — это источник
+        // трассировки для воды, которая рисуется следующим циклом
+        Castle.ssrFrame = true;
       }
 
       for (let i = blendsFrom; i < Castle.sceneObjects.length; ++i) {
@@ -2908,6 +3162,16 @@ export class Castle {
     requestAnimationFrame(Castle.loop);
   }
 
+  // Программы объекта: с блоком vertex-animation — только те, у кого в сцене задан
+  // startFreq/endAmp/animDir; остальные берут базовую программу без блока. Признак
+  // анимации запоминается на объекте — вызов в горячем пути (≈4000 рисунков за кадр).
+  static shaderPrograms(obj) {
+    const s = Castle.sceneShaders[obj.shaderId];
+    if (!s || !s.anim) return s;
+    if (obj.vertAnim === undefined) obj.vertAnim = Castle.hasVertexAnimation(obj);
+    return obj.vertAnim ? s.anim : s;
+  }
+
   static prepareAndDrawObject(obj, isSMPass, rotation, translation, tintOverride, scaleOverride) {
     if (!Castle.filter.test(obj.meshName)) {
       return;
@@ -2917,7 +3181,7 @@ export class Castle {
     let associatedTexture2 = obj.texture2Id;
     let associatedTexture3 = obj.texture3Id;
     let associatedTexture4 = obj.texture4Id;
-    let associatedShader = Castle.sceneShaders[obj.shaderId];
+    let associatedShader = Castle.shaderPrograms(obj);
 
     let textures = [
       Castle.sceneTextures[associatedTexture],
@@ -2939,7 +3203,7 @@ export class Castle {
       meshData.vertices,
       meshData.indexCount,
       meshData.vertStride,
-      Castle.sceneShaders[obj.shaderId].attributes,
+      associatedShader.attributes,
       obj.strip,
       obj.transform,
       isSMPass,
@@ -2996,6 +3260,23 @@ export class Castle {
 
     mat4.multiply(Castle.viewMatrix2, Castle.flipMatr, Castle.viewMatrix);
 
+    // Кинематографичный обход сцены (CastleCinematic): доворот камеры вокруг точки сцены
+    // camPivot. Камера C' = M(pivot, yaw) * C, значит вид V' = V * M^-1 — так точка прицела
+    // остаётся в центре кадра при любом угле. camYaw = 0 — ветка не выполняется, штатная
+    // камера не меняется. Остальное (viewProjMatr, viewProjInv, пузыри зданий) выводится
+    // из viewMatrix2, поэтому само едет за поворотом.
+    if (Castle.camYaw) {
+      mat4.identity(Castle.camOrbitMatr);
+
+      mat4.translate(Castle.camOrbitMatr, Castle.camOrbitMatr, [Castle.camPivot[0], 0, Castle.camPivot[1]]);
+
+      mat4.rotateY(Castle.camOrbitMatr, Castle.camOrbitMatr, -Castle.camYaw);
+
+      mat4.translate(Castle.camOrbitMatr, Castle.camOrbitMatr, [-Castle.camPivot[0], 0, -Castle.camPivot[1]]);
+
+      mat4.multiply(Castle.viewMatrix2, Castle.viewMatrix2, Castle.camOrbitMatr);
+    }
+
     mat4.multiply(Castle.viewProjMatr, Castle.projMatrix, Castle.viewMatrix2);
 
     var camForw = [Castle.viewMatrix2[2], Castle.viewMatrix2[6], Castle.viewMatrix2[10], 0];
@@ -3019,6 +3300,14 @@ export class Castle {
     Castle.camDeltaPos[1] = Castle.clamp(Castle.camDeltaPos[1], Castle.camDeltaPosMinMax[1][0], Castle.camDeltaPosMinMax[1][1]);
 
     mat4.invert(Castle.viewProjInv, Castle.viewProjMatr); // viewProj -> world
+
+    // Мировая позиция камеры — для звёзд и отражения (направление «из глаза в мир»). БЕРЁТСЯ ИЗ
+    // invert(viewMatrix2): локальный camPos выше — перевод в ЛОКАльной системе вида (матрицы
+    // домножаются справа), знак у него обратный мировой позиции.
+    mat4.invert(Castle.camMat, Castle.viewMatrix2);
+    Castle.camWorld[0] = Castle.camMat[12];
+    Castle.camWorld[1] = Castle.camMat[13];
+    Castle.camWorld[2] = Castle.camMat[14];
 
     Castle.cursorBasis = [
       ((Castle.cursorPosition[0] - Castle.canvasWidth / 2) / Castle.canvasWidth) * 2,
@@ -3071,6 +3360,34 @@ export class Castle {
 
     gl.uniform4f(l.time, Castle.currentTime, 0, 0, 0);
 
+    // Ветер покачивания деревьев (шейдеры *_wind): общий для кадра, как и time. Ставится только
+    // у программ, где он объявлен (l.wind === null у остальных — вызовов нет).
+    if (l.wind) {
+      const w = Castle.windState();
+      gl.uniform4f(l.wind, w.amp, w.speed, w.freq, w.profile);
+      gl.uniform2f(l.windDir, w.dir[0], w.dir[1]);
+    }
+
+    // Ночное небо и отражение в воде (shader_pos_uv_sky, shader_pos_water_reflect): мировая
+    // позиция камеры и ночный уровень. Ставится только там, где uniform-ы объявлены.
+    if (l.camPos) {
+      // nightStars.z — сила ВСЕГО отражения в воде (и SSR, и неба со звёздами): настройка
+      // «Отражения в воде» выключает его до нуля, и трассировка не считается вовсе (ssrActive)
+      const refl = Settings.settings.waterReflect === false ? 0 : Castle.waterReflect;
+      gl.uniform4f(l.camPos, Castle.camWorld[0], Castle.camWorld[1], Castle.camWorld[2], 1);
+      gl.uniform4f(l.nightStars, CastleLighting.nightLevel, Castle.starBrightness, refl, Castle.waterStarGain);
+    }
+
+    // SSR в воде (только цветной проход воды): сила 0 — трассировка в шейдере не выполняется,
+    // и отражение остаётся процедурным небом. Кадр без G-buffer (старый путь, выключенные огни
+    // зданий, отладка теней) — именно этот случай.
+    if (l.ssrParams) {
+      const on = Castle.ssrActive ? 1 : 0;
+      gl.uniform4f(l.ssrParams, on * Castle.ssrStrength, Castle.ssrMaxDist, Castle.ssrStartOffset, on && Castle.ssrDebug ? 1 : 0);
+      gl.uniform4f(l.ssrParams2, Castle.ssrConfMax, Castle.ssrBlurBase, Castle.ssrBlurSlope, 0);
+      gl.uniform2f(l.ssrInvSize, 1 / (CastleLighting.width || 1), 1 / (CastleLighting.height || 1));
+    }
+
     gl.uniform4f(l.shadowDebug, Castle.shadowDebugMode, 0, 0, 0);
   }
 
@@ -3081,6 +3398,13 @@ export class Castle {
     Castle.gl.uniformMatrix4fv(l.mViewProj, false, Castle.lightViewProjMatrix);
 
     Castle.gl.uniform4f(l.time, Castle.currentTime, 0, 0, 0);
+
+    // ветер нужен и проходу карты теней: иначе тень дерева стоит, а само оно качается
+    if (l.wind) {
+      const w = Castle.windState();
+      Castle.gl.uniform4f(l.wind, w.amp, w.speed, w.freq, w.profile);
+      Castle.gl.uniform2f(l.windDir, w.dir[0], w.dir[1]);
+    }
   }
 
   static getBlendFunc(blendString) {
@@ -3199,6 +3523,13 @@ export class Castle {
     animDir,
   ) {
     if (blend) {
+      // Отладочная карта уверенности SSR (Castle.ssrDebug): у адорнийцев гладь аддитивная
+      // (ONE/ONE), и карта сложилась бы с подложкой — по пикселям она не размечается.
+      // В этом режиме вода пишется заменой.
+      if (Castle.ssrDebug && Castle.currentDrawObject && Castle.currentDrawObject.waterSsr) {
+        blend = ['ONE', 'ZERO']; // результат = src·1 + dst·0, то есть выход шейдера заменой
+      }
+
       Castle.gl.enable(Castle.gl.BLEND);
 
       Castle.gl.disable(Castle.gl.CULL_FACE);
@@ -3277,7 +3608,26 @@ export class Castle {
     gl.uniform4fv(l.endAmp, endAmpValue ? endAmpValue : Castle.ZEROS4);
     gl.uniform4fv(l.animDirVertFreq, animDir ? animDir : Castle.ZEROS4);
 
+    // Покачивание на ветру: нижняя граница и высота объекта (windBase) — свои у каждого меша,
+    // нет данных — invHeight=0, профиль обнуляется, объект стоит.
+    if (l.windBase) {
+      const wb = Castle.currentDrawObject && Castle.currentDrawObject.meshData && Castle.currentDrawObject.meshData.windBase;
+      gl.uniform4f(l.windBase, wb ? wb[0] : 0, wb ? wb[1] : 0, wb ? wb[2] : 0, 0);
+    }
+
     gl.uniform2fv(l.uvScroll, uvScroll ? uvScroll : Castle.ZEROS2);
+
+    // Погодный оверлей (CastleWeather): фаза/слои/плоскость квада — только у программ, где эти
+    // uniform-ы объявлены (шейдер с #define SNOW); у остальных l.weather === null, вызовов нет.
+    if (l.weather) {
+      const wobj = Castle.currentDrawObject;
+      gl.uniform4fv(l.weather, (wobj && wobj.weather) || Castle.ZEROS4);
+      gl.uniform4fv(l.weather2, (wobj && wobj.weather2) || Castle.ZEROS4);
+      gl.uniform4fv(l.weather3, (wobj && wobj.weather3) || Castle.ZEROS4);
+      gl.uniform4fv(l.weather4, (wobj && wobj.weather4) || Castle.ZEROS4);
+      gl.uniform4fv(l.weather5, (wobj && wobj.weather5) || Castle.ZEROS4);
+      gl.uniform4fv(l.weather6, (wobj && wobj.weather6) || Castle.ZEROS4);
+    }
 
     // матрицы — общие рабочие массивы (uniformMatrix4fv копирует значение), новые на каждый объект не нужны
     const worldMatrix = Castle._mWorld;
@@ -3362,6 +3712,25 @@ export class Castle {
       }
     }
 
+    // SSR в воде: G-buffer кадра (цвет / глубина / нормаль) — на юнитах сразу после smTexture.
+    // Вода занимает tex0, smTexture — textures.length; сетка стройки (+1, +2) водой не бывает,
+    // а smColor отладки теней на +2 живёт только при shadowDebugMode, где SSR выключен.
+    if (l.ssrHdr) {
+      const base = textures.length + 1;
+      gl.activeTexture(gl.TEXTURE0 + base);
+      gl.bindTexture(gl.TEXTURE_2D, CastleLighting.hdrTexture);
+      gl.activeTexture(gl.TEXTURE0 + base + 1);
+      gl.bindTexture(gl.TEXTURE_2D, CastleLighting.depthTexture);
+      gl.activeTexture(gl.TEXTURE0 + base + 2);
+      gl.bindTexture(gl.TEXTURE_2D, CastleLighting.normalTexture);
+      if (l.ssrUnit !== base) {
+        l.ssrUnit = base;
+        gl.uniform1i(l.ssrHdr, base);
+        gl.uniform1i(l.ssrDepth, base + 1);
+        gl.uniform1i(l.ssrNormal, base + 2);
+      }
+    }
+
     if (!isSMPass && isGrid) {
       Castle.gl.activeTexture(Castle.gl.TEXTURE0 + textures.length + 1);
 
@@ -3429,7 +3798,9 @@ export class Castle {
     if (Castle.buildingBoundsCache[name]) return Castle.buildingBoundsCache[name];
     const bounds = { min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity] };
     for (const object of Castle.sceneBuildings[name]?.objects || []) {
-      const lo = object.meshData?.bboxMin, hi = object.meshData?.bboxMax, m = object.transform;
+      const lo = object.meshData?.bboxMin,
+        hi = object.meshData?.bboxMax,
+        m = object.transform;
       if (!lo || !hi || !m) continue;
       for (let corner = 0; corner < 8; corner++) {
         const p = [corner & 1 ? hi[0] : lo[0], corner & 2 ? hi[1] : lo[1], corner & 4 ? hi[2] : lo[2]];
@@ -3454,7 +3825,8 @@ export class Castle {
     // совпадает с центром на экране при одном ракурсе и уезжает при сдвиге камеры.)
     const mesh = Castle.sceneBuildings[name];
     const angle = (building.rot || 0) * 1.57;
-    const cx = (bounds.min[0] + bounds.max[0]) / 2, cz = (bounds.min[2] + bounds.max[2]) / 2;
+    const cx = (bounds.min[0] + bounds.max[0]) / 2,
+      cz = (bounds.min[2] + bounds.max[2]) / 2;
     const point = [
       Castle.zeroTranslation[0] + (building.posX * 7.0 + (mesh.size[0] / 2.0) * 7.0) + Math.cos(angle) * cx + Math.sin(angle) * cz,
       1 + bounds.max[1],

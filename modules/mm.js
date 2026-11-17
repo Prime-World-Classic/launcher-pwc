@@ -20,6 +20,7 @@ import { Splash } from './splash.js';
 import { domAudioPresets } from './domAudioPresets.js';
 import { SOUNDS_LIBRARY } from './soundsLibrary.js';
 import { loadKeybinds } from './keybindings/keybindings.io.js';
+import { LanePositionQueue } from './lanePositionQueue.js';
 
 export class MM {
   static id = '';
@@ -128,11 +129,55 @@ export class MM {
     });
   }
 
+  // Гонг «Бой найден» — оповещение, а не звук интерфейса. Раньше он шёл по ползунку
+  // «Звуки» (по умолчанию 0,2 от общей), а музыка замка — по «Музыке» (0,5) и играла
+  // поверх: гонг был на ~8 дБ тише музыки и в ней тонул. Теперь: не тише половины
+  // общей громкости (молчит, только если «Звуки» на нуле), а музыка на время гонга
+  // приглушается.
+  static FOUND_MIN_VOLUME = 0.5;
+  static FOUND_MUSIC_DUCK = 0.3;
+  static FOUND_DUCK_MS = 8000;
+
+  static foundVolume() {
+    const global = Settings.settings.globalVolume ?? 1.0;
+    const sounds = Settings.settings.soundsVolume ?? 0.2;
+
+    if (!(sounds > 0) || !(global > 0)) {
+      return 0;
+    }
+
+    return Math.min(1, global * Math.max(sounds, MM.FOUND_MIN_VOLUME));
+  }
+
   static soundEvent() {
-    Sound.play(SOUNDS_LIBRARY.MM_FOUND, {
-      id: 'MM_found',
-      volume: Castle.GetVolume(Castle.AUDIO_SOUNDS),
-    });
+    const volume = MM.foundVolume();
+
+    if (!volume) {
+      return;
+    }
+
+    MM.duckCastleMusic();
+
+    Sound.play(SOUNDS_LIBRARY.MM_FOUND, { id: 'MM_found', volume }, () => MM.unduckCastleMusic());
+  }
+
+  static duckTimer = null;
+
+  static duckCastleMusic() {
+    clearTimeout(MM.duckTimer);
+
+    Sound.setVolume('castle', Castle.GetVolume(Castle.AUDIO_MUSIC) * MM.FOUND_MUSIC_DUCK);
+
+    // 'ended' не придёт, если гонг остановили, — вернём музыку и по таймеру
+    MM.duckTimer = setTimeout(() => MM.unduckCastleMusic(), MM.FOUND_DUCK_MS);
+  }
+
+  static unduckCastleMusic() {
+    clearTimeout(MM.duckTimer);
+
+    MM.duckTimer = null;
+
+    Sound.setVolume('castle', Castle.GetVolume(Castle.AUDIO_MUSIC));
   }
 
   static play() {
@@ -221,6 +266,7 @@ export class MM {
   }
 
   static close() {
+    MM.lanePositionQueue?.dispose();
     MM.lobbyRunId++;
     MM.lobbySkinRequestId++;
     clearInterval(MM.lobbyPreviewInterval);
@@ -352,9 +398,44 @@ export class MM {
     }
   }
 
+  // Тренировка (режим 99): бой с манекенами и ботами сразу, без поиска. Бэкенд берёт
+  // героя из слота пати, поэтому сначала heroParty. Общая для «В бой!» в режиме
+  // «Тренировка» и кнопки «Тренировка» в билде (build/heroPanel.js).
+  static async startTraining(heroId) {
+    try {
+      if (MM.isBlockedByUpdate()) return;
+      if (!NativeAPI.status) return App.error(Lang.text('windowsLauncherRequired'));
+      await MM.gameStartCheck();
+      await App.api.request(App.CURRENT_MM, 'heroParty', { id: MM.partyId, hero: heroId });
+      await App.api.request(App.CURRENT_MM, 'start', {
+        version: App.PW_VERSION, mode: CastleNAVBAR.TRAINING_MODE, mac: await NativeAPI.getMACAdresses(), cache: await NativeAPI.getCacheIndex(), v: 2,
+      });
+    } catch (error) {
+      App.error(error);
+    }
+  }
+
   static async start() {
+    // «В бой!» в режиме «Тренировка»: герой выбран — сразу в бой, нет — выбор героя
+    if (!MM.active && CastleNAVBAR.isTraining()) {
+      const heroId = Number(MM.activeSelectHero) || 0;
+
+      if (heroId > 0) {
+        return MM.startTraining(heroId);
+      }
+
+      const myCard = document.querySelector(`.castle-play-lobby-player[data-id="${App.storage.data.id}"]`);
+
+      return View.openCastlePartyHeroPicker(myCard, 1100);
+    }
+
     if (!MM.active && MM.isBlockedByUpdate()) {
       return;
+    }
+
+    // бан поиска: кнопка серая с отсчётом, на нажатие — причина
+    if (!MM.active && CastleNAVBAR.searchBanLeft()) {
+      return App.error(CastleNAVBAR.searchBanText());
     }
 
     if (NativeAPI.status) {
@@ -448,6 +529,9 @@ export class MM {
       } catch (error) {
         MM.searchActive(false);
 
+        // отказ мог быть из-за бана (в том числе у участника пати) — покажем отсчёт
+        CastleNAVBAR.refreshSearchBan();
+
         return App.error(error);
       }
     }
@@ -462,6 +546,10 @@ export class MM {
     
     let canConfirm = !('canConfirm' in data) || data.canConfirm;
 
+    // Гонг — сразу: Timer.start ждёт ответа сервера (getTimer, до 3 попыток), и раньше
+    // гонг звучал с задержкой, а при сбое запроса не звучал совсем.
+    MM.soundEvent();
+
     await Timer.start(data.id, Lang.text('mmMatchFound'), () => {
       MM.close();
 
@@ -470,8 +558,6 @@ export class MM {
 
     MM.searchActive(false);
 
-    MM.soundEvent();
-    
     try {
       // 1×1 и тестовый клиент: звонки не рвём (limit — игроков в матче).
       if (!Voice.setMatchKeepCalls(data.limit)) {
@@ -1497,10 +1583,20 @@ export class MM {
   }
 
   static renderMap(team) {
+    MM.lanePositionQueue?.dispose();
     MM.renderBody = DOM({ style: team == 1 ? 'map' : 'map-reverse' });
     const map = MM.renderBody;
-    let nextPositionAt = 0;
-    let positionPending = false;
+    const lobbyId = MM.id;
+    const queue = MM.lanePositionQueue = new LanePositionQueue({
+      cooldown: MM.lobbyPositionCooldownMs,
+      isActive: () => map.isConnected && MM.isInTambur && MM.id === lobbyId,
+      send: (position) => App.api.request(App.CURRENT_MM, 'position', { id: lobbyId, position }),
+      onError: (error) => App.error(error),
+      onChange: (position) => {
+        map.setAttribute('aria-busy', String(position !== null));
+        for (const point of map.children) point.classList.toggle('map-position-pending', Number(point.dataset.position) === position);
+      },
+    });
 
     let container = DOM({ style: 'mm-lobby-map-frame' }, MM.renderBody);
 
@@ -1517,8 +1613,6 @@ export class MM {
         event: [
           'click',
           async () => {
-            if (positionPending || Date.now() < nextPositionAt) return;
-            nextPositionAt = Date.now() + MM.lobbyPositionCooldownMs;
             if (MM.preview) {
               const player = document.getElementById(`PLAYER${MM.lobbyUserId}`);
               if (!player) return;
@@ -1540,20 +1634,7 @@ export class MM {
               }
               return;
             }
-            positionPending = true;
-            map.setAttribute('aria-busy', 'true');
-            try {
-              await App.api.request(App.CURRENT_MM, 'position', {
-                id: MM.id,
-                position: item.dataset.player == App.storage.data.id ? 0 : item.dataset.position,
-              });
-            } catch (error) {
-              nextPositionAt = 0;
-              App.error(error);
-            } finally {
-              positionPending = false;
-              map.setAttribute('aria-busy', 'false');
-            }
+            queue.enqueue(item.dataset.player == App.storage.data.id ? 0 : Number(item.dataset.position));
           },
         ],
       });

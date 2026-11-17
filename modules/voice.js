@@ -10,6 +10,7 @@ import { normalizeKey } from './keybindings/keybindings.input.js';
 import { MM } from './mm.js';
 import { uiIcon } from './uiIcon.js';
 import { NativeAPI } from './nativeApi.js';
+import { VoiceScreen } from './voiceScreen.js';
 
 export class Voice {
   static peerConnectionConfig = {
@@ -122,6 +123,7 @@ export class Voice {
   static userMedia = null;
 
   static micUnavailable = false;
+  static micUnavailableNotified = false;
 
   static localMediaPromise = null;
 
@@ -212,6 +214,9 @@ export class Voice {
   static radioPressedByKeyboard = false;
 
   static radioPulseTimer = null;
+
+  // отложенное выключение микрофона после отпускания рации (voicePttReleaseMs)
+  static radioReleaseTimer = null;
 
   static logQueue = Promise.resolve();
 
@@ -583,13 +588,68 @@ export class Voice {
     return Voice.infoPanel?.querySelector?.('.voice-info-panel-body') || null;
   }
 
-  // Панель нужна, только пока идёт звонок (или его переподключение — между попытками записи
-  // собеседника нет) или включён свой микрофон (в режиме рации без собеседников говорить
-  // некому). Иначе — пустая рамка с крестиком, которая висела после каждого лобби без
-  // голосовых союзников.
+  // Панель видна всегда — сразу после входа, со своим ником, даже если никому не звонили, в любом
+  // режиме (и в рации, и под «Мут всех и себя» — тогда в ней надпись о муте; при выключенном войсе —
+  // «Голосовая связь выключена»). Раньше «Мут всех и себя» панель прятал: галочка тогда значила
+  // «выключить войс», теперь для этого есть отдельная настройка. Крестик прячет панель до
+  // следующего звонка или нажатия клавиши войса.
   static shouldShowInfoPanel() {
-    if (Object.keys(Voice.manager).length > 0 || Voice.reconnectJobs.size > 0) return true;
-    return Boolean(Voice.mic?.enabled) && !Settings.settings?.voiceRadioMode;
+    return Voice.isLoggedInView();
+  }
+
+  // Voice.init вызывается и до входа: на экране авторизации панели (с пустым ником) нет.
+  static viewMethod = '';
+  static infoPanelLogin = null;
+
+  static isLoggedInView() {
+    return Number(App.storage?.data?.id) > 0 && Voice.viewMethod !== 'authorization';
+  }
+
+  // View.show: сменился экран (вход, выход из аккаунта). Сменился ник — панель перерисовывается.
+  // «Выключить войс» (Настройки замка → Голосовая связь): не звоним сами, звонки к нам не проходят
+  // (бэкенд их не пересылает, а дошедшие сбрасываем в Events.VCall), микрофон не открываем.
+  static isVoiceOff() {
+    return Settings.settings?.voiceOff === true;
+  }
+
+  static async setVoiceOff(off) {
+    Settings.settings.voiceOff = Boolean(off);
+    Voice.log('voice-off', { off: Voice.isVoiceOff() });
+    if (Voice.isVoiceOff()) {
+      Sound.stop('ui-call');
+      // все звонки (и союзников в бою), повторные попытки, демонстрация экрана и микрофон
+      Voice.destroy(true);
+    }
+    Voice.syncVoiceOffToServer(true);
+    Voice.infoPanelHiddenByUser = false;
+    Voice.updateInfoPanel();
+    await Settings.WriteSettings();
+  }
+
+  // Состояние для бэкенда (user.voiceOff, хранится в памяти сервера): при входе в аккаунт, при
+  // переключении и после переподключения к API. Старый бэкенд метода не знает — ошибку глотаем.
+  static voiceOffSentFor = '';
+  static syncVoiceOffToServer(force = false) {
+    if (!Voice.isLoggedInView() || typeof App.api?.ghost !== 'function') return;
+    const off = Voice.isVoiceOff() ? 1 : 0;
+    const state = `${Number(App.storage.data.id)}:${off}`;
+    if (!force && Voice.voiceOffSentFor === state) return;
+    Voice.voiceOffSentFor = state;
+    Promise.resolve()
+      .then(() => App.api.ghost('user', 'voiceOff', { off }))
+      .catch(() => {});
+  }
+
+  static onViewShown(method) {
+    Voice.viewMethod = String(method || '');
+    Voice.syncVoiceOffToServer();
+    if (!Voice.infoPanel) return;
+    const login = String(App.storage?.data?.login || '');
+    if (Voice.infoPanelLogin !== login || VoiceScreen.panelOutdated()) {
+      Voice.updateInfoPanel();
+    } else {
+      Voice.syncInfoPanel();
+    }
   }
 
   static showInfoPanel(force = false) {
@@ -600,6 +660,16 @@ export class Voice {
       Voice.updateInfoPanel();
     }
     Voice.infoPanel.style.display = 'flex';
+  }
+
+  // Видимость по shouldShowInfoPanel в обе стороны: сняли «Мут всех и себя» — панель вернулась.
+  static syncInfoPanel() {
+    if (!Voice.infoPanel) return;
+    if (Voice.shouldShowInfoPanel()) {
+      if (!Voice.infoPanelHiddenByUser) Voice.infoPanel.style.display = 'flex';
+      return;
+    }
+    Voice.infoPanel.style.display = 'none';
   }
 
   static hideInfoPanelIfIdle() {
@@ -619,6 +689,7 @@ export class Voice {
   }
 
   static ensureReconnectJob(id, key, name = '', important = false, initialDelayMs = 0) {
+    if (Voice.isVoiceOff()) return;
     if (!Voice.shouldAutoReconnectKey(key)) return;
     const token = Voice.getReconnectToken(id, key);
     if (Voice.reconnectJobs.has(token)) return;
@@ -722,6 +793,9 @@ export class Voice {
 
     document.body.append(Voice.infoPanel);
 
+    // Панель со своим ником — сразу после входа, а не с первым звонком.
+    Voice.showInfoPanel();
+
     Voice.ensureRadioHotkeyListeners();
 
     requestAnimationFrame(() => Voice.updatePanelPosition());
@@ -750,12 +824,85 @@ export class Voice {
     return Voice.tokensEqual(expected, Array.isArray(actual) ? actual : []);
   }
 
+  // ---- Рация как в Discord: режим ввода «Рация», своя клавиша, мьют, задержка отпускания.
+  // Клавиша рации (voicePttHotkey); пустая или из одних модификаторов — та же, что «Вкл/выкл микрофон».
+  static getPttTokens() {
+    const raw = Array.isArray(Settings.settings?.voicePttHotkey) ? Settings.settings.voicePttHotkey : [];
+    const cleaned = raw.map((x) => String(x || '').trim().toUpperCase()).filter(Boolean);
+    const modifiers = ['CTRL', 'ALT', 'SHIFT', 'WIN'];
+    return cleaned.some((x) => !modifiers.includes(x)) ? cleaned : Voice.getVoiceToggleTokens();
+  }
+
+  // Рация на той же клавише, что «Вкл/выкл микрофон» (так было до отдельной клавиши): тогда в
+  // режиме рации эта клавиша только говорит, мьюта нет.
+  static isPttOnToggleKey() {
+    return Voice.tokensEqual(Voice.getPttTokens(), Voice.getVoiceToggleTokens());
+  }
+
+  static getPttReleaseMs() {
+    const value = Number(Settings.settings?.voicePttReleaseMs);
+    return Number.isFinite(value) ? Math.min(2000, Math.max(0, Math.round(value))) : 20;
+  }
+
+  // Событие клавиатуры или мыши (боковые кнопки — MOUSE4/MOUSE5) совпало с клавишей рации.
+  static eventMatchesPttHotkey(event) {
+    const expected = Voice.getPttTokens();
+    if (!expected.length) return false;
+    let actual = [];
+    if (event?.type?.startsWith('mouse')) {
+      const button = { 3: 'MOUSE4', 4: 'MOUSE5' }[event.button];
+      if (!button) return false;
+      if (event.ctrlKey) actual.push('CTRL');
+      if (event.altKey) actual.push('ALT');
+      if (event.shiftKey) actual.push('SHIFT');
+      actual.push(button);
+    } else {
+      const keys = normalizeKey(event);
+      actual = Array.isArray(keys) ? keys : [];
+    }
+    return Voice.tokensEqual(expected, actual);
+  }
+
+  // Мьют в режиме рации (клавиша «Вкл/выкл микрофон», когда рация на другой клавише): пока он
+  // включён, рация не говорит — как Toggle Mute в Discord. Живёт до перезапуска лаунчера.
+  static pttMuted = false;
+
+  static async togglePttMute() {
+    Voice.pttMuted = !Voice.pttMuted;
+    Voice.infoPanelHiddenByUser = false;
+    if (Voice.pttMuted) {
+      Voice.clearRadioReleaseTimer();
+      Voice.radioPressedByKeyboard = false;
+      await Voice.setMicEnabled(false);
+    }
+    Sound.play(Voice.pttMuted ? SOUNDS_LIBRARY.VC_DISABLED : SOUNDS_LIBRARY.VC_ENABALED, {
+      id: Voice.pttMuted ? 'Voice_disabled' : 'Voice_enabled',
+      volume: Castle.GetVolume(Castle.AUDIO_SOUNDS),
+    });
+    Voice.updateInfoPanel();
+    Voice.showInfoPanel(true);
+  }
+
+  static clearRadioReleaseTimer() {
+    if (!Voice.radioReleaseTimer) return;
+    clearTimeout(Voice.radioReleaseTimer);
+    Voice.radioReleaseTimer = null;
+  }
+
+  // Клавиша рации (наблюдатель клавиш, окно лаунчера или игра в бою): говорим, пока зажата.
+  static async handlePttKey(pressed) {
+    if (!Settings.settings?.voiceRadioMode) return;
+    Voice.clearRadioPulseTimer();
+    await Voice.setRadioPressed(pressed);
+  }
+
   static async setMicEnabled(enabled) {
+    if (Voice.isVoiceOff()) return;
     if (!Voice.userMedia || !Voice.mic) {
       await Voice.initLocalMedia();
     }
     if (!Voice.mic) {
-      if (enabled) App.error(Lang.text('voiceMicUnavailable'));
+      if (enabled) Voice.notifyMicUnavailable();
       return;
     }
     if (Voice.mic.enabled === Boolean(enabled)) return;
@@ -766,9 +913,46 @@ export class Voice {
   static async setRadioPressed(pressed) {
     if (!Settings.settings?.voiceRadioMode) return;
     const next = Boolean(pressed);
+    // мьют рации (togglePttMute): клавиша рации молчит
+    if (next && Voice.pttMuted && !Voice.isPttOnToggleKey()) return;
     if (Voice.radioPressedByKeyboard === next) return;
     Voice.radioPressedByKeyboard = next;
-    await Voice.setMicEnabled(next);
+    if (next) {
+      // Нажали рацию — панель открывается, даже закрытая крестиком (как Ctrl+Z в обычном режиме).
+      Voice.clearRadioReleaseTimer();
+      Voice.infoPanelHiddenByUser = false;
+      await Voice.setMicEnabled(true);
+      Voice.showInfoPanel(true);
+      return;
+    }
+    // Задержка отпускания (как в Discord): конец фразы не обрезается.
+    Voice.clearRadioReleaseTimer();
+    const delay = Voice.getPttReleaseMs();
+    if (delay <= 0) {
+      await Voice.setMicEnabled(false);
+      return;
+    }
+    Voice.radioReleaseTimer = setTimeout(() => {
+      Voice.radioReleaseTimer = null;
+      if (Voice.radioPressedByKeyboard) return;
+      Voice.setMicEnabled(false);
+    }, delay);
+  }
+
+  // Переключатель «Режим рации». Раньше менялся только флаг: включённый в обычном режиме микрофон
+  // так и оставался включённым (говорили всё время), а панель тут же пряталась и больше не
+  // появлялась. В рации микрофон включён только пока зажата клавиша; при выходе из рации —
+  // как выбрал игрок в обычном режиме (Ctrl+Z).
+  static setRadioMode(enabled) {
+    Settings.settings.voiceRadioMode = Boolean(enabled);
+    Voice.clearRadioPulseTimer();
+    Voice.clearRadioReleaseTimer();
+    Voice.radioPressedByKeyboard = false;
+    if (Voice.mic) {
+      Voice.mic.enabled = Voice.getInitialMicEnabled();
+    }
+    Voice.updateInfoPanel();
+    Voice.showInfoPanel();
   }
 
   static clearRadioPulseTimer() {
@@ -780,6 +964,7 @@ export class Voice {
   static async pulseRadioTalk(durationMs = 700) {
     if (!Settings.settings?.voiceRadioMode) return;
     if (Voice.radioPressedByKeyboard) return;
+    if (Voice.pttMuted && !Voice.isPttOnToggleKey()) return;
     await Voice.setMicEnabled(true);
     Voice.clearRadioPulseTimer();
     Voice.radioPulseTimer = setTimeout(async () => {
@@ -793,14 +978,16 @@ export class Voice {
     if (Voice.radioHotkeyListenersBound) return;
     Voice.radioHotkeyListenersBound = true;
 
+    // поле ввода клавиш (настройки) само ловит нажатия — рация в нём не срабатывает
+    const inKeyInput = (event) => Boolean(event.target?.closest?.('.bs-key, .castle-keybinding-input'));
+
     document.addEventListener('keydown', async (event) => {
       if (!Settings.settings?.voiceRadioMode) return;
-      if (event.repeat) return;
-      if (!Voice.eventMatchesVoiceToggleHotkey(event)) return;
+      if (event.repeat || inKeyInput(event)) return;
+      if (!Voice.eventMatchesPttHotkey(event)) return;
       event.preventDefault();
       event.stopPropagation();
-      Voice.clearRadioPulseTimer();
-      await Voice.setRadioPressed(true);
+      await Voice.handlePttKey(true);
     });
 
     document.addEventListener('keyup', async (event) => {
@@ -808,14 +995,30 @@ export class Voice {
       if (!Voice.radioPressedByKeyboard) return;
       const keyUpper = String(event.key || '').trim().toUpperCase();
       const isModifierRelease = keyUpper === 'CONTROL' || keyUpper === 'ALT' || keyUpper === 'SHIFT' || keyUpper === 'META';
-      const isMainRelease = Voice.eventMatchesVoiceToggleHotkey(event);
+      const main = Voice.getPttTokens().slice(-1)[0];
+      const isMainRelease = Voice.eventMatchesPttHotkey(event) || (normalizeKey(event) || []).slice?.(-1)[0] === main;
       if (!isModifierRelease && !isMainRelease) return;
-      Voice.clearRadioPulseTimer();
-      await Voice.setRadioPressed(false);
+      await Voice.handlePttKey(false);
+    });
+
+    // рация на боковой кнопке мыши (MOUSE4/MOUSE5), пока лаунчер в фокусе; вне его — наблюдатель
+    document.addEventListener('mousedown', async (event) => {
+      if (!Settings.settings?.voiceRadioMode || inKeyInput(event)) return;
+      if (!Voice.eventMatchesPttHotkey(event)) return;
+      event.preventDefault();
+      await Voice.handlePttKey(true);
+    });
+    document.addEventListener('mouseup', async (event) => {
+      if (!Settings.settings?.voiceRadioMode || !Voice.radioPressedByKeyboard) return;
+      if (![3, 4].includes(event.button)) return;
+      // «назад/вперёд» мыши в NW не должны листать историю страницы
+      if (Voice.getPttTokens().some((x) => x === 'MOUSE4' || x === 'MOUSE5')) event.preventDefault();
+      await Voice.handlePttKey(false);
     });
 
     window.addEventListener('blur', async () => {
       Voice.clearRadioPulseTimer();
+      Voice.clearRadioReleaseTimer();
       Voice.radioPressedByKeyboard = false;
       if (Settings.settings?.voiceRadioMode) {
         await Voice.setMicEnabled(false);
@@ -823,16 +1026,40 @@ export class Voice {
     });
   }
 
+  // Клавиша войса от наблюдателя клавиш (NativeAPI, PW_KeyWatch): приходит и нажатие,
+  // и отпускание в любом окне. Рация говорит, пока клавиша зажата; иначе — вкл/выкл
+  // микрофона по нажатию. В бою игра шлёт свой "ptt" той же клавиши — setRadioPressed
+  // повторное нажатие/отпускание пропускает.
+  // В режиме рации: если рация на этой же клавише — говорим, пока зажата (как было); если у
+  // рации своя клавиша — эта клавиша мьютит/размьючивает (Toggle Mute в Discord).
+  static async handleVoiceToggleKey(pressed) {
+    if (Settings.settings?.voiceRadioMode) {
+      if (Voice.isPttOnToggleKey()) {
+        await Voice.handlePttKey(pressed);
+        return;
+      }
+      if (pressed) await Voice.togglePttMute();
+      return;
+    }
+    if (pressed) await Voice.toggleEnabledMic();
+  }
+
+  // Запасной путь — nw.Shortcut: приходит только нажатие, рация включается импульсом.
   static async handleVoiceToggleHotkey() {
     if (Settings.settings?.voiceRadioMode) {
-      await Voice.pulseRadioTalk(700);
+      if (Voice.isPttOnToggleKey()) await Voice.pulseRadioTalk(700);
+      else await Voice.togglePttMute();
       return;
     }
     await Voice.toggleEnabledMic();
   }
 
+  static async handlePttHotkey() {
+    if (Settings.settings?.voiceRadioMode) await Voice.pulseRadioTalk(700);
+  }
+
   static async initLocalMedia() {
-    if (Voice.userMedia) {
+    if (Voice.userMedia || Voice.isVoiceOff()) {
       return;
     }
     // Two calls started before getUserMedia resolves must share one mic; otherwise the second
@@ -847,7 +1074,7 @@ export class Voice {
 
   static async initLocalMediaOnce() {
     try {
-      Voice.userMedia = await navigator.mediaDevices.getUserMedia(Voice.getMediaConstraints());
+      Voice.userMedia = await Voice.openMicStream();
     } catch (error) {
       return Voice.onMicUnavailable(error?.name || error);
     }
@@ -869,6 +1096,7 @@ export class Voice {
     }
 
     Voice.micUnavailable = false;
+    Voice.micUnavailableNotified = false;
     Voice.rawMic = tracks[0];
     Voice.watchRawMic(Voice.rawMic);
 
@@ -902,6 +1130,12 @@ export class Voice {
       console.log('Voice DSP init failed, no silent track:', error);
     }
     Voice.listenDeviceChange();
+  }
+
+  static notifyMicUnavailable() {
+    if (Voice.micUnavailableNotified) return;
+    Voice.micUnavailableNotified = true;
+    App.error(Lang.text('voiceMicUnavailable'));
   }
 
   // Дорожка для звонка: микрофон, а пока его нет — тихая дорожка той же цепочки обработки.
@@ -949,6 +1183,71 @@ export class Voice {
     };
   }
 
+  // Микрофон из настроек (Settings.voiceMicDevice — deviceId, voiceMicLabel — его имя на случай,
+  // если Windows выдаст устройству новый id). Пусто — устройство записи Windows по умолчанию:
+  // без deviceId Chromium берёт именно его, и если оно заглушено, а говорят в другой микрофон,
+  // собеседникам уходит тишина.
+  static async listMicDevices() {
+    if (!navigator.mediaDevices?.enumerateDevices) return [];
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter((device) => device.kind === 'audioinput');
+  }
+
+  // deviceId выбранного микрофона, если он сейчас подключён; '' — брать Windows по умолчанию.
+  static async resolveMicDeviceId() {
+    const id = String(Settings.settings?.voiceMicDevice || '');
+    if (!id) return '';
+    let devices = [];
+    try {
+      devices = await Voice.listMicDevices();
+    } catch {
+      return id;
+    }
+    // Без разрешения на микрофон Chromium прячет id и имена — пробуем сохранённый id как есть.
+    if (!devices.length || devices.every((device) => !device.deviceId)) return id;
+    if (devices.some((device) => device.deviceId === id)) return id;
+    const label = String(Settings.settings?.voiceMicLabel || '');
+    const byLabel = label ? devices.find((device) => device.label === label) : null;
+    return byLabel ? byLabel.deviceId : '';
+  }
+
+  // Выбранный микрофон, а если его нет или он не открылся — Windows по умолчанию.
+  static async openMicStream() {
+    const constraints = Voice.getMediaConstraints();
+    const deviceId = await Voice.resolveMicDeviceId();
+    let stream = null;
+    if (deviceId) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          ...constraints,
+          audio: { ...constraints.audio, deviceId: { exact: deviceId } },
+        });
+      } catch (error) {
+        Voice.log('mic-selected-failed', { error: String(error?.name || error) });
+      }
+    }
+    if (!stream) stream = await navigator.mediaDevices.getUserMedia(constraints);
+    Voice.log('mic-open', {
+      label: stream?.getAudioTracks?.()[0]?.label || '',
+      selected: Boolean(deviceId),
+    });
+    return stream;
+  }
+
+  // Смена микрофона в настройках: идущие звонки переходят на него сразу, без перезвона.
+  static async setMicDevice(deviceId, label = '') {
+    Settings.settings.voiceMicDevice = String(deviceId || '');
+    Settings.settings.voiceMicLabel = deviceId ? String(label || '') : '';
+    await Settings.WriteSettings();
+    Voice.log('mic-device-set', { label: Settings.settings.voiceMicLabel });
+    if (Voice.userMedia) {
+      await Voice.reacquireMic(true);
+    } else if (Voice.micUnavailable && Object.keys(Voice.manager).length) {
+      await Voice.initLocalMedia();
+      Voice.updateInfoPanel();
+    }
+  }
+
   // Выдернутый микрофон завершает свою дорожку ('ended'), и без повторного getUserMedia
   // звонок после подключения обратно шлёт тишину. Новая дорожка подключается ко входу той же
   // цепочки обработки: собеседникам по-прежнему идёт Voice.mic, переподключать звонки не нужно.
@@ -971,25 +1270,35 @@ export class Voice {
         Voice.reacquireMic();
       } else if (Voice.micUnavailable && Object.keys(Voice.manager).length) {
         Voice.initLocalMedia().then(() => Voice.updateInfoPanel());
+      } else if (Voice.userMedia && Settings.settings?.voiceMicDevice) {
+        // Выбранный микрофон подключили обратно, а звонок идёт через Windows по умолчанию.
+        Voice.resolveMicDeviceId()
+          .then((id) => {
+            const current = Voice.rawMic?.getSettings?.()?.deviceId;
+            if (id && current && id !== current) Voice.reacquireMic(true);
+          })
+          .catch(() => {});
       }
     });
   }
 
-  static reacquireMic() {
-    if (!Voice.reacquireMicPromise) {
-      Voice.reacquireMicPromise = Voice.reacquireMicOnce().finally(() => {
-        Voice.reacquireMicPromise = null;
-      });
+  // force — открыть микрофон заново и при живой дорожке (сменили устройство в настройках).
+  static reacquireMic(force = false) {
+    if (Voice.reacquireMicPromise) {
+      return force ? Voice.reacquireMicPromise.then(() => Voice.reacquireMic(true)) : Voice.reacquireMicPromise;
     }
+    Voice.reacquireMicPromise = Voice.reacquireMicOnce(force).finally(() => {
+      Voice.reacquireMicPromise = null;
+    });
     return Voice.reacquireMicPromise;
   }
 
-  static async reacquireMicOnce() {
-    if (!Voice.userMedia || Voice.rawMic?.readyState !== 'ended') return;
+  static async reacquireMicOnce(force = false) {
+    if (!Voice.userMedia || (!force && Voice.rawMic?.readyState !== 'ended')) return;
 
     let stream = null;
     try {
-      stream = await navigator.mediaDevices.getUserMedia(Voice.getMediaConstraints());
+      stream = await Voice.openMicStream();
     } catch (error) {
       // Микрофона пока нет — следующая попытка будет по 'devicechange'.
       Voice.log('mic-reacquire-failed', { error: String(error?.name || error) });
@@ -1057,6 +1366,14 @@ export class Voice {
 
   static async toggleEnabledMic() {
     Voice.infoPanelHiddenByUser = false;
+    if (Voice.isVoiceOff()) {
+      Voice.showInfoPanel(true);
+      return App.notify(Lang.text('voiceOffNotice'));
+    }
+    // рация на своей клавише: клик по нику/значку — мьют рации, как в Discord
+    if (Settings.settings?.voiceRadioMode && !Voice.isPttOnToggleKey()) {
+      return Voice.togglePttMute();
+    }
     if (!Voice.userMedia) {
       await Voice.initLocalMedia();
 
@@ -1064,7 +1381,7 @@ export class Voice {
     }
 
     if (!Voice.mic) {
-      return App.error(Lang.text('voiceMicUnavailable'));
+      return Voice.notifyMicUnavailable();
     }
 
     Voice.mic.enabled = !Voice.mic.enabled;
@@ -1179,6 +1496,22 @@ export class Voice {
       panelBody.firstChild.remove();
     }
 
+    // «Выключить войс»: звонков нет и быть не может — только надпись, подсказка — где включить
+    if (Voice.isVoiceOff()) {
+      panelBody.append(
+        DOM(
+          { style: ['voice-info-panel-body-item', 'voice-info-panel-body-item--off'] },
+          DOM({ style: 'voice-info-panel-body-item-controls' }, DOM({ style: 'voice-info-panel-body-item-icon' }, uiIcon('mic-off')), DOM({ style: 'voice-info-panel-off-text' }, Lang.text('voiceOffPanel'))),
+        ),
+        DOM({ style: 'voice-info-panel-body-tutorial' }, Lang.text('voiceOffHint')),
+      );
+      if (Voice.infoPanelHelp) Voice.infoPanelHelp.hidden = false;
+      Voice.infoPanelLogin = String(App.storage?.data?.login || '');
+      Voice.syncLobbyVoice();
+      Voice.syncInfoPanel();
+      return;
+    }
+
     let level = DOM({ style: 'voice-info-panel-body-item-bar-level' });
 
     let bar = DOM({ style: 'voice-info-panel-body-item-bar' }, level);
@@ -1207,6 +1540,7 @@ export class Voice {
           },
           App.storage.data.login,
         ),
+        VoiceScreen.selfButton() || '',
       ),
       DOM({ style: 'voice-info-panel-body-item-status' }, bar),
     );
@@ -1234,6 +1568,11 @@ export class Voice {
     }
 
     panelBody.append(selfItem);
+    // «Мут всех и себя» включён — панель не прячется, а говорит об этом (снять — в «Настройках замка»)
+    if (Voice.isMutedAll()) {
+      panelBody.append(DOM({ style: 'voice-info-panel-muted-all' }, uiIcon('mic-off'), DOM({ tag: 'span' }, Lang.text('voiceEnabled'))));
+    }
+    Voice.infoPanelLogin = String(App.storage?.data?.login || '');
 
     for (let id in Voice.manager) {
       Voice.playerInfoPanel(id);
@@ -1275,6 +1614,29 @@ export class Voice {
       }
     }
 
+    // Рация: какая клавиша говорит и (если рация на своей клавише) какая мьютит.
+    if (Voice.mic && Settings.settings?.voiceRadioMode) {
+      const dropKey = Voice.formatHotkey(Settings.settings?.voiceDropHotkey, 'Ctrl+K');
+      const pttKey = Voice.formatHotkey(Voice.getPttTokens(), toggleKey);
+      const hintDivider = '<span class="voice-info-panel-hint-divider"></span>';
+      tutorial =
+        `<strong>${pttKey}</strong>${Lang.text('voicePttHintSuffix')}` +
+        (Voice.isPttOnToggleKey()
+          ? ''
+          : hintDivider + `<strong>${toggleKey}</strong>${Lang.text(Voice.pttMuted ? 'voicePttUnmuteSuffix' : 'voicePttMuteSuffix')}`) +
+        hintDivider +
+        `<strong>${dropKey}</strong>${Lang.text('hotkeyDropCallsSuffix')}` +
+        hintDivider +
+        Lang.text('hotkeyVolumeControl') +
+        hintDivider +
+        Lang.text('voicePeerVolumeHint');
+    }
+    // мьют рации — значок микрофона перечёркнут, даже пока клавиша не зажата
+    selfItem.classList.toggle('voice-info-panel-body-item--ptt-muted', Boolean(Settings.settings?.voiceRadioMode && Voice.pttMuted && !Voice.isPttOnToggleKey()));
+    if (Settings.settings?.voiceRadioMode && Voice.pttMuted && !Voice.isPttOnToggleKey()) {
+      micIcon.replaceChildren(uiIcon('mic-off'));
+    }
+
     if (tutorial) {
       panelBody.append(DOM({ style: 'voice-info-panel-body-tutorial', innerHTML: tutorial }));
     }
@@ -1285,7 +1647,7 @@ export class Voice {
 
     Voice.syncLobbyVoice();
 
-    Voice.hideInfoPanelIfIdle();
+    Voice.syncInfoPanel();
   }
 
   static formatHotkey(tokens, fallback) {
@@ -1305,6 +1667,9 @@ export class Voice {
       ENTER: 'Enter',
       ESC: 'Esc',
       TAB: 'Tab',
+      CAPITAL: 'CapsLock',
+      MOUSE4: 'Mouse 4',
+      MOUSE5: 'Mouse 5',
     };
     return cleaned.map((x) => (map[x] ? map[x] : x)).join('+');
   }
@@ -1312,42 +1677,42 @@ export class Voice {
   static playerInfoPanel(id) {
     let name = Voice.manager[id].name ? Voice.manager[id].name : `id${id}`;
 
-    let state = () => {
-      let status = '';
+    // Статус соединения: текст и вид (wait — ждём/соединяемся, bad — связь потеряна, closed — завершён).
+    let statusInfo = () => {
+      const connectionState = Voice.manager[id].peer.connectionState;
+      if (connectionState === 'connected') return { text: '', kind: '' };
       const reconnectJob = Voice.getReconnectJob(id, Voice.manager[id].key);
-
-      if (reconnectJob && Voice.manager[id].peer.connectionState !== 'connected') {
-        status = Lang.text('voiceReconnectingAttempt').replace('{attempt}', String((reconnectJob.attempt || 0) + 1));
-      } else {
-        switch (Voice.manager[id].peer.connectionState) {
-          case 'new':
-            status = Lang.text('waitingResponse');
-            break;
-
-          case 'connecting':
-            status = Lang.text('voiceConnecting');
-            break;
-
-          case 'disconnected':
-            status = Lang.text('voiceDisconnected');
-            break;
-
-          case 'failed':
-            status = Lang.text('voiceFailed');
-            break;
-
-          case 'closed':
-            status = Lang.text('voiceClosed');
-            break;
-
-          default:
-            status = Voice.manager[id].peer.connectionState;
-            break;
-        }
+      if (reconnectJob) {
+        return {
+          text: Lang.text('voiceReconnectingAttempt').replace('{attempt}', String((reconnectJob.attempt || 0) + 1)),
+          kind: 'wait',
+        };
       }
-
-      return Voice.manager[id].peer.connectionState == 'connected' ? `${name}` : `${name} (${status})`;
+      switch (connectionState) {
+        case 'new':
+          return { text: Lang.text('waitingResponse'), kind: 'wait' };
+        case 'connecting':
+          return { text: Lang.text('voiceConnecting'), kind: 'wait' };
+        case 'disconnected':
+          return { text: Lang.text('voiceDisconnected'), kind: 'bad' };
+        case 'failed':
+          return { text: Lang.text('voiceFailed'), kind: 'bad' };
+        case 'closed':
+          return { text: Lang.text('voiceClosed'), kind: 'closed' };
+        default:
+          return { text: String(connectionState || ''), kind: 'wait' };
+      }
     };
+
+    // ник со статусом — для подсказки значка (в узкой колонке ников нет)
+    let state = () => {
+      const { text } = statusInfo();
+      return text ? `${name} (${text})` : `${name}`;
+    };
+
+    // Статус — отдельной строкой под ником вместо полоски уровня: в строке с ником
+    // он обрезался многоточием («Lantarm (пер…»).
+    const statusLabel = DOM({ style: 'voice-info-panel-body-item-state' }, '');
 
     let item = DOM(
       {
@@ -1387,7 +1752,10 @@ export class Voice {
     
     const updateItemView = () => {
       const mutedMark = Voice.isPeerSilenced(Number(id)) ? ' [MUTED]' : '';
-      item.innerText = `${state()}${mutedMark}`;
+      item.innerText = `${name}${mutedMark}`;
+      const info = statusInfo();
+      statusLabel.textContent = info.text;
+      statusLabel.dataset.kind = info.kind;
       mute.replaceChildren(uiIcon(Voice.isPeerSilenced(Number(id)) ? 'sound-off' : 'sound-on'));
       // в узкой колонке ников нет — ник в подсказке значка
       mute.dataset.tip = state();
@@ -1456,7 +1824,7 @@ export class Voice {
 
     const panelBody = Voice.getInfoPanelBody();
     if (!panelBody) return;
-    const status = DOM({ style: 'voice-info-panel-body-item-status' }, bar);
+    const status = DOM({ style: 'voice-info-panel-body-item-status' }, bar, statusLabel);
     row.addEventListener(
       'wheel',
       (event) => {
@@ -1467,7 +1835,7 @@ export class Voice {
       },
       { passive: false },
     );
-    row.append(DOM({ style: 'voice-info-panel-body-item-controls' }, mute, mutedByIcon, item, volumeText), status);
+    row.append(DOM({ style: 'voice-info-panel-body-item-controls' }, mute, mutedByIcon, item, VoiceScreen.peerButton(id) || '', volumeText), status);
     panelBody.append(row);
   }
 
@@ -1571,6 +1939,7 @@ export class Voice {
   }
 
   static async mergeFriendCalls(users) {
+    if (Voice.isVoiceOff()) return;
     if (!Array.isArray(users) || !users.length) {
       return;
     }
@@ -1677,6 +2046,7 @@ export class Voice {
   }
 
   static suspendPeersForBattle(allyIds = [], playerCount = 0) {
+    VoiceScreen.stopForMatch();
     Voice.rememberBattleFriendAllies(allyIds);
     if (Voice.setMatchKeepCalls(playerCount)) {
       // Ничего не ставим на паузу и не игнорируем переподключения друзей до начала боя.
@@ -1787,6 +2157,7 @@ export class Voice {
       return;
     }
     if (full) {
+      VoiceScreen.closeAll();
       Voice.stopAllReconnectJobs();
       Voice.battleSuspendedPeers.clear();
     } else {
@@ -2055,6 +2426,11 @@ export class Voice {
   }
 
   static async association(i, users, key) {
+    // войс выключен — союзникам в матче не звоним (их звонки к нам не пропустит бэкенд)
+    if (Voice.isVoiceOff()) {
+      Voice.log('association-skipped', { reason: 'voice-off', key: String(key || '') });
+      return;
+    }
     // Новый матч: под «Мут всех и себя» все снова в муте, включая свой микрофон, — кроме
     // союзников, с которыми звонок друзей шёл ещё до матча.
     Voice.resetMutedAllForMatch(users.map((user) => user.id));
@@ -2226,6 +2602,7 @@ export class Voice {
         case 'connected':
           this.hasEverConnected = true;
           this.logSelectedPair();
+          VoiceScreen.onPeerConnected(this.id);
           if (this.timer) {
             clearTimeout(this.timer);
             this.timer = null;
@@ -2356,6 +2733,13 @@ export class Voice {
 
     // Попытка переподключения не открывает заново панель, закрытую крестиком.
     const isReconnect = Boolean(Number(options?.reconnect || 0));
+
+    if (Voice.isVoiceOff()) {
+      Voice.log('call-blocked', { id: Number(this.id), key: this.key, reason: 'voice-off' });
+      await this.close();
+      if (isReconnect) return;
+      throw Lang.text('voiceOffNotice');
+    }
     if (!isReconnect) {
       Voice.infoPanelHiddenByUser = false;
     }
@@ -2407,13 +2791,14 @@ export class Voice {
     }, 15000);
 
     Voice.log('call', { id: Number(this.id), key: this.key, reconnect: Number(options?.reconnect || 0) ? 1 : 0 });
+    let response = null;
     try {
       // API отклоняет второй user.call, пока не пришёл ответ на первый (REQUEST_ALREADY_PENDING).
       // При восстановлении после боя звонки нескольким друзьям идут почти одновременно — ждём
       // освобождения метода, а не теряем звонок.
       for (let wait = 0; ; wait++) {
         try {
-          await App.api.request('user', 'call', {
+          response = await App.api.request('user', 'call', {
             id: this.id,
             key: this.key,
             offer: offer,
@@ -2430,6 +2815,18 @@ export class Voice {
       throw error;
     }
 
+    // У собеседника войс выключен: бэкенд звонок не переслал. Звонок закрываем без повторов
+    // (close без keepReconnect снимает и задачу переподключения), о звонке другу — сообщение.
+    if (Number(response?.voiceOff) === 1) {
+      Voice.log('call-peer-voice-off', { id: Number(this.id), key: this.key });
+      await this.close();
+      if (!isReconnect && this.key === 'friend') {
+        App.notify(Lang.text('voicePeerOff').replace('{name}', String(this.name || '')));
+      }
+      Voice.updateInfoPanel();
+      return;
+    }
+
     this.isCaller = true;
 
     Voice.updateInfoPanel();
@@ -2437,6 +2834,13 @@ export class Voice {
 
   async accept(offer) {
     if (!this.peer) {
+      return;
+    }
+
+    if (Voice.isVoiceOff()) {
+      Voice.log('accept-blocked', { id: Number(this.id), key: this.key, reason: 'voice-off' });
+      App.api.ghost('user', 'callDrop', { id: Number(this.id) }).catch(() => {});
+      await this.close();
       return;
     }
 
@@ -2527,6 +2931,8 @@ export class Voice {
     delete Voice.manager[this.id];
     
     Voice.mutedByPeers.delete(this.id);
+
+    VoiceScreen.onPeerGone(this.id);
 
     if (this.id in Voice.cacheCandidate) {
       delete Voice.cacheCandidate[this.id];

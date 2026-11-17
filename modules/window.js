@@ -5,6 +5,7 @@ import { View } from './view.js';
 import { App } from './app.js';
 import { NativeAPI } from './nativeApi.js';
 import { Castle } from './castle.js';
+import { CastleCinematic } from './castleCinematic.js';
 import { Settings } from './settings.js';
 import { Sound } from './sound.js';
 import { Splash } from './splash.js';
@@ -21,15 +22,16 @@ import { UiTooltip } from './uiTooltip.js';
 
 // windows
 import { keybindings } from './keybindings/keybindings.window.js';
-import { battleSettings, voiceHotkeyInput } from './battleSettings.js';
+import { battleSettings, castleSettings } from './battleSettings.js';
 import { fair } from './fair.js';
 import { PWGame } from './pwgame.js';
+import { CastleNAVBAR } from './castleNavBar.js';
 
 export class Window {
   static windows = {};
   static windowOrder = [];
-  static overlayWindowIds = new Set(['wquest', 'wbuild', 'wtop', 'wshop', 'wfair', 'wgame', 'wsteamauth', 'wyandexauth', 'wregistration-fraction']);
-  static overlayWindowMethods = new Set(['menu', 'settings', 'battleSettings', 'advancedSettings', 'keybindings', 'accountPanel', 'support']);
+  static overlayWindowIds = new Set(['wquest', 'wbuild', 'wtop', 'wshop', 'wfair', 'wgame', 'wsteamauth', 'wyandexauth', 'wregistration-fraction', 'wally-build', 'wplayer-build']);
+  static overlayWindowMethods = new Set(['menu', 'settings', 'battleSettings', 'keybindings', 'accountPanel', 'support']);
   static async show(category, method, value, value2, value3) {
     if (!(method in Window)) {
       return;
@@ -112,6 +114,7 @@ export class Window {
         Window.windowOrder.splice(index, 1);
       }
     }
+    const host = method === 'allyBuild' ? MM.view : View.active;
     if (Window.overlayWindowIds.has(template.id) || Window.overlayWindowMethods.has(method)) {
       const overlay = DOM({
         style: template.id === 'wquest' ? ['window__overlay', 'wquest__overlay'] : 'window__overlay',
@@ -161,13 +164,16 @@ export class Window {
         overlay.remove();
       };
       template.windowOverlay = overlay;
-      View.active.append(overlay);
+      host.append(overlay);
     }
     Window.windows[category] = template;
 
     Window.windowOrder.unshift(category);
 
-    const host = method === 'allyBuild' ? MM.view : View.active;
+    // Любое окно (приглашение в бой, входящий звонок, окно здания) — кинематографичный вид
+    // замка снимаем сразу: окна лежат внутри #castle-body и гасли бы вместе с интерфейсом.
+    CastleCinematic.exit();
+
     host.append(template);
     if (template.id === 'wbuild') {
       View.placeBuildHeroesFrame();
@@ -374,7 +380,36 @@ export class Window {
   // редирект на провайдера, результат возвращается postMessage'ом opener'у
   // (ParentEvent). Base один на всех провайдеров — раньше URL был
   // захардкожен в трёх местах.
-  static authBase = 'https://api.zone-play.com:2087';
+  // Адрес сервиса входа через провайдера (Steam/Яндекс). Раньше это была ОДНА
+  // строка на DOK-край (https://api.zone-play.com:2087): DOK лежит, публичного
+  // маршрута к steam.js на прод-бэкенде не было — попап не открывался ни у кого,
+  // включая оба живых канала. Теперь сервис доступен со своих WS-краёв: nginx
+  // края отдаёт путь /steam/ в реверс-SSH-туннель бэкенда, тот — на steam.js
+  // (конфиги и разбор адреса — pw-api-docker/nginx/{ws-edge-steam,backend-box}.conf,
+  // steam.js::domainFor по allow-list STEAM_DOMAINS).
+  //
+  // База выбирается по хосту, к которому лончер ДЕЙСТВИТЕЛЬНО подключился
+  // (Api.MAIN_HOST через connectionInfo()): вход идёт тем же краем, что и WS,
+  // поэтому отказ одного канала не превращается в «кнопка Steam не работает».
+  // Хостов RVPN/Cloudflare/старых установок в списке нет — для них значение
+  // authBase по умолчанию (публичный основной канал с нормальным сертификатом).
+  static authBase = 'https://pw-classic.ru/steam';
+  static authBases = {
+    'wss://pw-classic.ru': 'https://pw-classic.ru/steam',
+    'wss://pw-classic-backup.ru': 'https://pw-classic-backup.ru/steam',
+  };
+  // Единственная точка, откуда адрес берёт и попап (authPopup), и POST шага
+  // регистрации (App.authJsonRequest): realm/return_to/Origin на бэкенде
+  // строятся из одного и того же хоста, поэтому разъезд базы = отказ входа.
+  static authBaseUrl() {
+    let host = '';
+
+    try {
+      host = `${(App.api && App.api.connectionInfo && App.api.connectionInfo().host) || ''}`.trim();
+    } catch (error) {}
+
+    return Window.authBases[host] || Window.authBase;
+  }
   // Провайдеры входа/регистрации. popup — путь попапа (initiator), register —
   // путь JSON-шага регистрации (POST из основного окна). Режим регистрации —
   // query-параметр ?mode=register: вход нового игрока аккаунт НЕ создаёт
@@ -406,7 +441,7 @@ export class Window {
   static authPopup(path, name) {
     const sep = path.includes('?') ? '&' : '?';
     ParentEvent.children = window.open(
-      `${Window.authBase}${path}${sep}lang=${encodeURIComponent(Lang.target)}`,
+      `${Window.authBaseUrl()}${path}${sep}lang=${encodeURIComponent(Lang.target)}`,
       name,
       'width=1280, height=720, top=' +
         (screen.height - 720) / 2 +
@@ -1283,380 +1318,28 @@ export class Window {
     );
   }
 
+  // «Настройки замка»: вид как у «Настроек боя» (battleSettings.js, castleSettings), значения —
+  // настройки лаунчера. Бывшие «Доп. настройки» — вкладки этого окна.
   static async settings() {
-    let soundTestId = 'sound_test';
-	
-	 setTimeout(() => {
-          const sliders = document.querySelectorAll('.castle-menu-slider');
-          sliders.forEach(slider => {
-              Window.updateSliderFill(slider);
-          });
-      }, 0);
-
-	
-    return DOM(
-      { id: 'wcastle-menu', style: ['wcastle-menu--quest-bg', 'wcastle-menu--settings-shade'] },
-      DOM({style: 'title-modal'}, DOM({style: 'title-modal-text'}, Lang.text('preferences'))),
-      DOM(
-        { style: 'castle-menu-items' },
-        DOM(
-          { style: 'castle-menu-label' },
-          Lang.text('volume'),
-          DOM({
-            tag: 'input',
-            domaudio: domAudioPresets.defaultButton,
-            type: 'range',
-            value: Settings.settings.globalVolume * 100,
-            min: '0',
-            max: '100',
-            step: '1',
-            style: 'castle-menu-slider',
-            event: [
-              'input',
-              (e) => {
-                Settings.settings.globalVolume = parseFloat(e.target.value) / 100;
-                Settings.ApplySettings({ render: false, window: false });
-
-                document.getElementById('global-volume-percentage').textContent = `${Math.round(Settings.settings.globalVolume * 100)}%`;
-				Window.updateSliderFill(e.target);
-              },
-            ],
-          }),
-          DOM(
-            {
-              tag: 'span',
-              id: 'global-volume-percentage',
-              style: 'volume-percentage',
-            },
-            `${Math.round(Settings.settings.globalVolume * 100)}%`,
-          ),
-        ),
-        DOM(
-          { style: 'castle-menu-label' },
-          Lang.text('volumeMusic'),
-          DOM({
-            tag: 'input',
-            domaudio: domAudioPresets.defaultButton,
-            type: 'range',
-            value: Settings.settings.musicVolume * 100,
-            min: '0',
-            max: '100',
-            step: '1',
-            style: 'castle-menu-slider',
-            event: [
-              'input',
-              (e) => {
-                Settings.settings.musicVolume = parseFloat(e.target.value) / 100;
-                Settings.ApplySettings({ render: false, window: false });
-
-                document.getElementById('music-volume-percentage').textContent = `${Math.round(Settings.settings.musicVolume * 100)}%`;
-				Window.updateSliderFill(e.target);
-              },
-            ],
-          }),
-          DOM(
-            {
-              tag: 'span',
-              id: 'music-volume-percentage',
-              style: 'volume-percentage',
-            },
-            `${Math.round(Settings.settings.musicVolume * 100)}%`,
-          ),
-        ),
-        DOM(
-          { style: 'castle-menu-label' },
-          Lang.text('volumeSound'),
-          DOM({
-            tag: 'input',
-            domaudio: domAudioPresets.defaultButton,
-            type: 'range',
-            value: Settings.settings.soundsVolume * 100,
-            min: '0',
-            max: '100',
-            step: '1',
-            style: 'castle-menu-slider',
-            event: [
-              'input',
-              (e) => {
-                Settings.settings.soundsVolume = parseFloat(e.target.value) / 100;
-                Settings.ApplySettings({ render: false, window: false });
-
-                if (!Castle.testSoundIsPlaying) {
-                  Castle.testSoundIsPlaying = true;
-                  Sound.play(
-                    SOUNDS_LIBRARY.MM_FOUND,
-                    {
-                      id: soundTestId,
-                      volume: Castle.GetVolume(Castle.AUDIO_SOUNDS),
-                    },
-                    () => {
-                      Castle.testSoundIsPlaying = false;
-                    },
-                  );
-                }
-
-                document.getElementById('sounds-volume-percentage').textContent = `${Math.round(Settings.settings.soundsVolume * 100)}%`;
-				Window.updateSliderFill(e.target);
-              },
-            ],
-          }),
-          DOM(
-            {
-              tag: 'span',
-              id: 'sounds-volume-percentage',
-              style: 'volume-percentage',
-            },
-            `${Math.round(Settings.settings.soundsVolume * 100)}%`,
-          ),
-        ),
-        DOM(
-          { style: 'castle-menu-label' },
-          Lang.text('voiceVolume'),
-          DOM({
-            tag: 'input',
-            domaudio: domAudioPresets.defaultButton,
-            type: 'range',
-            id: 'voice-volume-slider',
-            value: Math.round((Number(Settings.settings.voiceVolume) || 1) * 100),
-            min: '0',
-            max: '100',
-            step: '1',
-            style: 'castle-menu-slider',
-            event: [
-              'input',
-              (e) => {
-                Settings.settings.voiceVolume = parseFloat(e.target.value) / 100;
-                Voice.setVolumeLevel(Settings.settings.voiceVolume);
-                document.getElementById('voice-volume-percentage').textContent = `${Math.round(Settings.settings.voiceVolume * 100)}%`;
-                Window.updateSliderFill(e.target);
-              },
-            ],
-          }),
-          DOM(
-            {
-              tag: 'span',
-              id: 'voice-volume-percentage',
-              style: 'volume-percentage',
-            },
-            `${Math.round((Number(Settings.settings.voiceVolume) || 1) * 100)}%`,
-          ),
-        ),
-        // клавиши голосовой связи лаунчера (те же — в «Настройках боя» → «Общение»)
-        DOM({ style: 'castle-menu-section-title' }, Lang.text('voiceHotkeys')),
-        DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceEnableToggle')), voiceHotkeyInput('voiceToggleHotkey', 'castle-keybinding-input')),
-        DOM({ style: 'castle-menu-voice-key' }, DOM({}, Lang.text('voiceDropCalls')), voiceHotkeyInput('voiceDropHotkey', 'castle-keybinding-input')),
-        DOM(
-          {
-            style: 'castle-menu-item-button',
-            domaudio: domAudioPresets.defaultButton,
-            event: [
-              'click',
-              () => {
-                Window.show('main', 'advancedSettings');
-              },
-            ],
-          },
-          Lang.text('advancedSettings'),
-        ),
-        DOM(
-          {
-            style: 'castle-menu-item-button',
-            domaudio: domAudioPresets.defaultButton,
-            event: [
-              'click',
-              async (e) => {
-                const oldLanguage = Lang.target;
-                Lang.toggle();
-                Settings.settings.language = Lang.target;
-                App.error(`${Lang.text('LangTarg')}: ${Lang.list[oldLanguage].name} → ${Lang.list[Lang.target].name}`);
-                await Lang.reinitViews();
-                await Window.show('main', 'settings');
-              },
-            ],
-          },
-          `${Lang.text('language')} (${Lang.target})`,
-        ),
-        // Кнопка "Назад"
-        DOM({ style: 'wcastle-menu__exit-separator' }),
-        DOM(
-          {
-            domaudio: domAudioPresets.bigButton,
-            style: ['castle-menu-item-button', 'castle-menu-item-button--red'],
-            event: [
-              'click',
-              () => {
-                Window.show('main', 'menu');
-              },
-            ],
-          },
-          Lang.text('back'),
-        ),
-        /*,
-				
-				DOM({ style: 'castle-menu-label-description' }, Lang.text('soundHelp'))
-				*/
-      ),
-    );
-  }
-
-  static async advancedSettings() {
-    return DOM(
-      { id: 'wcastle-menu', style: ['wcastle-menu--quest-bg', 'wcastle-menu--settings-shade'] },
-      DOM({ style: 'title-modal' }, DOM({ style: 'title-modal-text' }, Lang.text('advancedSettings'))),
-      DOM(
-        { style: 'castle-menu-items' },
-        DOM(
-          { style: 'castle-menu-item-checkbox' },
-          DOM(
-            {
-              tag: 'input',
-              domaudio: domAudioPresets.defaultSelect,
-              type: 'checkbox',
-              id: 'fullscreen-toggle',
-              checked: !Settings.settings.fullscreen,
-              event: [
-                'change',
-                (e) => {
-                  Settings.settings.fullscreen = !e.target.checked;
-                  Settings.ApplySettings({ render: false, audio: false });
-                },
-              ],
-            },
-            { checked: Settings.settings.fullscreen },
-          ),
-          DOM({ tag: 'label', for: 'fullscreen-toggle' }, Lang.text('windowMode') + ' (F11)'),
-        ),
-        DOM(
-          { style: 'castle-menu-item-checkbox' },
-          DOM({
-            tag: 'input',
-            domaudio: domAudioPresets.defaultSelect,
-            type: 'checkbox',
-            id: 'render-toggle',
-            checked: Settings.settings.render,
-            event: [
-              'change',
-              (e) => {
-                Settings.settings.render = e.target.checked;
-                Settings.ApplySettings({ audio: false, window: false });
-              },
-            ],
-          }),
-          DOM({ tag: 'label', for: 'render-toggle' }, Lang.text('threeD')),
-        ),
-        DOM(
-          { style: 'castle-menu-item-checkbox' },
-          DOM({
-            tag: 'input',
-            domaudio: domAudioPresets.defaultSelect,
-            type: 'checkbox',
-            id: 'daynight-toggle',
-            checked: Settings.settings.dayNight !== false,
-            event: [
-              'change',
-              (e) => {
-                // выкл — освещение и тени замка как до смены дня и ночи (Castle.updateDayNight)
-                Settings.settings.dayNight = e.target.checked;
-              },
-            ],
-          }),
-          DOM({ tag: 'label', for: 'daynight-toggle' }, Lang.text('dayNight')),
-        ),
-        DOM(
-          { style: 'castle-menu-item-checkbox' },
-          DOM({
-            tag: 'input',
-            domaudio: domAudioPresets.defaultSelect,
-            type: 'checkbox',
-            id: 'building-lights-toggle',
-            checked: Settings.settings.buildingLights !== false,
-            event: [
-              'change',
-              (e) => {
-                // выкл — без огней зданий и отложенного освещения (CastleLighting), отрисовка как раньше
-                Settings.settings.buildingLights = e.target.checked;
-              },
-            ],
-          }),
-          DOM({ tag: 'label', for: 'building-lights-toggle' }, Lang.text('buildingLights')),
-        ),
-        DOM({ style: 'castle-menu-section-title' }, Lang.text('voiceHotkeys')),
-        DOM(
-          { style: 'castle-menu-item-checkbox' },
-          DOM(
-            {
-              tag: 'input',
-              domaudio: domAudioPresets.defaultSelect,
-              type: 'checkbox',
-              id: 'novoice',
-              checked: Settings.settings.novoice,
-              event: [
-                'change',
-                (e) => {
-                  Voice.setMutedAll(e.target.checked);
-                },
-              ],
-            },
-            { checked: Settings.settings.novoice },
-          ),
-          DOM({ tag: 'label', for: 'novoice' }, Lang.text('voiceEnabled')),
-        ),
-        DOM(
-          { style: 'castle-menu-item-checkbox' },
-          DOM(
-            {
-              tag: 'input',
-              domaudio: domAudioPresets.defaultSelect,
-              type: 'checkbox',
-              id: 'voice-overlay',
-              checked: Settings.settings.voiceOverlay !== false,
-              event: [
-                'change',
-                (e) => {
-                  Settings.settings.voiceOverlay = e.target.checked;
-                },
-              ],
-            },
-            { checked: Settings.settings.voiceOverlay !== false },
-          ),
-          DOM({ tag: 'label', for: 'voice-overlay' }, Lang.text('voiceOverlay')),
-        ),
-        DOM(
-          { style: 'castle-menu-item-checkbox' },
-          DOM(
-            {
-              tag: 'input',
-              domaudio: domAudioPresets.defaultSelect,
-              type: 'checkbox',
-              id: 'voice-radio-mode',
-              checked: Settings.settings.voiceRadioMode,
-              event: [
-                'change',
-                (e) => {
-                  Settings.settings.voiceRadioMode = e.target.checked;
-                },
-              ],
-            },
-            { checked: Settings.settings.voiceRadioMode },
-          ),
-          DOM({ tag: 'label', for: 'voice-radio-mode' }, Lang.text('voiceRadioMode')),
-        ),
-        DOM({ style: 'wcastle-menu__exit-separator' }),
-        DOM(
-          {
-            domaudio: domAudioPresets.bigButton,
-            style: ['castle-menu-item-button', 'castle-menu-item-button--red'],
-            event: [
-              'click',
-              () => {
-                Window.show('main', 'settings');
-              },
-            ],
-          },
-          Lang.text('back'),
-        ),
-      ),
-    );
+    return castleSettings({
+      onBack: () => Window.show('main', 'menu'),
+      onModesWings: () => CastleNAVBAR.applyModeView(),
+      onSoundTest: () => {
+        if (Castle.testSoundIsPlaying) return;
+        Castle.testSoundIsPlaying = true;
+        Sound.play(SOUNDS_LIBRARY.MM_FOUND, { id: 'sound_test', volume: Castle.GetVolume(Castle.AUDIO_SOUNDS) }, () => {
+          Castle.testSoundIsPlaying = false;
+        });
+      },
+      onLanguage: async () => {
+        const oldLanguage = Lang.target;
+        Lang.toggle();
+        Settings.settings.language = Lang.target;
+        App.error(`${Lang.text('LangTarg')}: ${Lang.list[oldLanguage].name} → ${Lang.list[Lang.target].name}`);
+        await Lang.reinitViews();
+        await Window.show('main', 'settings');
+      },
+    });
   }
 
   // static async keybindings() {

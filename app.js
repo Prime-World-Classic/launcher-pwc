@@ -16,5 +16,5 @@ function loadScript(src) {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  await loadScript('content/modules/_modules.js?v=20261027-bootstrap-splash-1').catch(console.error);
+  await loadScript('content/modules/_modules.js?v=20261116-esc-hold-1').catch(console.error);
 });

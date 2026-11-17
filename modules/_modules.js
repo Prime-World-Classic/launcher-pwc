@@ -10,6 +10,10 @@ import { Settings } from './settings.js';
 import { Splash } from './splash.js';
 import { MM } from './mm.js';
 import { UiTooltip } from './uiTooltip.js';
+import { EscKey } from './escKey.js';
+
+// Esc — по отпусканию короче секунды (удержание не дёргает меню), до всех обработчиков клавиш
+EscKey.install();
 
 // фирменные подсказки вместо стандартных title — во всём лаунчере
 UiTooltip.init();

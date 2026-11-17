@@ -6,6 +6,7 @@ import { Rank } from './rank.js';
 import { App } from './app.js';
 import { Voice } from './voice.js';
 import { VoiceGameBridge } from './voiceGameBridge.js';
+import { VoiceScreen } from './voiceScreen.js';
 import { shouldReplaceDeadCall, shouldYieldToIncomingCall } from './voiceGlare.js';
 import { Chat } from './chat.js';
 import { NativeAPI } from './nativeApi.js';
@@ -362,6 +363,8 @@ export class Events {
   static MMQueueV2(data) {
     View.mmQueueMap = data;
     CastleNAVBAR.queue(data);
+    // ищут дуэль «3 в ряд» — бейджи на «Мини-играх»
+    App.setMatch3Queue(data?.match3);
   }
 
   // Админ включил/выключил поиск боя; mm и mmtest шлют каждый своё — берём свой канал.
@@ -431,7 +434,10 @@ export class Events {
     setTimeout(() => {
       MM.searchActive(false);
     }, 1000);
-    
+
+    // не подтвердил «бой найден» — бан поиска, на кнопке «В бой!» отсчёт
+    CastleNAVBAR.refreshSearchBan();
+
     if ((data && Number(data.noWarning) === 1) || data?.noWarning === true) {
       return;
     }
@@ -506,6 +512,16 @@ export class Events {
     const callKey = String(data?.key || '');
     const logIn = (decision, extra = {}) =>
       Voice.log('incoming', { id: Number(data?.id), key: callKey, reconnect: Number(data?.reconnect || 0), caller: Boolean(data?.isCaller), decision, ...extra });
+    // «Выключить войс»: бэкенд такие звонки не пересылает; дошедший (старый бэкенд) сразу
+    // сбрасываем, чтобы звонящий не ждал ответа.
+    if (Voice.isVoiceOff()) {
+      logIn('voice-off');
+      const callerId = Number(data?.id);
+      if (Number.isFinite(callerId) && callerId > 0) {
+        App.api.ghost('user', 'callDrop', { id: callerId }).catch(() => {});
+      }
+      return;
+    }
     // 1×1 и тестовый клиент: звонок не рвётся на матч, поэтому его переподключение пускаем.
     // Так же пускаем переподключение союзника, с которым звонок друзей шёл ещё до матча:
     // этот звонок в бою не ставится на паузу, и обрыв связи не должен ждать конца боя.
@@ -585,6 +601,11 @@ export class Events {
     await Voice.remoteDrop(data.id);
   }
   
+  // Демонстрация экрана: сигналы между показывающим и зрителем (см. voiceScreenHub.js).
+  static async VScreen(data) {
+    await VoiceScreen.onSignal(data);
+  }
+
   static async VMuteState(data) {
     Voice.setMutedByPeer(data?.id, Number(data?.muted || 0) === 1);
   }

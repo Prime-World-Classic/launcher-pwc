@@ -10,6 +10,19 @@ export class Settings {
     render: true,
     dayNight: true,
     buildingLights: true,
+    /** Отражения в воде замка целиком (SSR-геометрия плюс небо со звёздами). */
+    waterReflect: true,
+    /** Только SSR (отражение реальной геометрии кадра); выкл — в воде остаётся
+     *  процедурное небо и звёзды, как было до SSR. */
+    waterSsr: true,
+    /** Дождь и снег (CastleWeather): выкл — и слой осадков, и затемнение света под погодой. */
+    weather: true,
+    /** Панорамный режим замка (CastleCinematic): через 15 с бездействия интерфейс гаснет,
+     *  камера облетает замок. Выкл — режим не включается никогда. */
+    castlePanorama: true,
+    /** Вид списка режимов у «В бой»: false — меню по наведению на круг режима,
+     *  true — все режимы видны всегда, по бокам от слотов пати (CastleNAVBAR). */
+    castleModesWings: false,
     /** Рендер-бэкенд игры: 'd3d9' — старый пайплайн (по умолчанию, токена в
      *  протоколе нет), 'vulkan' — в протокол запуска уходит «render=vulkan»
      *  (gameRender.js, pwgame.js). Клиент без поддержки такой токен игнорирует. */
@@ -22,11 +35,21 @@ export class Settings {
     voiceVolume: 1.0,
     language: 'ru',
     novoice: false,
+    /** «Выключить войс»: никто не может позвонить, сам не звонит, микрофон не открывается. */
+    voiceOff: false,
     voiceOverlay: true,
     voiceOverlayPos: null,
     voiceRadioMode: false,
     voiceToggleHotkey: ['CTRL', 'Z'],
     voiceDropHotkey: ['CTRL', 'K'],
+    /** Клавиша рации (режим «Рация»). Совпадает с voiceToggleHotkey — рация на ней, как было до
+     *  отдельной клавиши; иначе voiceToggleHotkey в рации — мьют, который блокирует рацию. */
+    voicePttHotkey: ['CTRL', 'Z'],
+    /** Задержка отпускания рации, мс (как в Discord: 0..2000, по умолчанию 20). */
+    voicePttReleaseMs: 20,
+    /** Микрофон войса: deviceId и имя устройства; '' — устройство записи Windows по умолчанию. */
+    voiceMicDevice: '',
+    voiceMicLabel: '',
     buildSetLmbMode: 1,
     buildSetSortMode: 0,
     buildRowHoverHighlight: true,
@@ -154,6 +177,65 @@ export class Settings {
       fullscreenToggle.checked = !this.settings.fullscreen;
       console.log('Updated fullscreen toggle UI');
     }
+    // галочка «Оконный режим» в окне настроек лаунчера (battleSettings.js, data-setting)
+    for (const box of document.querySelectorAll('input[data-setting="fullscreen"]')) {
+      if (box.checked === !this.settings.fullscreen) continue;
+      box.checked = !this.settings.fullscreen;
+      box.dispatchEvent(new Event('change'));
+    }
+  }
+
+  // Окно может выйти из полного экрана помимо настроек: Chromium в NW 0.103 делает это при
+  // удержании Esc ~1,5 с (PressAndHoldEscToExitBrowserFullscreen), и со страницы это не отменить.
+  // Тогда настройка оставалась «полный экран», а галочка «Оконный режим» — снятой. Следим за
+  // состоянием окна и переводим настройку в оконный режим. Событие restore NW присылает
+  // не всегда (проверено), поэтому опрос.
+  static FULLSCREEN_GRACE_MS = 1500;
+  static fullscreenGraceUntil = 0;
+  static windowMinimized = false;
+  static fullscreenWatchTimer = null;
+
+  static fullscreenGrace() {
+    this.fullscreenGraceUntil = Date.now() + this.FULLSCREEN_GRACE_MS;
+  }
+
+  static watchFullscreen() {
+    if (this.fullscreenWatchTimer || !NativeAPI.status || !NativeAPI.window) return;
+    const win = NativeAPI.window;
+    this.fullscreenGrace();
+    try {
+      win.on('minimize', () => {
+        this.windowMinimized = true;
+      });
+      win.on('restore', () => {
+        // и разворот из свёрнутого, и выход из полного экрана; во втором случае опрос
+        // увидит оконный режим после паузы
+        this.windowMinimized = false;
+        this.fullscreenGrace();
+      });
+    } catch {}
+    this.fullscreenWatchTimer = setInterval(() => this.checkFullscreen(), 500);
+  }
+
+  static checkFullscreen() {
+    if (!this.settings?.fullscreen || this.windowMinimized) return;
+    // в бою окно лаунчера спрятано (mm.js gameStartEvent), его состояние не трогаем
+    if (document.body?.style.display === 'none') {
+      this.fullscreenGrace();
+      return;
+    }
+    if (Date.now() < this.fullscreenGraceUntil) return;
+    let isFullscreen = true;
+    try {
+      isFullscreen = Boolean(NativeAPI.window.isFullscreen);
+    } catch {
+      return;
+    }
+    if (isFullscreen) return;
+    console.log('Window left fullscreen outside settings: switching to window mode');
+    this.settings.fullscreen = false;
+    this.syncFullscreenUI();
+    this.WriteSettings();
   }
 
   // Показать уведомление о переключении режима
@@ -184,6 +266,8 @@ export class Settings {
       // 2. Применение настроек окна (если не отключено в options)
       if (options.window !== false && NativeAPI.status && NativeAPI.window) {
         const currentMode = await NativeAPI.window.isFullscreen;
+        // смена режима идёт не мгновенно — watchFullscreen не должен принять её за выход по Esc
+        if (Boolean(this.settings.fullscreen) !== Boolean(currentMode)) this.fullscreenGrace();
         if (this.settings.fullscreen && !currentMode) {
           await NativeAPI.window.enterFullscreen();
         } else if (!this.settings.fullscreen && currentMode) {
@@ -227,6 +311,8 @@ export class Settings {
 
     // Инициализируем глобальные горячие клавиши
     this.initGlobalHotkeys();
+
+    this.watchFullscreen();
 
     window.addEventListener('beforeunload', () => {
       this.WriteSettings();

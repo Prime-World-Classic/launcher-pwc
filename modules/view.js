@@ -1,6 +1,7 @@
 import { DOM } from './dom.js';
 import { Lang } from './lang.js';
 import { CastleNAVBAR } from './castleNavBar.js';
+import { CastleCinematic } from './castleCinematic.js';
 import { Window } from './window.js';
 import { Rank } from './rank.js';
 import { Division } from './division.js';
@@ -22,6 +23,7 @@ import { Timer } from './timer.js';
 import { HelpSplash } from './helpSpalsh.js';
 import { Shop } from './shop.js';
 import { syncFairGameFiles } from './fair.js';
+import { GameSettingsSync } from './gameSettingsSync.js';
 import { DomAudio } from './domAudio.js';
 import { domAudioPresets } from './domAudioPresets.js';
 import { SOUNDS_LIBRARY } from './soundsLibrary.js';
@@ -133,7 +135,7 @@ export class View {
   static castleActiveTab = 'heroes';
   static castleOpenedBuildHeroId = 0;
   // версия страницы вкладки «Герой» и её каталога (content/heroes-preview.*)
-  static HEROES_TAB_VERSION = '20261029-castle-details-2';
+  static HEROES_TAB_VERSION = '20261106-cobr-final-5';
   static heroesCatalogueIdsPromise = null;
   // открыта вкладка «Герой» окна билда (View.attachBuildHeroesTab)
   static buildHeroesTabActive = false;
@@ -165,7 +167,7 @@ export class View {
   static castleFriendEditSelection = new Set();
   static castleFriendClearConfirm = false;
   static castleModeHeroAutoOpenHandler = null;
-  static castleHeroAutoOpenModes = new Set([1, 2, 5]);
+  static castleHeroAutoOpenModes = new Set([1, 2, 5, 99]);
   static castleAramMode = 3;
   static castlePartyHeroRequestInFlight = false;
   static castlePlayRefreshSeq = 0;
@@ -980,6 +982,7 @@ export class View {
 
   static castleQuestBody = DOM({ style: ['quest', 'left-offset-no-shift'] });
   static castleQuestTimerIntervals = new Set();
+  static castleQuestIssueTimeout = 0;
   static completedQuestHeroRewards = new Set();
 
   static clearCastleQuestTimers() {
@@ -1000,7 +1003,7 @@ export class View {
   static castleTotalCrystal = DOM({ tag: 'div', style: ['question-icon'] }, DOM({ style: 'quest-counter' }, ''));
 
   static setCss(name = 'content/style.css') {
-    const cssVersion = '20261101-consumables-list-2';
+    const cssVersion = '20261117-chat-images-2';
     const separator = name.includes('?') ? '&' : '?';
     const href = `${name}${separator}v=${cssVersion}`;
     // Каждый показ замка звал setCss заново и плодил одинаковые <link>: после
@@ -1038,6 +1041,8 @@ export class View {
     if (method != 'castle') {
       Castle.buildMode = false;
       View.clearCastleQuestTimers();
+      // кинематографичный вид — режим замка: на другом экране наблюдение за бездействием не нужно
+      CastleCinematic.stop();
     }
     const fromStats = View.active?.classList?.contains('stats-screen');
     const restoreCastle = method === 'castle' && value === undefined && fromStats && View.keptCastle;
@@ -1066,6 +1071,9 @@ export class View {
     if (!template) {
       return;
     }
+
+    // панель войса: после входа — сразу со своим ником, на экране входа — нет
+    Voice.onViewShown(method);
 
     // Ensure action bar slots exist in native input_new.cfg once per app session.
     if (method === 'castle' && !View._actionBarCfgEnsured) {
@@ -1547,7 +1555,8 @@ export class View {
     document.body.classList.add('noselect');
 
     Shop.retrieveLastUpdate();
-    syncFairGameFiles(); // номер выбранной похвалы и тексты похвал — в файлы игры
+    // копия настроек игры с сервера на диск, потом номер выбранной похвалы и тексты похвал — в файлы игры
+    GameSettingsSync.pullOnLogin().finally(() => syncFairGameFiles());
     ReplayUpload.resume(); // недосланные реплеи боёв (после перезапуска лончера тоже)
     CrashReport.resume(); // недосланные отчёты о крашах игры
 
@@ -1630,6 +1639,9 @@ export class View {
     setTimeout(() => {
       Chat.scroll();
     }, 1500);
+
+    // с этого момента можно считать бездействие: сам режим включится по таймеру (CastleCinematic)
+    CastleCinematic.start();
 
     return body;
   }
@@ -1731,6 +1743,8 @@ export class View {
     MM.partyMembersCount = Object.keys(data?.users || {}).length || 1;
     if (data && ('mode' in data) && !options?.preserveMode) {
       CastleNAVBAR.setMode(Number(data.mode) + 1, { syncParty: false });
+    } else {
+      CastleNAVBAR.refreshSearchBan();
     }
 
     MM.activeSelectHero = Number(data.users[myId]?.hero) || 0;
@@ -2618,6 +2632,16 @@ export class View {
       View.castleTotalCrystal.firstChild.innerText = request.crystal;
     } catch (error) {
       return App.error(error);
+    }
+
+    // Квесты выдаются раз в сутки в 12:00 МСК (nextIssue — мс до выдачи): если игрок
+    // в это время сидит в замке, обновляем список сами, с разбросом до минуты.
+    clearTimeout(View.castleQuestIssueTimeout);
+    const nextIssue = Number(request.nextIssue);
+    if (nextIssue > 0 && nextIssue <= 86400000) {
+      View.castleQuestIssueTimeout = setTimeout(() => {
+        if (View.active?.id === 'castle-body') View.castleQuestUpdate().catch((error) => App.error(error));
+      }, nextIssue + 1000 + Math.floor(Math.random() * 60000));
     }
 
     View.clearCastleQuestTimers();

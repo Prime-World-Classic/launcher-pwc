@@ -1,0 +1,796 @@
+{
+ "_": "Сгенерировано tools/pw-convert/build_easel_sounds.py из Data/Audio/PrimeWorld.fev (группа Minigame02), не править руками. volume — громкость события (линейная); rate — скорость проигрывания (у разовых событий высота, fadeIn и offset уже в файле: рендер FMOD; pitch — справочно, полутоны); volumeRand — разброс громкости (дБ вниз); pitchRand — разброс высоты (± полутонов); maxPlaybacks/steal — сколько экземпляров события звучит сразу и кого вытеснять; fadeIn/fadeOut — мс; offset — смещение старта, с; loop — звучит до остановки; ms — длина файла (null у зацикленных).",
+ "events": {
+  "easel_drop_shot": {
+   "volume": 1.0,
+   "volumeRand": 0.0,
+   "pitch": 36.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_drop_shot",
+   "loop": false,
+   "rate": 1,
+   "ms": 4,
+   "samples": [
+    "easel_drop_shot"
+   ]
+  },
+  "easel_hit": {
+   "volume": 0.5012,
+   "volumeRand": 0.0,
+   "pitch": 12.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_hit",
+   "loop": false,
+   "rate": 1,
+   "ms": 126,
+   "samples": [
+    "easel_hit"
+   ]
+  },
+  "easel_miss": {
+   "volume": 0.7079,
+   "volumeRand": 0.0,
+   "pitch": 24.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_miss",
+   "loop": false,
+   "rate": 1,
+   "ms": 46,
+   "samples": [
+    "easel_miss"
+   ]
+  },
+  "easel_drop_explosion": {
+   "volume": 0.5623,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_drop_explosion",
+   "loop": false,
+   "rate": 1,
+   "ms": 551,
+   "samples": [
+    "easel_drop_explosion"
+   ]
+  },
+  "easel_platform_drops_swap": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 24.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_platform_drops_swap",
+   "loop": false,
+   "rate": 1,
+   "ms": 138,
+   "samples": [
+    "easel_platform_drops_swap"
+   ],
+   "effects": [
+    "FMOD Lowpass"
+   ]
+  },
+  "easel_paint_flow": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 12.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_paint_flow",
+   "loop": false,
+   "rate": 1,
+   "ms": 1438,
+   "samples": [
+    "easel_paint_flow"
+   ]
+  },
+  "easel_drop_slide_low": {
+   "volume": 0.7079,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_drop_slide_low",
+   "loop": false,
+   "rate": 1,
+   "ms": 2717,
+   "samples": [
+    "easel_drop_slide_low"
+   ]
+  },
+  "easel_drop_slide_high": {
+   "volume": 0.5623,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_drop_slide_high",
+   "loop": false,
+   "rate": 1,
+   "ms": 3631,
+   "samples": [
+    "easel_drop_slide_high"
+   ]
+  },
+  "easel_drop_movement": {
+   "volume": 1.0,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0.0,
+   "file": null,
+   "loop": false,
+   "rate": 1,
+   "ms": 0,
+   "samples": []
+  },
+  "easel_drop_lookout": {
+   "volume": 0.5012,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_drop_lookout",
+   "loop": false,
+   "rate": 1,
+   "ms": 1570,
+   "samples": [
+    "easel_drop_lookout"
+   ]
+  },
+  "easel_level_loose": {
+   "volume": 0.5623,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_level_loose",
+   "loop": false,
+   "rate": 1,
+   "ms": 6977,
+   "samples": [
+    "easel_level_loose"
+   ]
+  },
+  "easel_hit_color_match": {
+   "volume": 0.5623,
+   "volumeRand": 0.0,
+   "pitch": 12.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_hit_color_match",
+   "loop": false,
+   "rate": 1,
+   "ms": 184,
+   "samples": [
+    "easel_hit_color_match"
+   ]
+  },
+  "easel_hit_color_missmatch": {
+   "volume": 0.5623,
+   "volumeRand": 0.0,
+   "pitch": 4.8,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_hit_color_missmatch",
+   "loop": false,
+   "rate": 1,
+   "ms": 299,
+   "samples": [
+    "easel_hit_color_missmatch"
+   ]
+  },
+  "easel_drop_lookhide": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_drop_lookhide",
+   "loop": false,
+   "rate": 1,
+   "ms": 1567,
+   "samples": [
+    "easel_drop_lookhide"
+   ]
+  },
+  "easel_level_win": {
+   "volume": 1.0,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_level_win",
+   "loop": false,
+   "rate": 1,
+   "ms": 7029,
+   "samples": [
+    "easel_level_win"
+   ]
+  },
+  "easel_boost_speedball_click": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_boost_speedball_click",
+   "loop": false,
+   "rate": 1,
+   "ms": 570,
+   "samples": [
+    "easel_boost_speedball_click"
+   ]
+  },
+  "easel_boost_speedball_fired": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_boost_speedball_fired",
+   "loop": false,
+   "rate": 1,
+   "ms": 2858,
+   "samples": [
+    "easel_boost_speedball_fired"
+   ]
+  },
+  "easel_boost_joker_click": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_boost_joker_click",
+   "loop": false,
+   "rate": 1,
+   "ms": 989,
+   "samples": [
+    "easel_boost_joker_click"
+   ]
+  },
+  "easel_boost_freeze_click": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_boost_freeze_click",
+   "loop": false,
+   "rate": 1,
+   "ms": 1302,
+   "samples": [
+    "easel_boost_freeze_click"
+   ]
+  },
+  "easel_boost_paintblast_click": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_boost_paintblast_click",
+   "loop": false,
+   "rate": 1,
+   "ms": 1955,
+   "samples": [
+    "easel_boost_paintblast_clic"
+   ]
+  },
+  "easel_boost_paintblast_explosion": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_boost_paintblast_explosion",
+   "loop": false,
+   "rate": 1,
+   "ms": 4937,
+   "samples": [
+    "easel_boost_paintblas_explosion"
+   ]
+  },
+  "easel_boost_brightening_click": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_boost_brightening_click",
+   "loop": false,
+   "rate": 1,
+   "ms": 1593,
+   "samples": [
+    "easel_boost_brightering_cli"
+   ]
+  },
+  "easel_boost_inspiration_click": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_boost_inspiration_click",
+   "loop": false,
+   "rate": 1,
+   "ms": 1328,
+   "samples": [
+    "easel_boost_inspiration_cli"
+   ]
+  },
+  "easel_combo_2x": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 12.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_combo_2x",
+   "loop": false,
+   "rate": 1,
+   "ms": 1001,
+   "samples": [
+    "easel_combo_2x"
+   ]
+  },
+  "easel_combo_3x": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 12.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_combo_3x",
+   "loop": false,
+   "rate": 1,
+   "ms": 883,
+   "samples": [
+    "easel_combo_3x"
+   ]
+  },
+  "easel_combo_4x": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 12.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_combo_4x",
+   "loop": false,
+   "rate": 1,
+   "ms": 962,
+   "samples": [
+    "easel_combo_4x"
+   ]
+  },
+  "easel_combo_5x": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 12.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_combo_5x",
+   "loop": false,
+   "rate": 1,
+   "ms": 1028,
+   "samples": [
+    "easel_combo_5x"
+   ]
+  },
+  "easel_level_scroll_start": {
+   "volume": 0.7079,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_level_scroll_start",
+   "loop": false,
+   "rate": 1,
+   "ms": 3045,
+   "samples": [
+    "easel_level_scroll_start"
+   ]
+  },
+  "easel_level_scroll_end": {
+   "volume": 1.0,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_level_scroll_end",
+   "loop": false,
+   "rate": 1,
+   "ms": 6758,
+   "samples": [
+    "easel_level_scroll_end"
+   ]
+  },
+  "easel_chain_near_exit": {
+   "volume": 1.0,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0.0,
+   "file": "easel_chain_near_exit",
+   "loop": true,
+   "rate": 1.0,
+   "ms": null,
+   "samples": [
+    "easel_chain_near_exit"
+   ]
+  },
+  "easel_chain_reach_end": {
+   "volume": 0.5623,
+   "volumeRand": 0.0,
+   "pitch": -4.8,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0.0,
+   "file": "easel_chain_reach_end",
+   "loop": true,
+   "rate": 0.7579,
+   "ms": null,
+   "samples": [
+    "easel_chain_reach_end"
+   ]
+  },
+  "easel_result_gold": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_result_gold",
+   "loop": false,
+   "rate": 1,
+   "ms": 1354,
+   "samples": [
+    "easel_result_gold"
+   ]
+  },
+  "easel_result_silver": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_result_silver",
+   "loop": false,
+   "rate": 1,
+   "ms": 1354,
+   "samples": [
+    "easel_result_silver"
+   ]
+  },
+  "easel_scorpion_start": {
+   "volume": 1.0,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0.0,
+   "file": null,
+   "loop": false,
+   "rate": 1,
+   "ms": 0,
+   "samples": []
+  },
+  "easel_new_boost_obtained": {
+   "volume": 0.5623,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_new_boost_obtained",
+   "loop": false,
+   "rate": 1,
+   "ms": 274,
+   "samples": [
+    "easel_new_boost_obtained"
+   ]
+  },
+  "easel_chain_near_exit_zz": {
+   "volume": 0.631,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0.0,
+   "file": "easel_chain_near_exit_zz",
+   "loop": true,
+   "rate": 1.0,
+   "ms": null,
+   "samples": [
+    "easel_chain_near_exit_zz"
+   ]
+  },
+  "easel_chain_destroyed": {
+   "volume": 0.7943,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_chain_destroyed",
+   "loop": false,
+   "rate": 1,
+   "ms": 1223,
+   "samples": [
+    "easel_chain_destroyed"
+   ]
+  },
+  "easel_ball_in_tunnel": {
+   "volume": 0.0,
+   "volumeRand": 0.0,
+   "pitch": 12.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_ball_in_tunnel",
+   "loop": false,
+   "rate": 1,
+   "ms": 159,
+   "samples": [
+    "easel_ball_in_tunnel"
+   ]
+  },
+  "easel_ball_out_tunnel": {
+   "volume": 0.0,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_ball_out_tunnel",
+   "loop": false,
+   "rate": 1,
+   "ms": 366,
+   "samples": [
+    "easel_ball_out_tunnel"
+   ]
+  },
+  "easel_tunnel_appeared": {
+   "volume": 1.0,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_tunnel_appeared",
+   "loop": false,
+   "rate": 1,
+   "ms": 1366,
+   "samples": [
+    "easel_tunnel_appeared"
+   ]
+  },
+  "easel_chain_merged": {
+   "volume": 1.0,
+   "volumeRand": 0.0,
+   "pitch": 48.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_chain_merged",
+   "loop": false,
+   "rate": 1,
+   "ms": 211,
+   "samples": [
+    "easel_chain_merged"
+   ]
+  },
+  "easel_coin_catched": {
+   "volume": 1.0,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "easel_coin_catched",
+   "loop": false,
+   "rate": 1,
+   "ms": 498,
+   "samples": [
+    "easel_coin_catched"
+   ]
+  },
+  "magnet": {
+   "volume": 0.5623,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0.0,
+   "file": "magnet",
+   "loop": true,
+   "rate": 1.0,
+   "ms": null,
+   "samples": [
+    "Magnet"
+   ]
+  },
+  "alchemist": {
+   "volume": 1.0,
+   "volumeRand": 0.0,
+   "pitch": 0.0,
+   "pitchRand": 0.0,
+   "maxPlaybacks": 2,
+   "steal": "oldest",
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "offset": 0,
+   "file": "alchemist",
+   "loop": false,
+   "rate": 1,
+   "ms": 9006,
+   "samples": [
+    "Alchemist"
+   ]
+  }
+ }
+}

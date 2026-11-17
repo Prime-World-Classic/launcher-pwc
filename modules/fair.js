@@ -29,8 +29,10 @@ import { UserCfg } from './battleSettings.js';
 //   В бой уходит только номер: user.cfg `setvar praise_id = <номер>` -> CmdPraise (amount), а текст каждый клиент
 //   берёт из praises.txt («<номер>\t<текст>», пишет syncFairGameFiles) — PW_Game AdventureScreen::OnPraise.
 // - Стили интерфейса (6) — следующим шагом.
-// Выбор экрана и похвалы пока хранится в лаунчере (localStorage): на сервере под них нет столбцов
-// (у флага и рамки — user.shopItemFlagId / shopItemFrameId), shop.apply их не знает.
+// Выбор экрана и похвалы хранится на аккаунте (pw-api shop.fairSelected / shop.fairSelect, таблица
+// user_fair_select): раньше он жил только в localStorage профиля лаунчера, и в другом лаунчере (Steam,
+// другой ПК) игра получала стандартные экран и похвалу. localStorage (fair_local_v2) — зеркало на случай
+// старого бэкенда или сбоя сети; выбор, сделанный до переноса, уходит на сервер при первом чтении.
 
 const CAT = { flag: 1, frame: 2, skin: 3, loadscreen: 4, praise: 5 };
 // с какого числа побед на герое показывается каждый из 4 вариантов рамки (бэкенд: mm.model.js getFrameTypeFromVictoryCount, «>= 25» и т. д.)
@@ -97,12 +99,88 @@ function loadLocalState() {
         else if (value != null && String(value) === name) delete selected[categoryId];
         if (Array.isArray(selected[categoryId]) && !selected[categoryId].length) delete selected[categoryId];
       }
-      saveLocalState({ selected });
+      saveLocalState({ selected, userId: Number(state.userId) || 0 });
     }
-    return { selected };
+    return { selected, userId: Number(state.userId) || 0 };
   } catch {
-    return { selected: {} };
+    return { selected: {}, userId: 0 };
   }
+}
+
+// ---- выбор на аккаунте (pw-api shop.fairSelected / shop.fairSelect)
+
+// перед боем дольше не ждём: игра стартует с зеркалом из localStorage
+const SERVER_TIMEOUT_MS = 2500;
+// бэкенд без этих методов (до деплоя) — дальше только localStorage
+let serverSelectionUnsupported = false;
+
+const currentUserId = () => Number(App.storage?.data?.id) || 0;
+
+const isUnsupported = (e) => String(e?.message ?? e).includes('Not method in object');
+
+function withTimeout(promise, ms) {
+  let timer = 0;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error('timeout')), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+export function selectionFromServer(response, userId = 0) {
+  const selected = {};
+  const loadscreens = (Array.isArray(response?.loadscreens) ? response.loadscreens : []).map(String).filter((name) => /^[A-Za-z0-9_-]{1,64}$/.test(name));
+  if (loadscreens.length) selected[CAT.loadscreen] = loadscreens;
+  const praise = Math.trunc(Number(response?.praise) || 0);
+  if (praise > 0) selected[CAT.praise] = String(praise);
+  return { selected, userId };
+}
+
+export function selectionToServer(state) {
+  return { loadscreens: loadscreenRotation(state), praise: Math.max(0, Math.trunc(Number(state.selected[CAT.praise]) || 0)) };
+}
+
+const hasSelection = (state) => selectionToServer(state).loadscreens.length > 0 || selectionToServer(state).praise > 0;
+
+// Выбор этого аккаунта: с сервера (и в зеркало localStorage). Выбор, сделанный в этом лаунчере до переноса
+// на сервер (или на старом бэкенде), переносится туда один раз — если на сервере ещё ничего нет и зеркало
+// не от другого аккаунта. Сервер оставляет только купленное.
+async function loadSelection() {
+  const local = loadLocalState();
+  const userId = currentUserId();
+  const foreign = !!(local.userId && userId && local.userId !== userId);
+  if (serverSelectionUnsupported || !userId) return foreign ? { selected: {}, userId } : local;
+  try {
+    let response = await withTimeout(App.api.request('shop', 'fairSelected'), SERVER_TIMEOUT_MS);
+    if (!response?.stored && !foreign && hasSelection(local)) {
+      response = await withTimeout(App.api.request('shop', 'fairSelect', selectionToServer(local)), SERVER_TIMEOUT_MS);
+    }
+    const state = selectionFromServer(response, userId);
+    saveLocalState(state);
+    return state;
+  } catch (e) {
+    if (isUnsupported(e)) serverSelectionUnsupported = true;
+    else console.warn('fair: selection from server failed', e);
+    return foreign ? { selected: {}, userId } : local;
+  }
+}
+
+// сохранить выбор (весь целиком); ответ сервера — то, что реально сохранено
+async function storeSelection(state) {
+  const userId = currentUserId();
+  if (!serverSelectionUnsupported && userId) {
+    try {
+      const response = await App.api.request('shop', 'fairSelect', selectionToServer(state));
+      const saved = selectionFromServer(response, userId);
+      state.selected = saved.selected;
+    } catch (e) {
+      if (!isUnsupported(e)) throw e;
+      serverSelectionUnsupported = true;
+    }
+  }
+  state.userId = userId;
+  saveLocalState(state);
 }
 
 function saveLocalState(state) {
@@ -118,25 +196,24 @@ function loadscreenRotation(state) {
   return list.map(String).filter((name) => /^[A-Za-z0-9_-]{1,64}$/.test(name));
 }
 
-// Файлы игры (My Games/Prime World Classic): номер выбранной похвалы и имя загрузочного экрана в user.cfg,
+// Файлы игры (папка NativeAPI.getGameUserDir()): номер выбранной похвалы и имя загрузочного экрана в user.cfg,
 // тексты всех похвал в praises.txt (у получателя похвалы должен быть текст её номера). Вызывается при входе
 // в замок, при выборе экрана или похвалы и перед каждым запуском игры (PWGame.start).
 export async function syncFairGameFiles() {
   try {
     if (!NativeAPI.status) return;
-    const documents = NativeAPI.getDocumentsDir();
-    if (!documents) return;
+    const folder = NativeAPI.getGameUserDir();
+    if (!folder) return;
     const words = { ...(Lang.list[Lang.default]?.word || {}), ...(Lang.list[Lang.target]?.word || {}) };
     const lines = [];
     for (const key of Object.keys(words)) {
       const m = /^praise_(\d+)$/.exec(key);
       if (m && typeof words[key] === 'string') lines.push(`${m[1]}\t${words[key].replace(/[\t\r\n]+/g, ' ')}`);
     }
-    const folder = NativeAPI.path.join(documents, 'My Games', 'Prime World Classic');
     await NativeAPI.fileSystem.promises.mkdir(folder, { recursive: true });
     await NativeAPI.fileSystem.promises.writeFile(NativeAPI.path.join(folder, 'praises.txt'), lines.join('\n') + '\n', 'utf8');
 
-    const state = loadLocalState();
+    const state = await loadSelection();
     const praiseId = Number(state.selected[CAT.praise]) || 0;
     // имя фона /UI/Styles/LoadingBack/Fair/<имя>.dds; none — фон карты. Из ротации экран выбирает лаунчер —
     // случайный при каждом запуске игры: выпущенный PW_Game понимает только одно имя (список через запятую
@@ -251,17 +328,19 @@ export async function fair(tab = null, { previewData = null } = {}) {
 
   View.castleCrystalContainer?.classList.remove('crystal-container-anim');
 
-  const ctx = { topHero: { heroId: 1, skinId: 1, frameId: 0 }, available: [], purchased: [], local: previewData ? { selected: {} } : loadLocalState() };
+  const ctx = { topHero: { heroId: 1, skinId: 1, frameId: 0 }, available: [], purchased: [], local: { selected: {} } };
 
-  const [available, purchased, topHero] = previewData ? [previewData.available, previewData.purchased, previewData.topHero] : await Promise.all([
+  const [available, purchased, topHero, local] = previewData ? [previewData.available, previewData.purchased, previewData.topHero, null] : await Promise.all([
     // SHOP_SCOPE: categories — что отдаёт новый бэкенд, allCategories — чтобы ярмарка
     // не осталась без экранов и похвал на старом. Без этого бэкенд режет категории
     // 4 и 5, и товары, уже лежащие в наборе игрока, в ярмарке не видны.
     App.api.request('shop', 'available', SHOP_SCOPE).catch((e) => (App.error(e), [])),
     App.api.request('shop', 'purchase', SHOP_SCOPE).catch((e) => (App.error(e), [])),
     App.api.request(App.CURRENT_MM, 'getHeroWithFrameId').catch((e) => (App.error(e), null)),
+    loadSelection(),
   ]);
   if (topHero) ctx.topHero = topHero;
+  if (local) ctx.local = local;
   ctx.available = (available || []).map((item) => ({ ...item, categoryId: Number(item.categoryId) })).filter((item) => isOpenCategory(item.categoryId));
   ctx.purchased = (purchased || []).map((item) => ({ ...item, categoryId: Number(item.categoryId) })).filter((item) => isOpenCategory(item.categoryId));
 
@@ -666,6 +745,8 @@ export async function fair(tab = null, { previewData = null } = {}) {
   // купленный товар выбирается сразу, без окна подтверждения
   const equip = async (item) => {
     if (previewData) return;
+    // выбор экрана/похвалы меняем у копии: при ошибке сервера окно остаётся как было
+    const before = { ...ctx.local, selected: { ...ctx.local.selected } };
     try {
       if (item.categoryId === CAT.loadscreen) {
         // ротация: «Выбрать» добавляет экран, «Убрать» снимает; стандартный экран очищает ротацию
@@ -674,12 +755,12 @@ export async function fair(tab = null, { previewData = null } = {}) {
         const next = item.id == 0 ? [] : rotation.includes(name) ? rotation.filter((n) => n !== name) : [...rotation, name];
         if (next.length) ctx.local.selected[CAT.loadscreen] = next;
         else delete ctx.local.selected[CAT.loadscreen];
-        saveLocalState(ctx.local);
+        await storeSelection(ctx.local);
         await syncFairGameFiles();
       } else if (LOCAL_CATEGORIES.includes(item.categoryId)) {
         if (item.id == 0) delete ctx.local.selected[item.categoryId];
         else ctx.local.selected[item.categoryId] = String(item.externalId);
-        saveLocalState(ctx.local);
+        await storeSelection(ctx.local);
         await syncFairGameFiles();
       } else if (item.categoryId === CAT.skin) {
         const { heroId, skinId } = heroOf(item);
@@ -690,6 +771,7 @@ export async function fair(tab = null, { previewData = null } = {}) {
         await App.api.request('shop', 'apply', { id: item.id });
       }
     } catch (e) {
+      if (LOCAL_CATEGORIES.includes(item.categoryId)) ctx.local = before;
       App.error(e);
       return;
     }
@@ -747,6 +829,10 @@ export async function fair(tab = null, { previewData = null } = {}) {
       DOM({ tag: 'span', style: 'fair-cat-text' }, Lang.text(tabDesc.label)),
       DOM({ tag: 'span', style: 'fair-count' }, String(counter(tabDesc.id))),
     );
+    if (isCollectionTab(tabDesc.id)) {
+      const proposal = previewData && new URLSearchParams(location.search).get('previewCollectionEffect');
+      el.dataset.effect = ['glow', 'trace', 'sweep'].includes(proposal) ? proposal : 'trace';
+    }
     tabButtons.set(tabDesc.id, el);
     sidebar.append(el);
   }

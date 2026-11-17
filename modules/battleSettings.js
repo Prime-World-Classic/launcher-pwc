@@ -12,6 +12,7 @@ import { domAudioPresets } from './domAudioPresets.js';
 import { KeybindStore } from './keybindings/keybindings.store.js';
 import { loadKeybinds, saveKeybinds } from './keybindings/keybindings.io.js';
 import { normalizeKey, attachGameKeyCapture } from './keybindings/keybindings.input.js';
+import { GameSettingsSync } from './gameSettingsSync.js';
 
 // ---------------------------------------------------------------- user.cfg
 
@@ -32,9 +33,9 @@ export const UserCfg = {
     this.lines = [...USER_CFG_HEADER];
     this.path = null;
     if (!NativeAPI.status) return;
-    const documents = NativeAPI.getDocumentsDir();
-    if (!documents) return;
-    this.path = NativeAPI.path.join(documents, 'My Games', 'Prime World Classic', 'user.cfg');
+    const folder = NativeAPI.getGameUserDir();
+    if (!folder) return;
+    this.path = NativeAPI.path.join(folder, 'user.cfg');
     let text = '';
     try {
       text = await NativeAPI.fileSystem.promises.readFile(this.path, 'utf8');
@@ -84,6 +85,7 @@ export const UserCfg = {
     try {
       await NativeAPI.fileSystem.promises.mkdir(NativeAPI.path.dirname(this.path), { recursive: true });
       await NativeAPI.fileSystem.promises.writeFile(this.path, this.lines.join(this.eol) + this.eol, 'utf8');
+      GameSettingsSync.launcherWrote(this.path); // изменение лончера — в копию на сервере
     } catch (e) {
       console.error('battleSettings: user.cfg write failed', e);
       App.error(Lang.text('bsSaveError'));
@@ -111,6 +113,10 @@ const PAGES = {
     { type: 'check', id: 'smart_cast_toggles', variable: 'smart_cast_toggles', def: 0, label: 'bsAdvSmartCastToggles' },
     { type: 'check', id: 'dbl_click_selfcast', variable: 'dbl_click_selfcast', def: 1, label: 'bsAdvDblClickSelfcast' },
     { type: 'slider', id: 'dbl_click_selfcast_time', variable: 'dbl_click_selfcast_time', def: 0.3, min: 0.15, max: 0.5, steps: 8, fmt: 'f2', dep: 'dbl_click_selfcast', label: 'bsAdvDblClickSelfcastTime' },
+    { type: 'check', id: 'talent_queue', variable: 'talent_queue', def: 1, label: 'bsAdvTalentQueue' },
+    { type: 'note', label: 'bsAdvNoteTalentQueue' },
+    { type: 'header', label: 'bsAdvHdrCamera' },
+    { type: 'slider', id: 'camera_max_zoom_out', variable: 'camera_max_zoom_out', def: 115, min: 100, max: 115, steps: 16, fmt: 'pct', label: 'bsAdvCameraMaxZoomOut' },
     { type: 'header', label: 'bsAdvHdrInterface' },
     { type: 'slider', id: 'team_portraits_scale', variable: 'team_portraits_scale', def: 100, min: 50, max: 200, steps: 16, fmt: 'pct', label: 'bsAdvTeamPortraitsScale' },
     { type: 'slider', id: 'cursor_scale', variable: 'cursor_scale', def: 100, min: 50, max: 300, steps: 26, fmt: 'pct', label: 'bsAdvCursorScale' },
@@ -128,11 +134,7 @@ const PAGES = {
     { type: 'note', label: 'bsAdvNoteAbilityStatus' },
     { type: 'check', id: 'bad_words', variable: 'use_badwords_filter', def: 1, label: 'bsPrefUseBadWordsFilter' },
     { type: 'check', id: 'chat_off', variable: 'session_chat_off', def: 0, label: 'bsPrefChatOff' },
-    { type: 'header', label: 'bsAdvHdrVoiceChat' },
-    { type: 'key', command: 'voice_overlay_unlock_on', label: 'bsKeyVoiceOverlayUnlock' },
-    // голосовая связь лаунчера (те же клавиши — в «Настройках замка»)
-    { type: 'launcherKey', settingKey: 'voiceToggleHotkey', label: 'voiceEnableToggle' },
-    { type: 'launcherKey', settingKey: 'voiceDropHotkey', label: 'voiceDropCalls' },
+    // голосовой чат — отдельной вкладкой «Голосовая связь» (battleVoiceRows)
   ],
   chatWheel: [
     { type: 'header', label: 'bsAdvHdrChatWheel' },
@@ -247,16 +249,38 @@ function parseWheelItems(text, valid) {
 
 // ---------------------------------------------------------------- элементы
 
+const KEY_LABELS = { MOUSE4: 'Mouse 4', MOUSE5: 'Mouse 5', CAPITAL: 'CapsLock' };
+
 function formatKeys(keys) {
-  return keys && keys.length ? keys.filter(Boolean).join(' + ') : '';
+  return keys && keys.length ? keys.filter(Boolean).map((k) => KEY_LABELS[k] || k).join(' + ') : '';
 }
 
-// поле клавиши: щёлкнуть и нажать клавишу (Backspace — очистить, Esc/Enter — выйти)
-function keyInput(getKeys, setKeys, { style = 'bs-key', noBareModifier = false } = {}) {
+// поле клавиши: щёлкнуть и нажать клавишу (Backspace — очистить, Esc/Enter — выйти);
+// allowMouse — ещё и боковые кнопки мыши (MOUSE4/MOUSE5, для рации, как в Discord)
+function keyInput(getKeys, setKeys, { style = 'bs-key', noBareModifier = false, allowMouse = false } = {}) {
   const input = DOM({ tag: 'input', style, readOnly: true });
   const refresh = () => {
     input.value = formatKeys(getKeys());
   };
+  if (allowMouse) {
+    input.addEventListener('mousedown', (e) => {
+      const button = { 3: 'MOUSE4', 4: 'MOUSE5' }[e.button];
+      if (!button || document.activeElement !== input) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const keys = [];
+      if (e.ctrlKey) keys.push('CTRL');
+      if (e.altKey) keys.push('ALT');
+      if (e.shiftKey) keys.push('SHIFT');
+      keys.push(button);
+      setKeys(keys);
+      refresh();
+    });
+    // «назад/вперёд» мыши не должны листать страницу, пока назначаем кнопку
+    input.addEventListener('mouseup', (e) => {
+      if (e.button === 3 || e.button === 4) e.preventDefault();
+    });
+  }
   input.addEventListener(
     'keydown',
     (e) => {
@@ -287,7 +311,7 @@ function keyInput(getKeys, setKeys, { style = 'bs-key', noBareModifier = false }
 
 // клавиша голосовой связи лаунчера (Settings.voiceToggleHotkey / voiceDropHotkey): сохраняется сразу,
 // пока поле в фокусе, глобальные клавиши войса сняты, чтобы нажатие не включало их
-export function voiceHotkeyInput(settingKey, style = 'bs-key') {
+export function voiceHotkeyInput(settingKey, style = 'bs-key', { allowMouse = false } = {}) {
   const input = keyInput(
     () => (Array.isArray(Settings.settings?.[settingKey]) ? Settings.settings[settingKey] : []),
     async (keys) => {
@@ -295,11 +319,150 @@ export function voiceHotkeyInput(settingKey, style = 'bs-key') {
       await Settings.WriteSettings();
       Voice.updateInfoPanel?.();
     },
-    { style, noBareModifier: true },
+    { style, noBareModifier: true, allowMouse },
   );
   input.addEventListener('focus', () => NativeAPI.unregisterVoiceHotkeys?.());
   input.addEventListener('blur', () => NativeAPI.refreshVoiceHotkeys?.());
   return input;
+}
+
+// Микрофон войса (Settings.voiceMicDevice) и его проверка: { select, test }. Выбор сохраняется
+// сразу и подхватывается идущими звонками; «По умолчанию (Windows)» — устройство записи Windows
+// по умолчанию, как было раньше. Проверка открывает тот же микрофон, что возьмёт звонок; уровень —
+// заливка внутри самой кнопки. inputStyle — вид полей окна: 'bs-key' (настройки боя) или
+// 'castle-keybinding-input' (настройки замка, как у клавиш войса).
+export function voiceMicControls(inputStyle = 'bs-key') {
+  const select = DOM({
+    tag: 'select',
+    style: [inputStyle, inputStyle === 'bs-key' ? 'bs-select' : 'voice-mic-select--castle', 'voice-mic-select'],
+    domaudio: domAudioPresets.defaultSelect,
+  });
+  const fill = DOM({ style: 'voice-mic-meter-fill' });
+  const caption = DOM({ tag: 'span', style: 'voice-mic-test-caption' }, Lang.text('voiceMicTestStart'));
+  const button = DOM({ style: [inputStyle, 'voice-mic-test-btn'], domaudio: domAudioPresets.defaultButton }, fill, caption);
+  const test = button;
+
+  const option = (value, text, label = '') => {
+    const element = DOM({ tag: 'option' }, text);
+    element.value = value;
+    element.dataset.label = label;
+    return element;
+  };
+
+  const refill = async () => {
+    let devices = [];
+    try {
+      devices = await Voice.listMicDevices();
+      // Без разрешения на микрофон Chromium прячет имена: разовый запрос, чтобы их показать.
+      if (devices.length && devices.every((device) => !device.label)) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
+        devices = await Voice.listMicDevices();
+      }
+    } catch {}
+
+    const current = String(Settings.settings?.voiceMicDevice || '');
+    const currentLabel = String(Settings.settings?.voiceMicLabel || '');
+    // «default» — то же, что без выбора; его имя («По умолчанию - <устройство>») показываем в пункте.
+    const def = devices.find((device) => device.deviceId === 'default');
+    const defName = def?.label ? def.label.replace(/^[^-]*-\s*/, '') : '';
+    const options = [option('', defName ? `${Lang.text('voiceMicDefault')}: ${defName}` : Lang.text('voiceMicDefault'))];
+    let selected = '';
+    for (const device of devices) {
+      if (!device.deviceId || device.deviceId === 'default') continue;
+      options.push(option(device.deviceId, device.label || Lang.text('voiceMicUnnamed'), device.label));
+      if (current && (device.deviceId === current || (!selected && currentLabel && device.label === currentLabel))) {
+        selected = device.deviceId;
+      }
+    }
+    if (current && !selected) {
+      // Выбранный микрофон отключён: пока его нет, звонок идёт через Windows по умолчанию.
+      const missing = option(current, `${currentLabel || Lang.text('voiceMicUnnamed')} (${Lang.text('voiceMicMissing')})`, currentLabel);
+      options.push(missing);
+      selected = current;
+    }
+    select.replaceChildren(...options);
+    select.value = selected;
+    select.title = select.selectedOptions[0]?.textContent || '';
+  };
+
+  let testing = null;
+  const stopTest = () => {
+    if (!testing) return;
+    cancelAnimationFrame(testing.frame);
+    testing.stream.getTracks().forEach((track) => track.stop());
+    testing.context.close().catch(() => {});
+    testing = null;
+    fill.style.width = '0%';
+    caption.textContent = Lang.text('voiceMicTestStart');
+    test.title = '';
+  };
+  let starting = false;
+  const startTest = async () => {
+    // пока микрофон открывается, повторное нажатие не открывает второй
+    if (starting || testing) return;
+    starting = true;
+    let stream = null;
+    try {
+      stream = await Voice.openMicStream();
+    } catch {
+      App.error(Lang.text('voiceMicUnavailable'));
+      return;
+    } finally {
+      starting = false;
+    }
+    if (!button.isConnected) {
+      stream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+    const context = new AudioContext();
+    context.resume?.()?.catch?.(() => {});
+    const analyser = context.createAnalyser();
+    analyser.fftSize = 1024;
+    context.createMediaStreamSource(stream).connect(analyser);
+    const samples = new Float32Array(analyser.fftSize);
+    testing = { stream, context, frame: 0 };
+    caption.textContent = Lang.text('voiceMicTestStop');
+    test.title = stream.getAudioTracks()[0]?.label || '';
+    const tick = () => {
+      if (!testing) return;
+      if (!button.isConnected) return stopTest();
+      analyser.getFloatTimeDomainData(samples);
+      let sum = 0;
+      for (const value of samples) sum += value * value;
+      const db = 20 * Math.log10(Math.sqrt(sum / samples.length) || 1e-8);
+      // -60 дБ и тише — пусто, 0 дБ — полная шкала
+      fill.style.width = `${Math.max(0, Math.min(100, ((db + 60) / 60) * 100)).toFixed(1)}%`;
+      testing.frame = requestAnimationFrame(tick);
+    };
+    tick();
+  };
+
+  button.addEventListener('click', () => {
+    if (starting) return;
+    if (testing) stopTest();
+    else startTest();
+  });
+  select.addEventListener('change', async () => {
+    const label = select.selectedOptions[0]?.dataset.label || '';
+    select.title = select.selectedOptions[0]?.textContent || '';
+    await Voice.setMicDevice(select.value, label);
+    if (testing) {
+      stopTest();
+      await startTest();
+    }
+  });
+
+  const onDeviceChange = () => {
+    if (!select.isConnected) {
+      navigator.mediaDevices.removeEventListener('devicechange', onDeviceChange);
+      return stopTest();
+    }
+    refill();
+  };
+  navigator.mediaDevices?.addEventListener?.('devicechange', onDeviceChange);
+  refill();
+  return { select, test };
 }
 
 // клавиша игры (input_new.cfg): имена клавиш — как у игры, конфликт подсвечивается
@@ -486,8 +649,14 @@ function buildRowsPage(rowsDesc, ctx) {
         page.append(row(Lang.text(desc.label), bindKeyInput(desc.command, null, () => saveKeybinds())));
         break;
       case 'launcherKey':
-        page.append(row(Lang.text(desc.label), voiceHotkeyInput(desc.settingKey)));
+        page.append(row(Lang.text(desc.label), voiceHotkeyInput(desc.settingKey, 'bs-key', { allowMouse: Boolean(desc.allowMouse) })));
         break;
+      case 'launcherMic': {
+        // микрофон голосовой связи лаунчера (тот же выбор — в «Настройках замка»)
+        const mic = voiceMicControls();
+        page.append(row(Lang.text('voiceMic'), mic.select), row(Lang.text('voiceMicCheck'), mic.test));
+        break;
+      }
       case 'launcherCheck': {
         // настройка лончера (launcher.cfg), а не user.cfg: сохраняется сразу, как launcherKey
         const box = checkbox(Settings.settings[desc.settingKey] === desc.on, async (checked) => {
@@ -941,6 +1110,7 @@ const CATEGORIES = [
   { id: 'game', label: 'bsCatGame' },
   { id: 'keys', label: 'bsCatKeys' },
   { id: 'comm', label: 'bsCatComm' },
+  { id: 'voice', label: 'advCatVoice' },
   { id: 'chatWheel', label: 'bsCatChatWheel' },
   { id: 'pingWheel', label: 'bsCatPingWheel' },
   { id: 'advanced', label: 'bsCatAdvanced' },
@@ -990,7 +1160,8 @@ export async function battleSettings() {
           }),
         );
       }
-    } else page = buildRowsPage(PAGES[id], ctx);
+    } else if (id === 'voice') page = buildCastlePage(battleVoiceRows(), ctx);
+    else page = buildRowsPage(PAGES[id], ctx);
     content.append(page);
     footer.append(button(Lang.text('back'), () => root.requestClose?.(), true));
   };
@@ -1021,5 +1192,306 @@ export async function battleSettings() {
   };
 
   await show(CATEGORIES.some((c) => c.id === shownCategory) ? shownCategory : 'game');
+  return root;
+}
+
+/// ---------------------------------------------------------------- «Настройки замка»
+
+// Тот же вид, что у «Настроек боя» (вкладки слева, разделы с заголовками, пояснения под пунктами),
+// но значения — настройки лаунчера (Settings.settings), а не user.cfg игры. Применяются сразу.
+// type: header | note | setting (галочка: get/set) | volumes (ползунки громкости сеткой) |
+// language | launcherKey | launcherMic;
+// dep — список id галочек, без которых пункт недоступен ('!id' — доступен, пока галочка снята).
+const S = () => Settings.settings;
+const applyAudio = () => Settings.ApplySettings({ render: false, window: false });
+const CASTLE_PAGES = {
+  castle: [
+    { type: 'header', label: 'advHdrScreen' },
+    {
+      type: 'setting',
+      id: 'fullscreen',
+      label: 'advWindowModeF11',
+      get: () => !S().fullscreen,
+      set: (on) => {
+        S().fullscreen = !on;
+        Settings.ApplySettings({ render: false, audio: false });
+      },
+    },
+    { type: 'note', label: 'advNoteWindowMode' },
+    {
+      type: 'setting',
+      id: 'render',
+      label: 'threeD',
+      get: () => Boolean(S().render),
+      set: (on) => {
+        S().render = on;
+        Settings.ApplySettings({ audio: false, window: false });
+      },
+    },
+    { type: 'note', label: 'advNoteThreeD' },
+    // CastleCinematic: 15 с без мыши и клавиш — интерфейс гаснет, камера облетает замок
+    { type: 'setting', id: 'castlePanorama', label: 'castlePanorama', dep: ['render'], get: () => S().castlePanorama !== false, set: (on) => (S().castlePanorama = on) },
+    { type: 'note', label: 'advNoteCastlePanorama' },
+    { type: 'header', label: 'advHdrLight' },
+    // выкл — освещение и тени замка как до смены дня и ночи (Castle.updateDayNight)
+    { type: 'setting', id: 'dayNight', label: 'dayNight', get: () => S().dayNight !== false, set: (on) => (S().dayNight = on) },
+    { type: 'note', label: 'advNoteDayNight' },
+    // выкл — без огней зданий и отложенного освещения (CastleLighting), отрисовка как раньше
+    { type: 'setting', id: 'buildingLights', label: 'buildingLights', get: () => S().buildingLights !== false, set: (on) => (S().buildingLights = on) },
+    { type: 'note', label: 'advNoteBuildingLights' },
+    { type: 'header', label: 'advHdrWater' },
+    // выкл — в воде нет никакого отражения (ни геометрии, ни неба со звёздами)
+    { type: 'setting', id: 'waterReflect', label: 'waterReflect', get: () => S().waterReflect !== false, set: (on) => (S().waterReflect = on) },
+    // SSR трассирует G-buffer кадра: без огней зданий и смены дня/ночи его нет, без отражений — тем более
+    {
+      type: 'setting',
+      id: 'waterSsr',
+      label: 'waterSsr',
+      dep: ['waterReflect', 'dayNight', 'buildingLights'],
+      get: () => S().waterSsr !== false,
+      set: (on) => (S().waterSsr = on),
+    },
+    { type: 'note', label: 'advNoteWaterSsr' },
+    // выкл — нет ни слоя осадков, ни затемнения света/усиления ветра под погодой
+    { type: 'setting', id: 'weather', label: 'weather', get: () => S().weather !== false, set: (on) => (S().weather = on) },
+    { type: 'note', label: 'advNoteWeather' },
+  ],
+  sound: [
+    { type: 'header', label: 'advHdrVolume' },
+    {
+      type: 'volumes',
+      items: [
+        { key: 'globalVolume', label: 'volume', def: 0.5, apply: applyAudio },
+        { key: 'musicVolume', label: 'volumeMusic', def: 0.5, apply: applyAudio },
+        // звуки — с пробным звуком, чтобы слышать громкость (как было в старом окне)
+        { key: 'soundsVolume', label: 'volumeSound', def: 0.2, apply: (v, ctx) => (applyAudio(), ctx.onSoundTest?.()) },
+        { key: 'voiceVolume', label: 'voiceVolume', def: 1, apply: (v) => Voice.setVolumeLevel(v) },
+      ],
+    },
+  ],
+  interface: [
+    { type: 'header', label: 'advHdrInterface' },
+    // вкл — все режимы видны у «В бой», выкл — меню по наведению на круг режима
+    { type: 'setting', id: 'castleModesWings', label: 'castleModesWings', get: () => S().castleModesWings === true, set: (on, ctx) => ((S().castleModesWings = on), ctx.onModesWings?.()) },
+    { type: 'note', label: 'advNoteModesWings' },
+    { type: 'language' },
+  ],
+  voice: [
+    { type: 'header', label: 'voiceHotkeys' },
+    // никто не может позвонить, сам не звонит (Voice.setVoiceOff); остальные пункты войса — серые
+    { type: 'setting', id: 'voiceOff', label: 'voiceOff', get: () => S().voiceOff === true, set: (on) => Voice.setVoiceOff(on) },
+    { type: 'note', label: 'advNoteVoiceOff' },
+    { type: 'setting', id: 'novoice', label: 'voiceEnabled', dep: ['!voiceOff'], get: () => Boolean(S().novoice), set: (on) => Voice.setMutedAll(on) },
+    { type: 'note', label: 'advNoteMuteAll' },
+    { type: 'setting', id: 'voiceOverlay', label: 'voiceOverlay', dep: ['!voiceOff'], get: () => S().voiceOverlay !== false, set: (on) => (S().voiceOverlay = on) },
+    { type: 'note', label: 'advNoteVoiceOverlay' },
+    // режим ввода, как в Discord: голосовая активация (микрофон по Вкл/выкл) или рация
+    {
+      type: 'choice',
+      id: 'voiceRadioMode',
+      label: 'voiceInputMode',
+      dep: ['!voiceOff'],
+      options: [
+        { value: false, label: 'voiceInputVoice' },
+        { value: true, label: 'voiceInputPtt' },
+      ],
+      get: () => Boolean(S().voiceRadioMode),
+      set: (value) => {
+        Voice.setRadioMode(value);
+        NativeAPI.refreshVoiceHotkeys?.();
+      },
+    },
+    { type: 'note', label: 'advNoteInputMode' },
+    { type: 'header', label: 'advHdrVoiceKeys' },
+    { type: 'launcherKey', settingKey: 'voiceToggleHotkey', label: 'voiceEnableToggle' },
+    { type: 'launcherKey', settingKey: 'voicePttHotkey', label: 'voicePttKey', allowMouse: true, dep: ['voiceRadioMode'] },
+    {
+      type: 'number',
+      id: 'voicePttReleaseMs',
+      label: 'voicePttRelease',
+      dep: ['voiceRadioMode'],
+      min: 0,
+      max: 2000,
+      steps: 201,
+      unit: 'voiceMs',
+      get: () => Voice.getPttReleaseMs(),
+      set: (v) => (S().voicePttReleaseMs = Math.round(v)),
+    },
+    { type: 'note', label: 'advNotePttKeys' },
+    { type: 'launcherKey', settingKey: 'voiceDropHotkey', label: 'voiceDropCalls' },
+    { type: 'header', label: 'voiceMic' },
+    { type: 'launcherMic' },
+  ],
+};
+
+// «Голосовая связь» в «Настройках боя» — та же вкладка, что в «Настройках замка», плюс игровая
+// клавиша «Управление войс-оверлеем» (input_new.cfg) в разделе «Клавиши»
+function battleVoiceRows() {
+  const rows = [...CASTLE_PAGES.voice];
+  const keysAt = rows.findIndex((r) => r.type === 'header' && r.label === 'advHdrVoiceKeys');
+  rows.splice(keysAt + 1, 0, { type: 'key', command: 'voice_overlay_unlock_on', label: 'bsKeyVoiceOverlayUnlock' });
+  return rows;
+}
+
+// «Интерфейс» — первая вкладка: на ней окно открывается в первый раз, потом — на последней открытой
+const CASTLE_CATEGORIES = [
+  { id: 'interface', label: 'advCatInterface' },
+  { id: 'castle', label: 'advCatCastle' },
+  { id: 'sound', label: 'advCatSound' },
+  { id: 'voice', label: 'advCatVoice' },
+];
+
+let shownCastleCategory = CASTLE_CATEGORIES[0].id;
+
+// громкость лаунчера 0..1 (Settings.settings[key]) — сеткой, как «Звук» в «Настройках боя»
+function castleVolume(item, ctx) {
+  const raw = Number(S()[item.key]);
+  const value = Math.min(1, Math.max(0, Number.isFinite(raw) ? raw : item.def));
+  const text = DOM({ style: 'bs-value' }, `${Math.round(value * 100)}%`);
+  const el = slider({
+    value,
+    min: 0,
+    max: 1,
+    steps: 101,
+    onInput: (v) => {
+      S()[item.key] = v;
+      text.textContent = `${Math.round(v * 100)}%`;
+      item.apply(v, ctx);
+    },
+  });
+  return DOM({ style: 'bs-field' }, DOM({ style: 'bs-field-label' }, Lang.text(item.label)), DOM({ style: 'bs-slider-box' }, el, text));
+}
+
+function buildCastlePage(rowsDesc, ctx) {
+  const page = DOM({ style: 'bs-page' });
+  const checks = new Map();
+  const dependents = [];
+  const updateEnabled = () => {
+    for (const d of dependents) {
+      const enabled = d.dep.every((id) => (id.startsWith('!') ? checks.get(id.slice(1)) !== true : checks.get(id) !== false));
+      d.element.classList.toggle('is-disabled', !enabled);
+      for (const control of d.controls) control.disabled = !enabled;
+      if (d.box) d.box.disabled = !enabled;
+    }
+  };
+  const addDependent = (desc, element, ...controls) => {
+    if (desc.dep) dependents.push({ dep: desc.dep, element, controls });
+  };
+  for (const desc of rowsDesc) {
+    if (desc.type === 'choice') {
+      // выпадающий список (режим ввода войса); для dep — как галочка: true/false
+      checks.set(desc.id, desc.get());
+      const select = DOM({ tag: 'select', style: ['bs-key', 'bs-select'], domaudio: domAudioPresets.defaultSelect });
+      desc.options.forEach((option, index) => {
+        const element = DOM({ tag: 'option' }, Lang.text(option.label));
+        element.value = String(index);
+        select.append(element);
+      });
+      select.value = String(Math.max(0, desc.options.findIndex((o) => o.value === desc.get())));
+      select.addEventListener('change', () => {
+        const value = desc.options[Number(select.value)]?.value;
+        checks.set(desc.id, value);
+        desc.set(value, ctx);
+        updateEnabled();
+      });
+      const element = row(Lang.text(desc.label), select);
+      page.append(element);
+      addDependent(desc, element, select);
+    } else if (desc.type === 'launcherKey') {
+      const input = voiceHotkeyInput(desc.settingKey, 'bs-key', { allowMouse: Boolean(desc.allowMouse) });
+      const element = row(Lang.text(desc.label), input);
+      page.append(element);
+      addDependent(desc, element, input);
+    } else if (desc.type === 'number') {
+      // ползунок с числом (задержка отпускания рации, мс)
+      const text = DOM({ style: 'bs-value' }, `${desc.get()} ${Lang.text(desc.unit)}`);
+      const el = slider({
+        value: desc.get(),
+        min: desc.min,
+        max: desc.max,
+        steps: desc.steps,
+        onInput: (v) => {
+          text.textContent = `${Math.round(v)} ${Lang.text(desc.unit)}`;
+        },
+        onChange: async (v) => {
+          desc.set(v, ctx);
+          await Settings.WriteSettings();
+        },
+      });
+      const element = row(Lang.text(desc.label), DOM({ style: 'bs-slider-box' }, el, text));
+      page.append(element);
+      addDependent(desc, element, el);
+    } else if (desc.type === 'setting') {
+      checks.set(desc.id, desc.get());
+      const box = checkbox(desc.get(), (checked) => {
+        checks.set(desc.id, checked);
+        desc.set(checked, ctx);
+        updateEnabled();
+      });
+      box.dataset.setting = desc.id; // Settings.syncFullscreenUI находит галочку по нему
+      const label = DOM({ tag: 'label', style: 'bs-row-label' }, Lang.text(desc.label));
+      label.addEventListener('click', () => {
+        if (!box.disabled) box.click();
+      });
+      const element = DOM({ style: ['bs-row', 'bs-row--check'] }, box, label);
+      page.append(element);
+      addDependent(desc, element, box);
+    } else if (desc.type === 'volumes') {
+      page.append(DOM({ style: 'bs-grid' }, ...desc.items.map((item) => castleVolume(item, ctx))));
+    } else if (desc.type === 'language') {
+      // язык лаунчера: по нажатию — следующий (Lang.toggle), окно перерисовывается на новом языке
+      const name = Lang.list?.[Lang.target]?.name || Lang.target;
+      const control = DOM({ style: ['bs-key', 'bs-lang-button'], domaudio: domAudioPresets.defaultButton, event: ['click', () => ctx.onLanguage?.()] }, name);
+      page.append(row(Lang.text('language'), control));
+    } else {
+      // header, note, launcherKey, launcherMic — как на страницах «Настроек боя»
+      page.append(...buildRowsPage([desc], ctx).childNodes);
+    }
+  }
+  updateEnabled();
+  return page;
+}
+
+// «Назад» — в меню замка. Хуки из window.js (там Castle, звуки и перерисовка экранов):
+// onModesWings — перерисовать режимы у «В бой»; onSoundTest — пробный звук при смене громкости
+// звуков; onLanguage — сменить язык и открыть окно заново.
+export function castleSettings({ onBack, onModesWings, onSoundTest, onLanguage } = {}) {
+  NativeAPI.unregisterVoiceHotkeys?.();
+  const ctx = { onModesWings, onSoundTest, onLanguage };
+  const content = DOM({ style: ['bs-content', 'wtop-list-scroll'] });
+  const footer = DOM({ style: 'bs-footer' });
+  const sidebar = DOM({ style: 'bs-sidebar' });
+  const catButtons = new Map();
+
+  const show = (id) => {
+    shownCastleCategory = id;
+    for (const [cid, el] of catButtons) el.classList.toggle('is-active', cid === id);
+    content.replaceChildren(buildCastlePage(CASTLE_PAGES[id], ctx));
+    content.scrollTop = 0;
+    footer.replaceChildren(button(Lang.text('back'), () => (onBack ? onBack() : root.requestClose?.()), true));
+  };
+
+  for (const cat of CASTLE_CATEGORIES) {
+    const el = DOM(
+      {
+        domaudio: domAudioPresets.bigButton,
+        style: ['castle-menu-item-button', 'bs-cat'],
+        event: ['click', () => show(cat.id)],
+      },
+      Lang.text(cat.label),
+    );
+    catButtons.set(cat.id, el);
+    sidebar.append(el);
+  }
+
+  // id окна — как у «Настроек боя»: весь вид (#wbattle-settings в main.css) общий
+  const root = DOM(
+    { id: 'wbattle-settings', style: ['wcastle-menu--quest-bg', 'wcastle-settings'] },
+    DOM({ style: 'title-modal' }, DOM({ style: 'title-modal-text' }, Lang.text('preferences'))),
+    DOM({ style: 'bs-body' }, sidebar, DOM({ style: 'bs-main' }, content, footer)),
+  );
+  root.cleanup = () => NativeAPI.refreshVoiceHotkeys?.();
+
+  show(CASTLE_PAGES[shownCastleCategory] ? shownCastleCategory : CASTLE_CATEGORIES[0].id);
   return root;
 }

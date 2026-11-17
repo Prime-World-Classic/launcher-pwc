@@ -6,6 +6,7 @@ import { Splash } from './splash.js';
 import { domAudioPresets } from './domAudioPresets.js';
 import { uiIcon } from './uiIcon.js';
 import { CastleFarm } from './castleFarm.js';
+import { ChatImages } from './chatImages.js';
 
 // Общий чат замка.
 // У сообщения один id — chat_message.id из БД: его несут и живая рассылка
@@ -79,6 +80,9 @@ export class Chat {
 
   static searchClosed = false;
 
+  // Прикреплённая картинка (только администрация): { blob, w, h, url } — уходит со следующим сообщением.
+  static attachment = null;
+
   static init() {
     Chat.initView();
 
@@ -133,6 +137,30 @@ export class Chat {
       uiIcon('send'),
     );
 
+    Chat.fileInput = DOM({ tag: 'input', type: 'file', accept: ChatImages.TYPES.join(',') });
+    Chat.fileInput.style.display = 'none';
+    Chat.fileInput.addEventListener('change', () => {
+      const file = Chat.fileInput.files?.[0];
+      Chat.fileInput.value = '';
+      if (file) Chat.attachFile(file);
+    });
+    Chat.attachButton = DOM(
+      {
+        tag: 'button',
+        style: 'chat-attach',
+        domaudio: domAudioPresets.smallButton,
+        title: Lang.text('chatAttachImage'),
+        event: ['click', () => Chat.fileInput.click()],
+      },
+      uiIcon('image'),
+    );
+    Chat.field.addEventListener('paste', (event) => {
+      const file = Chat.imageFrom(event.clipboardData);
+      if (!file || !Chat.canAttach) return;
+      event.preventDefault();
+      Chat.attachFile(file);
+    });
+
     Chat.teamList = DOM({ style: ['chat-body', 'chat-body--team'] }, DOM({ style: 'chat-team-hint' }, Lang.text('chatTeamHint')));
 
     Chat.mmNotice = DOM({ style: 'chat-mm-notice' }, Lang.text('chatMMSearchClosed'));
@@ -161,6 +189,8 @@ export class Chat {
       Chat.field,
       Chat.counter,
       DOM({ style: 'chat-tabs' }, tab('all', Lang.text('chatTabAll')), tab('team', Lang.text('chatTabTeam'))),
+      Chat.attachButton,
+      Chat.fileInput,
       sendButton,
     );
 
@@ -174,6 +204,24 @@ export class Chat {
       Chat.input,
     );
     Chat.body.addEventListener('mouseleave', () => Chat.setPinnedOpen(false));
+    // Перетаскивание файла: без preventDefault NW открыл бы файл вместо лаунчера.
+    Chat.body.addEventListener('dragover', (event) => {
+      if (!Chat.canAttach || !event.dataTransfer?.types?.includes('Files')) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+      Chat.body.classList.add('chat--drop');
+    });
+    Chat.body.addEventListener('dragleave', (event) => {
+      if (!Chat.body.contains(event.relatedTarget)) Chat.body.classList.remove('chat--drop');
+    });
+    Chat.body.addEventListener('drop', (event) => {
+      Chat.body.classList.remove('chat--drop');
+      if (!Chat.canAttach) return;
+      const file = Chat.imageFrom(event.dataTransfer);
+      if (!file) return;
+      event.preventDefault();
+      Chat.attachFile(file);
+    });
     Chat.initResizeAnchor();
 
     Chat.initTooltip();
@@ -208,6 +256,7 @@ export class Chat {
 
   static setTab(name) {
     if (Chat.tab !== name && (Chat.editId || Chat.reply)) Chat.cancelCompose();
+    if (name === 'team') Chat.clearAttachment();
     Chat.tab = name;
     Chat.tabUnread[name] = 0;
     Chat.body.classList.toggle('chat--team', name === 'team');
@@ -357,6 +406,11 @@ export class Chat {
     return Number(App?.storage?.data?.id || 0);
   }
 
+  // Картинки в общий чат — только администрация (сервер проверяет сам).
+  static get canAttach() {
+    return App.isAdmin() && Chat.tab === 'all';
+  }
+
   static get canModerate() {
     return App.isAdmin() || App.isHelper();
   }
@@ -373,7 +427,7 @@ export class Chat {
 
   static sourceOf(data) {
     const source = String(data?.source || '').toLowerCase();
-    if (source === 'steam' || source === 'phone' || source === 'telegram') return source;
+    if (source === 'steam' || source === 'phone' || source === 'telegram' || source === 'vk') return source;
     if (Number(data?.client) === 2) return 'steam';
     if (Number(data?.client) === 1) return 'phone';
     return '';
@@ -394,6 +448,7 @@ export class Chat {
       pinned: Boolean(data?.pinned),
       source: Chat.sourceOf(data),
       tgTag: String(data?.tgTag || ''),
+      ...Chat.imageOf(data),
       echoId: String(data?.echoId || ''),
     };
   }
@@ -413,8 +468,15 @@ export class Chat {
       pinned: Boolean(Number(row?.pinned || 0)),
       source: Chat.sourceOf(row),
       tgTag: String(row?.tgTag || ''),
+      ...Chat.imageOf(row),
       echoId: '',
     };
+  }
+
+  static imageOf(data) {
+    const image = String(data?.image || '');
+    if (!/^[a-f0-9]{32}\.(webp|png|jpg|gif)$/.test(image)) return { image: '', imageW: 0, imageH: 0 };
+    return { image, imageW: Number(data?.imageW || 0), imageH: Number(data?.imageH || 0) };
   }
 
   static isOwn(message) {
@@ -430,7 +492,8 @@ export class Chat {
 
   static canEdit(message) {
     if (!message || !Chat.isOwn(message) || !Chat.items.has(message.id)) return false;
-    if (message.source === 'telegram' && !Chat.canModerate) return false;
+    // Сообщения из Telegram и беседы ВКонтакте правят только модераторы (как и в pw-api).
+    if ((message.source === 'telegram' || message.source === 'vk') && !Chat.canModerate) return false;
     return Date.now() - message.date <= Chat.EDIT_WINDOW_MS;
   }
 
@@ -520,6 +583,7 @@ export class Chat {
 
   static async loadHistory() {
     Chat.history = { page: 0, loading: false, hasMore: true };
+    Chat.updateCompose(); // вход уже выполнен — кнопка картинки для администрации
     await Chat.loadHistoryPage(0);
     await Chat.refreshPinned();
   }
@@ -693,7 +757,7 @@ export class Chat {
       parts.push(flag);
     }
 
-    const sourceLabels = { phone: 'titlePhone', steam: 'titleSteamClient', telegram: 'titleTelegram' };
+    const sourceLabels = { phone: 'titlePhone', steam: 'titleSteamClient', telegram: 'titleTelegram', vk: 'titleVk' };
     if (sourceLabels[message.source]) {
       const icon = DOM({ tag: 'span', style: ['chat-source-icon', `chat-source-icon-${message.source}`] });
       icon.dataset.tooltipSource = Lang.text(sourceLabels[message.source]);
@@ -733,6 +797,12 @@ export class Chat {
   // Текст: ссылки — только у администрации, картинка — у владельца (сообщение-ссылка).
   static renderText(message) {
     const text = DOM({ tag: 'span', style: 'chat-msg-text' });
+    if (message.image || message.imageUrl) {
+      const caption = ChatImages.caption(message);
+      if (caption) text.append(Chat.renderText({ ...message, image: '', imageUrl: '', text: caption }));
+      text.append(Chat.renderImage(message));
+      return text;
+    }
     if (message.userId === 1 && /^https:\/\/\S+$/.test(message.text)) {
       text.append(DOM({ tag: 'img', style: 'chat-msg-image', src: message.text }));
       return text;
@@ -757,6 +827,73 @@ export class Chat {
     return text;
   }
 
+  // Место под картинку резервируется по размеру из сообщения: лента не прыгает, пока файл качается.
+  static renderImage(message) {
+    const w = message.imageW || 4;
+    const h = message.imageH || 3;
+    const picture = DOM({ style: ['chat-msg-picture', 'chat-msg-picture--loading'], title: Lang.text('chatImage') });
+    picture.style.setProperty('--chat-image-ratio', String(w / h));
+    picture.style.setProperty('--chat-image-px', `${w}px`);
+    const img = DOM({ tag: 'img', style: 'chat-msg-picture-img', alt: Lang.text('chatImage'), draggable: false });
+    picture.append(img);
+    const show = (url) => {
+      img.src = url;
+      picture.classList.remove('chat-msg-picture--loading');
+      picture.addEventListener('click', (event) => {
+        event.stopPropagation();
+        Chat.openImage(url);
+      });
+    };
+    if (message.imageUrl) {
+      show(message.imageUrl);
+      return picture;
+    }
+    // Качаем, когда картинка появилась на экране (история — по 25 сообщений).
+    // Не скачалась (обрыв связи) — клик пробует ещё раз.
+    const start = () => {
+      picture.classList.add('chat-msg-picture--loading');
+      picture.classList.remove('chat-msg-picture--failed');
+      picture.title = Lang.text('chatImage');
+      ChatImages.load(message.image).then(show, (error) => {
+        console.error('[chat] image', message.image, error);
+        picture.classList.remove('chat-msg-picture--loading');
+        picture.classList.add('chat-msg-picture--failed');
+        picture.title = Lang.text('chatImageRetry');
+      });
+    };
+    picture.addEventListener('click', (event) => {
+      if (!picture.classList.contains('chat-msg-picture--failed')) return;
+      event.stopPropagation();
+      start();
+    });
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      observer.disconnect();
+      start();
+    });
+    requestAnimationFrame(() => observer.observe(picture));
+    return picture;
+  }
+
+  // Просмотр в полный размер; закрывается кликом или Esc.
+  static openImage(url) {
+    const close = () => {
+      document.removeEventListener('keydown', onKey, true);
+      Splash.hide();
+    };
+    const onKey = (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      close();
+    };
+    document.addEventListener('keydown', onKey, true);
+    Splash.show(
+      DOM({ style: 'chat-image-view', event: ['click', close] }, DOM({ tag: 'img', style: 'chat-image-view-img', src: url, draggable: false })),
+      false,
+    );
+  }
+
   static renderTime(message) {
     const time = DOM(
       { tag: 'span', style: 'chat-msg-time' },
@@ -778,9 +915,10 @@ export class Chat {
     if (Chat.canModerate && message.id > 0) {
       actions.append(Chat.actionButton(uiIcon('pin'), Chat.pinnedIds.has(message.id) ? Lang.text('chatUnpin') : Lang.text('chatPin'), () => Chat.togglePin(message.id)));
     }
-    if (message.text && !(message.userId === 1 && /^https:\/\/\S+$/.test(message.text))) {
+    const copyText = ChatImages.caption(message);
+    if (copyText && !(message.userId === 1 && /^https:\/\/\S+$/.test(message.text))) {
       const copy = Chat.actionButton(uiIcon('copy'), Lang.text('chatCopy'), async () => {
-        await Chat.copyText(Chat.stripReplyHandle(message.text));
+        await Chat.copyText(Chat.stripReplyHandle(copyText));
         copy.replaceChildren(uiIcon('check'));
         clearTimeout(copy.resetTimer);
         copy.resetTimer = setTimeout(() => copy.replaceChildren(uiIcon('copy')), 1200);
@@ -893,7 +1031,7 @@ export class Chat {
         event: ['click', () => Chat.setPinnedOpen(!Chat.pinnedOpen)],
       },
       uiIcon('pin'),
-      DOM({ tag: 'span', style: 'chat-pinned-preview' }, DOM({ tag: 'b' }, `${latest.nickname}: `), latest.text),
+      DOM({ tag: 'span', style: 'chat-pinned-preview' }, DOM({ tag: 'b' }, `${latest.nickname}: `), ChatImages.caption(latest) || Lang.text('chatImage')),
       DOM({ tag: 'span', style: 'chat-pinned-count' }, String(list.length)),
     );
 
@@ -1082,7 +1220,7 @@ export class Chat {
     Chat.reply = null;
     Chat.editId = id;
     Chat.items.get(id)?.classList.add('chat-msg--editing');
-    Chat.field.value = message.text;
+    Chat.field.value = ChatImages.caption(message);
     Chat.focusField();
     Chat.updateCompose();
   }
@@ -1114,17 +1252,64 @@ export class Chat {
     Chat.counter.textContent = length >= Chat.COUNTER_FROM ? `${length}/${Chat.MAX_LENGTH}` : '';
     Chat.counter.classList.toggle('chat-counter--limit', length >= Chat.MAX_LENGTH);
 
+    Chat.attachButton.style.display = Chat.canAttach || Chat.attachment ? '' : 'none';
+
     let label = '';
     if (Chat.editId) label = Lang.text('chatEditing');
     else if (Chat.reply) label = `${Lang.text('chatReplyTo')} ${Chat.reply.handle}`;
     Chat.banner.replaceChildren();
-    Chat.banner.classList.toggle('chat-compose-banner--visible', Boolean(label));
+    Chat.banner.classList.toggle('chat-compose-banner--visible', Boolean(label || Chat.attachment));
     if (label) {
       Chat.banner.append(
         DOM({ tag: 'span' }, label),
         DOM({ tag: 'button', style: 'chat-msg-action', title: Lang.text('cancel'), event: ['click', () => Chat.cancelCompose()] }, uiIcon('cross')),
       );
     }
+    if (Chat.attachment) {
+      const thumb = DOM({ tag: 'img', style: 'chat-compose-thumb', src: Chat.attachment.url, draggable: false });
+      thumb.addEventListener('click', () => Chat.openImage(Chat.attachment.url));
+      Chat.banner.append(
+        DOM(
+          { style: 'chat-compose-attachment' },
+          thumb,
+          DOM({ tag: 'span' }, `${Lang.text('chatImage')} · ${Chat.attachment.w}×${Chat.attachment.h} · ${Math.max(1, Math.round(Chat.attachment.blob.size / 1024))} KB`),
+        ),
+        DOM({ tag: 'button', style: 'chat-msg-action', title: Lang.text('cancel'), event: ['click', () => Chat.clearAttachment()] }, uiIcon('cross')),
+      );
+    }
+  }
+
+  // ---- Картинки (только администрация) ----
+
+  static imageFrom(transfer) {
+    for (const file of transfer?.files || []) {
+      if (/^image\//.test(file.type)) return file;
+    }
+    for (const item of transfer?.items || []) {
+      if (item.kind === 'file' && /^image\//.test(item.type)) return item.getAsFile();
+    }
+    return null;
+  }
+
+  static async attachFile(file) {
+    if (!Chat.canAttach) return;
+    Chat.hideError();
+    try {
+      const prepared = await ChatImages.prepare(file);
+      Chat.clearAttachment();
+      Chat.attachment = { ...prepared, url: URL.createObjectURL(prepared.blob) };
+      Chat.updateCompose();
+      Chat.focusField();
+    } catch (error) {
+      Chat.showError(error);
+    }
+  }
+
+  static clearAttachment() {
+    if (!Chat.attachment) return;
+    URL.revokeObjectURL(Chat.attachment.url);
+    Chat.attachment = null;
+    Chat.updateCompose();
   }
 
   // Свои сообщения, доступные для правки, — новые первыми.
@@ -1174,9 +1359,11 @@ export class Chat {
   static async sendMessage() {
     if (Chat.sending) return;
     const raw = Chat.field.value;
-    const text = raw.trim();
+    let text = raw.trim();
     const prefix = Chat.replyPrefix().trim();
-    if (!text.length || (prefix && text === prefix)) {
+    const withImage = Boolean(Chat.attachment) && !Chat.editId && Chat.tab === 'all';
+    if (!text.length && Chat.editId && Chat.messages.get(Chat.editId)?.image) text = ChatImages.PLACEHOLDER;
+    if (!withImage && (!text.length || (prefix && text === prefix))) {
       if (!Chat.editId) Chat.cancelCompose();
       return;
     }
@@ -1187,7 +1374,7 @@ export class Chat {
       if (Chat.editId) {
         await Chat.submitEdit(Chat.editId, text);
       } else {
-        await (Chat.tab === 'team' ? Chat.submitTeam(text, raw) : Chat.submitNew(text, raw));
+        await (Chat.tab === 'team' ? Chat.submitTeam(text, raw) : Chat.submitNew(text, raw, withImage ? Chat.attachment : null));
       }
     } catch (error) {
       Chat.showError(error);
@@ -1206,7 +1393,7 @@ export class Chat {
     }
   }
 
-  static async submitNew(text, raw) {
+  static async submitNew(text, raw, attachment = null) {
     const reply = Chat.reply;
     const echoId = `${Chat.myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const client = NativeAPI.isSteamClient ? 2 : 0;
@@ -1222,30 +1409,46 @@ export class Chat {
       date: Date.now(),
       edited: 0,
       source: Chat.sourceOf({ client }),
+      imageUrl: attachment?.url || '',
+      imageW: attachment?.w || 0,
+      imageH: attachment?.h || 0,
     });
     echo.classList.add('chat-msg--pending');
     echo.dataset.pending = '1';
-    echo.title = Lang.text('chatPending');
+    echo.title = Lang.text(attachment ? 'chatImageUploading' : 'chatPending');
     Chat.pending.set(echoId, echo);
     Chat.list.prepend(echo);
     Chat.scroll(true);
 
     Chat.reply = null;
     Chat.field.value = '';
+    // Превью картинки пока нужно копии в ленте — URL освобождается ниже.
+    if (attachment) Chat.attachment = null;
     Chat.updateCompose();
 
     try {
-      await App.api.request('user', 'chat', { message: text, to: reply?.userId || 0, client, echoId, v: Chat.PROTOCOL });
+      const image = attachment ? await ChatImages.upload(attachment.blob) : null;
+      await App.api.request('user', 'chat', {
+        message: text,
+        to: reply?.userId || 0,
+        client,
+        echoId,
+        v: Chat.PROTOCOL,
+        ...(image ? { image: image.key, imageW: image.w, imageH: image.h } : {}),
+      });
     } catch (error) {
-      // Отказ (мьют, флуд, длина): убираем копию и возвращаем текст в поле, если там пусто.
+      // Отказ (мьют, флуд, длина, загрузка): убираем копию, возвращаем текст и картинку, если там пусто.
       Chat.resolvePending(echoId);
+      if (attachment && !Chat.attachment) Chat.attachment = attachment;
+      else if (attachment) URL.revokeObjectURL(attachment.url);
       if (!Chat.field.value) {
         Chat.reply = reply;
         Chat.field.value = raw;
-        Chat.updateCompose();
       }
+      Chat.updateCompose();
       throw error;
     }
+    if (attachment) setTimeout(() => URL.revokeObjectURL(attachment.url), 60000);
   }
 
   static resolvePending(echoId) {

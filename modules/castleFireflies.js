@@ -9,8 +9,10 @@ import * as vec4 from './glMatrix/vec4.js';
 export class CastleFireflies {
   static count = 260;
   static cellSize = 4;
-  // меши, над которыми летают светлячки (по имени меша сцены)
-  static groundMeshes = /(^|\/)(terrain|understage|highland|rocks_|trees_|bushes_|water)/;
+  // меши, над которыми летают светлячки (по имени меша сцены). Дальние холмы (terrain_far_*)
+  // исключены: это фон за краем сцены, светлячки там не нужны, а высота поля (buildHeightField)
+  // от их вершин раздувается.
+  static groundMeshes = /(^|\/)(?!terrain_far)(terrain|understage|highland|rocks_|trees_|bushes_|water)/;
   static waterMeshes = /(^|\/)water_/; // реки и пруды; водопады (waterfall_*) — не поверхность
 
   static plantMeshes = /(^|\/)(trees_|bushes_)/;

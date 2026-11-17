@@ -11,11 +11,13 @@ const MONO = new Set([
   'sound-off',
   'mic',
   'mic-off',
+  'screen',
   'clock',
   'stopwatch',
   'refresh',
   'gear',
   'copy',
+  'image',
 ]);
 
 export function uiIconClass(name) {
