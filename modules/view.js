@@ -35,6 +35,7 @@ import { TalentAdmin } from './talentAdmin.js';
 import { ReplayUpload } from './replayUpload.js';
 import { CrashReport } from './crashReport.js';
 import { HeroFrame } from './heroFrame.js';
+import { HeroFrameSelect } from './heroFrameSelect.js';
 import { HeroStar } from './heroStar.js';
 import { Stats } from './stats.js';
 import { CastleFarm } from './castleFarm.js';
@@ -1003,7 +1004,7 @@ export class View {
   static castleTotalCrystal = DOM({ tag: 'div', style: ['question-icon'] }, DOM({ style: 'quest-counter' }, ''));
 
   static setCss(name = 'content/style.css') {
-    const cssVersion = '20261117-chat-images-2';
+    const cssVersion = '20261118-fair-unowned-1';
     const separator = name.includes('?') ? '&' : '?';
     const href = `${name}${separator}v=${cssVersion}`;
     // Каждый показ замка звал setCss заново и плодил одинаковые <link>: после
@@ -3581,7 +3582,7 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
         DOM({ style: ['castle-item-background', 'hover-brightness'] }),
         DOM({ style: ['castle-hero-item-bg', 'hover-brightness'] }),
         DOM({ style: ['castle-hero-item-img', 'no-hover-brightness'] }),
-        HeroFrame.createNode(item),
+        HeroFrame.createOwnNode(item),
         DOM({ style: ['castle-item-ornament', 'hover-brightness'] }),
         rank,
         heroNameBase,
@@ -3590,6 +3591,9 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
 
       hero.dataset.heroId = String(item.id);
       hero.dataset.url = `content/hero/${item.id}/${item.skin ? item.skin : 1}.webp`;
+
+      // выбор рамки героя — под портретом (heroFrameSelect.js); в правке списков не нужен
+      if (!editMode) hero.append(HeroFrameSelect.button(item));
 
       if (editMode) {
         const selected = View.castleHeroEditSelection.has(Number(item.id));

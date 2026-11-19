@@ -22,6 +22,10 @@ import { ReplayUpload } from './replayUpload.js';
 //  - ...-async.txt: рассинхрон. Пишет игра, как только сервер сообщил о нём
 //    (HybridServerNodeImpl.cpp): шаг и контрольные суммы мира всех клиентов.
 //    Игра при этом не падает, отчёт уходит, пока окно рассинхрона на экране;
+//  - ...-integrity.txt: проверка клиента нашла чужой код в процессе игры (ClientIntegrity.cpp:
+//    неподписанная DLL, подменённая DLL игры, поток или DLL вне загрузчика, правка кода exe).
+//    Игра не падает и ничего не блокирует; отчёт уходит, пока она запущена, — с копиями
+//    найденных DLL, хвостом общего лога и списком запущенных программ;
 //  - ...-crcdump-<шаг>.bin: контрольные данные мира за шаг рассинхрона, сервер
 //    запрашивает их у одного нормального клиента и у разошедшихся
 //    (game_crc_data_requests_enabled). Есть async.txt — мы разошлись, иначе
@@ -30,7 +34,13 @@ import { ReplayUpload } from './replayUpload.js';
 //    в Telegram, какой герой и какой стат разошлись.
 //
 // Из каждого отчёта собирается один архив .tar.xz — дамп, exception.log, общий лог
-// (*-output.txt), fastfail.log, реплей боя, meta.json — и шлётся по WS:
+// (*-output.txt), fastfail.log, реплей боя, meta.json — и шлётся по WS.
+// Кроме того: modules.txt (DLL процесса игры из дампа, посторонние сверху),
+// modules/<имя> — копии посторонних DLL с диска (не Windows, не папка игры, не Defender
+// и не известные оверлеи Steam/OBS/Discord/RivaTuner; штамп сверяется с дампом), processes.txt — запущенные программы
+// (pid, родитель, имя, путь к exe; без командной строки) на момент краша. Посторонние
+// DLL попадают и в сводку, выше стека. Путь в профиль Windows → %USERPROFILE%.
+// Отправка:
 // crash.begin → crash.chunk × N → crash.finish. От игрока ничего не нужно.
 // В crash.begin идёт и краткая сводка (summary): код исключения, штамп exe и стек
 // адресами. Имена функций подставляет бэкенд (objects/crashSymbols.js): таблицу имён
@@ -72,6 +82,40 @@ export class CrashReport {
 
   static SUMMARY_FRAMES = 8;
 
+  // Посторонние DLL в процессе игры (не Windows, не папка игры, не известные оверлеи):
+  // в сводку — не больше SUMMARY_MODULES, в архив — сами файлы в пределах лимитов
+  static SUMMARY_MODULES = 5;
+
+  static MODULE_FILE_MAX = 8 * 1024 * 1024;
+
+  static MODULE_FILES_TOTAL = 12 * 1024 * 1024;
+
+  static TRUSTED_MODULES = [
+    /^[a-z]:\\windows\\/i,
+    /\\programdata\\microsoft\\windows defender\\/i,
+  ];
+
+  // Известные оверлеи и запись экрана: тоже внедряются в игру, но это не чужой код
+  // против игры. В сводку и копии не идут, в modules.txt — отдельным списком.
+  // Сверяется путь целиком (папка программы + имя), не одно имя файла.
+  static KNOWN_OVERLAYS = [
+    ['Steam', /\\steam\\gameoverlayrenderer(64)?\.dll$/i],
+    ['OBS', /\\obs-studio\\data\\obs-plugins\\win-capture\\graphics-hook(32|64)\.dll$/i],
+    ['Discord', /\\discord(ptb|canary)?\\app-[\d.]+\\modules\\discord_hook-\d+\\discord_hook\\[^\\]+\\discordhook(64)?\.dll$/i],
+    ['RivaTuner', /\\rivatuner statistics server\\rtsshooks(64)?\.dll$/i],
+  ];
+
+  static overlayOf(path) {
+    const found = CrashReport.KNOWN_OVERLAYS.find(([, re]) => re.test(path));
+    return found ? found[0] : '';
+  }
+
+  // Список процессов снимается в момент краша: при выходе игры (отметка .crash/crash.txt)
+  // или при отправке, если краш случился не раньше PROCESS_FRESH_MS назад
+  static PROCESS_FRESH_MS = 10 * 60 * 1000;
+
+  static PROCESS_TIMEOUT_MS = 20000;
+
   // Дамп без async.txt столько времени — мы нормальная сторона рассинхрона
   static PEER_WAIT_MS = 60 * 1000;
 
@@ -80,7 +124,21 @@ export class CrashReport {
 
   static FOLDER_RE = /^\d{4}\.\d{2}\.\d{2}-\d{2}\.\d{2}\.\d{2}$/;
 
-  static REPORT_RE = /^([A-Za-z0-9._-]{1,80})-(\d{4}\.\d{2}\.\d{2}-\d{2}\.\d{2}\.\d{2})-(exception\.dmp|fatal\.dmp|crash\.txt|async\.txt|crcdump-\d+\.bin)$/;
+  static REPORT_RE = /^([A-Za-z0-9._-]{1,80})-(\d{4}\.\d{2}\.\d{2}-\d{2}\.\d{2}\.\d{2})-(exception\.dmp|fatal\.dmp|crash\.txt|async\.txt|crcdump-\d+\.bin|integrity\.txt)$/;
+
+  // Проверка клиента (integrity.txt): хвост общего лога и строк сводки
+  static INTEGRITY_LOG_TAIL = 2 * 1024 * 1024;
+
+  static INTEGRITY_SUMMARY_LINES = 8;
+
+  static INTEGRITY_TEXT = {
+    dll: 'DLL без подписи',
+    game_dll: 'подменена DLL игры',
+    thread: 'поток вне DLL',
+    exec_pe: 'DLL в памяти в обход загрузчика',
+    hidden_image: 'DLL спрятана из списка модулей',
+    text_patch: 'правка кода PW_Game.exe',
+  };
 
   static REPLAY_RE = /^[A-Za-z0-9._-]{1,80}-(\d{4}\.\d{2}\.\d{2}-\d{2}\.\d{2}\.\d{2})-([0-9a-f]{16,32})(?:-\d{1,2})?\.pwrp$/;
 
@@ -211,7 +269,12 @@ export class CrashReport {
       return;
     }
 
-    const note = JSON.stringify({ exitCode: CrashReport.hex(code), exe: await CrashReport.installedExe(), fastfail: await CrashReport.fastfailBlock() }, null, 2);
+    const note = JSON.stringify({
+      exitCode: CrashReport.hex(code),
+      exe: await CrashReport.installedExe(),
+      fastfail: await CrashReport.fastfailBlock(),
+      processes: await CrashReport.processSnapshot(now),
+    }, null, 2);
     if (fatal.length) {
       // последний дамп — ближайший к выходу; ранние — от обработанных исключений
       await fs.promises.writeFile(NativeAPI.path.join(run.folderPath, `${fatal.at(-1)}.crash`), note);
@@ -463,13 +526,25 @@ export class CrashReport {
     const replay = await CrashReport.findReplay(dump);
     if (replay) add(replay.name, await CrashReport.readTail(replay.path, CrashReport.MAX_REPLAY));
 
+    // DLL в процессе игры (из дампа) и копии посторонних
+    const modules = CrashReport.dumpModules(files.find((file) => file.name === dump.name)?.data);
+    const foreign = CrashReport.foreignModules(modules);
+    const copies = await CrashReport.moduleFiles(foreign);
+    if (modules.length) add('modules.txt', Buffer.from(CrashReport.modulesText(modules, foreign, copies.notes), 'utf8'));
+    for (const file of copies.files) add(file.name, file.data);
+
+    // запущенные программы: снятые при выходе игры, иначе — сейчас, если краш свежий
+    let processes = note.processes || '';
+    if (!processes && Date.now() - (dump.crashTime || dump.mtime) <= CrashReport.PROCESS_FRESH_MS) processes = await CrashReport.processSnapshot(dump.crashTime || dump.mtime);
+    if (processes) add('processes.txt', Buffer.from(String(processes), 'utf8'));
+
     const asyncReport = asyncData ? CrashReport.parseAsyncReport(asyncData.toString('latin1')) : null;
     const crash = dump.kind === 'exception' ? CrashReport.parseExceptionLog(exceptionText) : CrashReport.parseFastfail(String(note.fastfail || ''));
     const exe = CrashReport.dumpExe(files.find((file) => file.name === dump.name)?.data) || note.exe || null;
     const stack = crash.frames.map((rva) => CrashReport.frameAddress(rva));
     const summary = asyncReport
       ? CrashReport.asyncSummary(asyncReport, await CrashReport.exeStamp(), CrashReport.fpHash(fastfailTail))
-      : CrashReport.summary(dump.kind, note.exitCode, crash, stack, exe);
+      : CrashReport.summary(dump.kind, note.exitCode, crash, stack, exe, foreign);
 
     const watching = CrashReport.watchSession && dump.mtime >= CrashReport.watchSince - 60000;
     const meta = {
@@ -484,11 +559,116 @@ export class CrashReport {
       summary,
       stack,
       async: asyncReport,
+      foreignModules: foreign.map((module) => CrashReport.homePath(module.path)),
+      processes: processes ? 'processes.txt' : '',
       os: `${NativeAPI.os.type()} ${NativeAPI.os.release()} ${NativeAPI.os.arch()}`,
       nw: (process.versions && process.versions.nw) || '',
     };
     files.unshift({ name: 'meta.json', data: Buffer.from(JSON.stringify(meta, null, 2)) });
     return { files, meta };
+  }
+
+  // Отчёт проверки клиента (ClientIntegrity.cpp в игре): файл, копии найденных DLL,
+  // хвост общего лога, запущенные программы. Без реплея и дампа — игра не падала.
+  static async collectIntegrity(dump) {
+    const files = [];
+    const add = (name, data) => {
+      if (data) files.push({ name, data });
+    };
+    const data = await CrashReport.readTail(dump.path, CrashReport.MAX_DUMP);
+    add(dump.name, data);
+    const report = CrashReport.parseIntegrity(data ? data.toString('utf8') : '');
+
+    const dlls = report.triggers
+      .filter((item) => (item.type === 'dll' || item.type === 'game_dll') && item.fields.path)
+      .map((item) => ({ path: item.fields.path, timestamp: String(item.fields.stamp || '').toLowerCase(), size: String(item.fields.size || '').toLowerCase() }));
+    const copies = await CrashReport.moduleFiles(dlls);
+    for (const file of copies.files) add(file.name, file.data);
+    if (dlls.length) add('modules.txt', Buffer.from(CrashReport.modulesText([], dlls, copies.notes), 'utf8'));
+
+    let names = [];
+    try {
+      names = await NativeAPI.fileSystem.promises.readdir(dump.folderPath);
+    } catch {}
+    for (const name of names.filter((item) => /-output\.txt$/.test(item)).sort()) {
+      add(name, await CrashReport.readTail(NativeAPI.path.join(dump.folderPath, name), CrashReport.INTEGRITY_LOG_TAIL));
+    }
+
+    let processes = '';
+    if (Date.now() - dump.mtime <= CrashReport.PROCESS_FRESH_MS) processes = await CrashReport.processSnapshot(dump.mtime);
+    if (processes) add('processes.txt', Buffer.from(processes, 'utf8'));
+
+    const watching = CrashReport.watchSession && dump.mtime >= CrashReport.watchSince - 60000;
+    const meta = {
+      report: dump.name,
+      kind: dump.kind,
+      folder: dump.folder,
+      crashTime: new Date(dump.mtime).toISOString(),
+      exitCode: '',
+      exe: report.exe,
+      session: (watching && CrashReport.watchSession) || '',
+      replay: '',
+      summary: CrashReport.integritySummary(report),
+      stack: [],
+      triggers: report.triggers.map((item) => CrashReport.homePath(item.line)),
+      processes: processes ? 'processes.txt' : '',
+      os: `${NativeAPI.os.type()} ${NativeAPI.os.release()} ${NativeAPI.os.arch()}`,
+      nw: (process.versions && process.versions.nw) || '',
+    };
+    files.unshift({ name: 'meta.json', data: Buffer.from(JSON.stringify(meta, null, 2)) });
+    return { files, meta };
+  }
+
+  // integrity.txt → {exe, triggers: [{type, fields, line}]}
+  static parseIntegrity(text) {
+    const lines = String(text || '').split(/\r?\n/);
+    const exe = (/^exe=([0-9a-fA-F]{8})\b/m.exec(text || '') || [])[1] || '';
+    const triggers = [];
+    for (const line of lines) {
+      const m = /^\[trigger\] (\w+)(.*)$/.exec(line);
+      if (!m) continue;
+      const fields = {};
+      for (const field of m[2].matchAll(/(\w+)=(?:"([^"]*)"|(\S+))/g)) fields[field[1]] = field[2] !== undefined ? field[2] : field[3];
+      triggers.push({ type: m[1], fields, line: line.slice('[trigger] '.length) });
+    }
+    return { exe: exe.toLowerCase(), triggers };
+  }
+
+  // Короткий текст для Telegram
+  static integritySummary(report) {
+    const lines = [`🛡 Проверка клиента: находок ${report.triggers.length}${report.exe ? `, exe ${report.exe}` : ''}`];
+    const fileOf = (path) => {
+      const full = CrashReport.homePath(path);
+      const cut = full.lastIndexOf('\\');
+      const dir = cut > 0 ? full.slice(0, cut) : '';
+      return `${full.slice(cut + 1)}${dir ? ` — ${dir.length > 90 ? `…${dir.slice(-89)}` : dir}` : ''}`;
+    };
+    for (const item of report.triggers.slice(0, CrashReport.INTEGRITY_SUMMARY_LINES)) {
+      const f = item.fields;
+      let title = CrashReport.INTEGRITY_TEXT[item.type] || item.type;
+      let detail = '';
+      if (item.type === 'dll') {
+        if (/^bad/.test(f.signature || '')) title = 'DLL с неверной подписью';
+        detail = fileOf(f.path || '');
+      } else if (item.type === 'game_dll') {
+        detail = `${fileOf(f.path || '')} (штамп ${f.stamp}, ждали ${f.expected_stamp})`;
+      } else if (item.type === 'thread') {
+        // where — описание места с пробелами: «"путь"+0x…» или «private rwx alloc=…»
+        const where = / where=(.*?)(?: region_size=\S+)?$/.exec(item.line);
+        detail = `старт ${f.start}${where ? `, ${CrashReport.homePath(where[1])}` : ''}`;
+      } else if (item.type === 'exec_pe') {
+        detail = `${f.base}, ${f.region_size ? `0x${f.region_size}` : ''} ${f.protect || ''}`.trim();
+      } else if (item.type === 'hidden_image') {
+        detail = `${f.base} ${f.device_path || ''}`.trim();
+      } else if (item.type === 'text_patch') {
+        const target = / target=(.*)$/.exec(item.line);
+        detail = `${f.rva}, ${f.len} байт${target ? `, переход в ${CrashReport.homePath(target[1])}` : ''}`;
+      }
+      const text = `  ${title}${detail ? `: ${detail}` : ''}`;
+      lines.push(text.length > 200 ? `${text.slice(0, 197)}...` : text);
+    }
+    if (report.triggers.length > CrashReport.INTEGRITY_SUMMARY_LINES) lines.push(`  …ещё ${report.triggers.length - CrashReport.INTEGRITY_SUMMARY_LINES}`);
+    return lines.join('\n');
   }
 
   // exception.log → {code, detail, frames: [RVA PW_Game.exe]}
@@ -537,13 +717,14 @@ export class CrashReport {
     return { code, detail, frames };
   }
 
-  // PW_Game.exe из таблицы модулей минидампа: {timestamp, size} как в peHeader; нет — null
-  static dumpExe(data) {
-    if (!data || data.length < 32 || data.toString('latin1', 0, 4) !== 'MDMP') return null;
+  // Таблица модулей минидампа (ModuleListStream): [{path, timestamp, size}] (hex); не дамп — []
+  static dumpModules(data) {
+    if (!data || data.length < 32 || data.toString('latin1', 0, 4) !== 'MDMP') return [];
+    const result = [];
     try {
       const count = data.readUInt32LE(8);
       const directory = data.readUInt32LE(12);
-      if (directory + 12 * count > data.length) return null;
+      if (directory + 12 * count > data.length) return [];
       for (let i = 0; i < count; i++) {
         if (data.readUInt32LE(directory + 12 * i) !== 4) continue;
         const list = data.readUInt32LE(directory + 12 * i + 8);
@@ -551,17 +732,161 @@ export class CrashReport {
         for (let m = 0; m < modules; m++) {
           const entry = list + 4 + 108 * m;
           const name = data.readUInt32LE(entry + 20);
-          const text = data.toString('utf16le', name + 4, name + 4 + data.readUInt32LE(name));
-          if (text.toLowerCase().endsWith('pw_game.exe')) {
-            return {
-              timestamp: data.readUInt32LE(entry + 16).toString(16).padStart(8, '0'),
-              size: data.readUInt32LE(entry + 8).toString(16),
-            };
-          }
+          result.push({
+            path: data.toString('utf16le', name + 4, name + 4 + data.readUInt32LE(name)),
+            timestamp: data.readUInt32LE(entry + 16).toString(16).padStart(8, '0'),
+            size: data.readUInt32LE(entry + 8).toString(16),
+          });
         }
       }
     } catch {}
-    return null;
+    return result;
+  }
+
+  // PW_Game.exe из таблицы модулей минидампа: {timestamp, size} как в peHeader; нет — null
+  static dumpExe(data) {
+    const exe = CrashReport.dumpModules(data).find((module) => module.path.toLowerCase().endsWith('pw_game.exe'));
+    return exe ? { timestamp: exe.timestamp, size: exe.size } : null;
+  }
+
+  // DLL не из Windows, не из папки игры (…\Game\…) и не известные оверлеи: чужой код в процессе игры
+  static foreignModules(modules) {
+    const exe = modules.find((module) => module.path.toLowerCase().endsWith('pw_game.exe'));
+    const parts = exe ? exe.path.split('\\') : [];
+    // exe лежит в <игра>\Bin — своими считаем всё в <игра>
+    const gameDir = parts.length > 2 ? `${parts.slice(0, -2).join('\\')}\\`.toLowerCase() : '';
+    return modules.filter((module) => {
+      const path = module.path.toLowerCase();
+      if (!path || module === exe) return false;
+      if (gameDir && path.startsWith(gameDir)) return false;
+      if (CrashReport.overlayOf(module.path)) return false;
+      return !CrashReport.TRUSTED_MODULES.some((re) => re.test(module.path));
+    });
+  }
+
+  // Папка профиля игрока → %USERPROFILE% (имя учётной записи Windows в отчёт не нужно)
+  static homePath(path) {
+    const text = String(path || '');
+    let home = '';
+    try {
+      home = NativeAPI.os.homedir() || '';
+    } catch {}
+    if (home && text.toLowerCase().startsWith(home.toLowerCase())) return `%USERPROFILE%${text.slice(home.length)}`;
+    return text.replace(/^([a-z]:\\users\\)[^\\]+/i, '$1<user>');
+  }
+
+  // Имя файла в tar: только ASCII (ustar), с папкой modules/
+  static archiveModuleName(path, used) {
+    const base = String(path).split('\\').pop().replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 80) || 'module.dll';
+    let name = `modules/${base}`;
+    for (let i = 2; used.has(name); i++) name = `modules/${i}_${base}`;
+    used.add(name);
+    return name;
+  }
+
+  // Копии посторонних DLL с диска: {files: [{name, data}], notes: Map(path → строка)}.
+  // Файл могли пересобрать после краша — сверяем штамп PE с дампом.
+  static async moduleFiles(foreign) {
+    const files = [];
+    const notes = new Map();
+    const used = new Set();
+    let total = 0;
+    for (const module of foreign) {
+      let size = 0;
+      try {
+        size = (await NativeAPI.fileSystem.promises.stat(module.path)).size;
+      } catch {
+        notes.set(module.path, 'файла на диске уже нет');
+        continue;
+      }
+      if (size > CrashReport.MODULE_FILE_MAX || total + size > CrashReport.MODULE_FILES_TOTAL) {
+        notes.set(module.path, `не приложен: ${size} байт, лимит`);
+        continue;
+      }
+      const data = await CrashReport.readTail(module.path, CrashReport.MODULE_FILE_MAX);
+      if (!data) {
+        notes.set(module.path, 'не прочитался');
+        continue;
+      }
+      const header = CrashReport.peHeader(data.subarray(0, 4096));
+      const name = CrashReport.archiveModuleName(module.path, used);
+      files.push({ name, data });
+      total += data.length;
+      const same = header && header.timestamp === module.timestamp;
+      notes.set(module.path, same ? `приложен: ${name}` : `приложен: ${name}, НО на диске другая сборка (штамп ${header ? header.timestamp : '?'})`);
+    }
+    return { files, notes };
+  }
+
+  // modules.txt: посторонние сверху, затем все модули процесса
+  static modulesText(modules, foreign, notes) {
+    const lines = [];
+    lines.push(`Посторонние DLL: ${foreign.length}`);
+    for (const module of foreign) {
+      lines.push(`${CrashReport.homePath(module.path)}\tштамп ${module.timestamp}\t${notes.get(module.path) || ''}`);
+    }
+    const overlays = modules.filter((module) => CrashReport.overlayOf(module.path));
+    if (overlays.length) {
+      lines.push('', `Известные оверлеи: ${overlays.length}`);
+      for (const module of overlays) lines.push(`${CrashReport.overlayOf(module.path)}\t${CrashReport.homePath(module.path)}`);
+    }
+    if (modules.length) {
+      lines.push('', `Все модули процесса игры: ${modules.length}`);
+      for (const module of modules) lines.push(`${module.timestamp}\t${module.size}\t${CrashReport.homePath(module.path)}`);
+    }
+    return `${lines.join('\r\n')}\r\n`;
+  }
+
+  // Запущенные программы: pid, родитель, имя, путь к exe (без командной строки — в ней
+  // бывают токены). PowerShell/CIM, если не вышло — tasklist. Пустая строка — не удалось.
+  static async processSnapshot(crashTime = Date.now()) {
+    if (!CrashReport.supported()) return '';
+    const head = `Снято: ${new Date().toISOString()}, краш: ${new Date(crashTime).toISOString()}`;
+    const script = [
+      '[Console]::OutputEncoding = [Text.Encoding]::UTF8',
+      'Get-CimInstance Win32_Process | Sort-Object ProcessId | ForEach-Object { "{0}`t{1}`t{2}`t{3}" -f $_.ProcessId, $_.ParentProcessId, $_.Name, $_.ExecutablePath }',
+    ].join('; ');
+    const encoded = Buffer.from(script, 'utf16le').toString('base64');
+    const cim = await CrashReport.runCapture('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded]);
+    if (cim && /\t/.test(cim)) {
+      const rows = cim.split(/\r?\n/).filter(Boolean).map((line) => {
+        const cells = line.split('\t');
+        cells[3] = CrashReport.homePath(cells[3] || '');
+        return cells.join('\t');
+      });
+      return `${head}\r\npid\tparent\tname\tpath\r\n${rows.join('\r\n')}\r\n`;
+    }
+    const list = await CrashReport.runCapture('tasklist.exe', ['/fo', 'csv', '/nh'], 'latin1');
+    return list ? `${head}\r\n(tasklist, без путей)\r\n${list}` : '';
+  }
+
+  // Запустить программу и вернуть stdout ('' — ошибка или таймаут)
+  static runCapture(exe, args, encoding = 'utf8') {
+    return new Promise((resolve) => {
+      let child;
+      try {
+        child = NativeAPI.childProcess.spawn(exe, args, { windowsHide: true });
+      } catch {
+        resolve('');
+        return;
+      }
+      if (NativeAPI.trackChildBeforeReload) NativeAPI.trackChildBeforeReload(child);
+      const chunks = [];
+      let total = 0;
+      const timer = setTimeout(() => child.kill(), CrashReport.PROCESS_TIMEOUT_MS);
+      child.stdout.on('data', (data) => {
+        total += data.length;
+        if (total <= 4 * 1024 * 1024) chunks.push(data);
+      });
+      child.on('error', () => {
+        clearTimeout(timer);
+        resolve('');
+      });
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        resolve(code === 0 ? Buffer.concat(chunks).toString(encoding) : '');
+      });
+    });
   }
 
   // Заголовок установленного PW_Game.exe: {timestamp, size} | null
@@ -600,7 +925,7 @@ export class CrashReport {
   }
 
   // Короткий текст для Telegram: что случилось и где
-  static summary(kind, exitCode, crash, stack, exe) {
+  static summary(kind, exitCode, crash, stack, exe, foreign = []) {
     const lines = [];
     if (crash.code) {
       const text = CrashReport.CODE_TEXT[crash.code];
@@ -610,6 +935,17 @@ export class CrashReport {
       const code = String(exitCode || '');
       const text = CrashReport.CODE_TEXT[code];
       lines.push(`Игра закрылась без окна краша, код выхода ${code || '?'}${text && code !== crash.code ? ` (${text})` : ''}${kind === 'crash' ? ', дампа нет' : ''}`);
+    }
+    // выше стека: подпись в Telegram обрезается с конца
+    if (foreign.length) {
+      lines.push(`⚠ Посторонние DLL в игре: ${foreign.length}`);
+      for (const module of foreign.slice(0, CrashReport.SUMMARY_MODULES)) {
+        const path = CrashReport.homePath(module.path);
+        const cut = path.lastIndexOf('\\');
+        const dir = cut > 0 ? path.slice(0, cut) : '';
+        lines.push(`  ${path.slice(cut + 1)}${dir ? ` — ${dir.length > 90 ? `…${dir.slice(-89)}` : dir}` : ''}`);
+      }
+      if (foreign.length > CrashReport.SUMMARY_MODULES) lines.push(`  …ещё ${foreign.length - CrashReport.SUMMARY_MODULES} (modules.txt)`);
     }
     if (exe) lines.push(`exe ${exe.timestamp}`);
     for (const frame of stack.slice(0, CrashReport.SUMMARY_FRAMES)) {
@@ -778,7 +1114,7 @@ export class CrashReport {
   // {skip} | {done} | {retry}
   static async send(dump) {
     if (dump.kind === 'crcdump') return CrashReport.sendCrcDump(dump);
-    const { files, meta } = await CrashReport.collect(dump);
+    const { files, meta } = dump.kind === 'integrity' ? await CrashReport.collectIntegrity(dump) : await CrashReport.collect(dump);
     const tar = CrashReport.tar(files, dump.mtime);
 
     const begin = await App.api.request('crash', 'begin', { name: dump.name, rawSize: tar.length, session: meta.session, summary: meta.summary });

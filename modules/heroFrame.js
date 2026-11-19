@@ -30,6 +30,15 @@ export class HeroFrame {
     return node;
   }
 
+  // рамка своего героя (из build.heroAll): помечена data-own-hero, чтобы при смене рамки
+  // (heroFrameSelect.js) обновить её на месте, без перерисовки списка
+  static createOwnNode(hero) {
+    const node = HeroFrame.createNode(hero);
+    const id = Number(hero?.id) || 0;
+    if (id) node.dataset.ownHero = String(id);
+    return node;
+  }
+
   static apply(node, data) {
     if (!node) return;
     const url = HeroFrame.url(data?.wins, data?.frameType);

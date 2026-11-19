@@ -1045,6 +1045,23 @@ body.castle-cinematic {
     rgba(0, 0, 0, 1) 0.05cqh -0.05cqh 0.2cqh;
 }
 
+/* training is starting (CastleNAVBAR.setTrainingStarting): grey, not clickable, spinner */
+.castle-button-play-3.castle-button-play-loading {
+  pointer-events: none;
+  cursor: default;
+}
+
+.castle-button-play-spinner {
+  width: 1.6em;
+  height: 1.6em;
+  box-sizing: border-box;
+  border: 0.22em solid rgba(255, 231, 138, 0.25);
+  border-top-color: #ffe78a;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 0.15em rgba(0, 0, 0, 0.9));
+  animation: rotate 0.8s linear infinite;
+}
+
 .castle-button-play-test {
   z-index: 2;
   background-image: url('img/b3.png');

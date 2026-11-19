@@ -21,6 +21,7 @@ import { domAudioPresets } from './domAudioPresets.js';
 import { SOUNDS_LIBRARY } from './soundsLibrary.js';
 import { loadKeybinds } from './keybindings/keybindings.io.js';
 import { LanePositionQueue } from './lanePositionQueue.js';
+import { HeroFrameSelect } from './heroFrameSelect.js';
 
 export class MM {
   static id = '';
@@ -269,6 +270,9 @@ export class MM {
     MM.lanePositionQueue?.dispose();
     MM.lobbyRunId++;
     MM.lobbySkinRequestId++;
+    // окно выбора рамки, открытое из тамбура, висит в body — закрываем вместе с тамбуром
+    if (HeroFrameSelect.lobbyFrameButton?.classList.contains('hero-frame-select--open')) HeroFrameSelect.closePicker();
+    HeroFrameSelect.lobbyFrameButton = null;
     clearInterval(MM.lobbyPreviewInterval);
     MM.lobbyPreviewInterval = null;
     if (MM.preview) {
@@ -402,15 +406,22 @@ export class MM {
   // героя из слота пати, поэтому сначала heroParty. Общая для «В бой!» в режиме
   // «Тренировка» и кнопки «Тренировка» в билде (build/heroPanel.js).
   static async startTraining(heroId) {
+    // уже запускаем: повторное нажатие упиралось в кд бэкенда (кнопка серая, castleNavBar.js)
+    if (CastleNAVBAR.trainingStarting) return;
+    if (MM.isBlockedByUpdate()) return;
+    if (!NativeAPI.status) return App.error(Lang.text('windowsLauncherRequired'));
+
+    CastleNAVBAR.setTrainingStarting(true);
+
     try {
-      if (MM.isBlockedByUpdate()) return;
-      if (!NativeAPI.status) return App.error(Lang.text('windowsLauncherRequired'));
       await MM.gameStartCheck();
       await App.api.request(App.CURRENT_MM, 'heroParty', { id: MM.partyId, hero: heroId });
       await App.api.request(App.CURRENT_MM, 'start', {
         version: App.PW_VERSION, mode: CastleNAVBAR.TRAINING_MODE, mac: await NativeAPI.getMACAdresses(), cache: await NativeAPI.getCacheIndex(), v: 2,
       });
+      // успех — кнопку вернёт MM.finish (игра запущена) или страховочный таймер
     } catch (error) {
+      CastleNAVBAR.setTrainingStarting(false);
       App.error(error);
     }
   }
@@ -609,6 +620,7 @@ export class MM {
 
   static async lobbyBuildView(heroId) {
     MM.lobbySkinView(heroId);
+    HeroFrameSelect.refreshLobby();
     MM.lobbyTabObserver?.disconnect();
     MM.lobbyTabObserver = null;
     if (MM.lobbyBuildField.firstChild) {
@@ -1086,7 +1098,7 @@ export class MM {
     MM.lobbyConfirm.disabled = currentUserId != data.target;
 
     lobbyBuild.append(
-      DOM({ style: 'mm-lobby-skin-title' }, Lang.text('mmSelectSkin')),
+      DOM({ style: 'mm-lobby-skin-title' }, DOM({ tag: 'span' }, Lang.text('mmSelectSkin')), HeroFrameSelect.lobbyButton()),
       MM.lobbySkinBody,
       DOM({ style: 'mm-lobby-section-title' }, Lang.text('mmHeroBuild')),
       MM.lobbyBuildField,
@@ -1148,6 +1160,17 @@ export class MM {
         : `url(content/hero/empty.webp)`;
 
       player.append(hero, name);
+
+      // рейтинг аккаунта союзника — плашка под ником (pw-api LobbySnapshot: playerRatingVisual только у своей команды)
+      const accountRating = isAlly ? Math.round(Number(data.users[key].playerRatingVisual) || 0) : 0;
+      if (accountRating > 0) {
+        player.append(DOM(
+          { style: 'mm-lobby-account-rating', ariaLabel: `${Lang.text('mmAccountRating')}: ${accountRating}` },
+          DOM({ style: 'mm-lobby-account-rating-gem', ariaHidden: 'true' }),
+          DOM({ tag: 'span', style: 'mm-lobby-account-rating-value' }, String(accountRating)),
+          DOM({ tag: 'span', style: 'mm-lobby-account-rating-tip', ariaHidden: 'true' }, Lang.text('mmAccountRating')),
+        ));
+      }
 
       if (key == data.target) {
         player.classList.add('mm-lobby-header-team-player--active');
@@ -1789,6 +1812,7 @@ export class MM {
   }
 
   static finish(data) {
+    CastleNAVBAR.setTrainingStarting(false);
     Timer.stop();
     MM.skipVoiceRestoreOnClose = true;
     MM.close();
@@ -1857,6 +1881,17 @@ export class MM {
         }
       }
     }
+  }
+
+  // рамка союзника (или своя) сменилась в тамбуре: ставим, только если на портрете тот же герой
+  static eventFrame(data) {
+    if (!data || `${data.id}` !== `${MM.id}`) return;
+    const player = document.getElementById(`PLAYER${data.userId}`);
+    if (!player || Number(player.dataset.hero) !== Number(data.heroId)) return;
+    const frame = player.querySelector('.mm-frame');
+    if (!frame) return;
+    const frameId = Number(data.frameId) || 0;
+    frame.style.backgroundImage = frameId > 0 ? `url(content/frames/${frameId}.png)` : 'none';
   }
 
   static eventBanHero(data) {

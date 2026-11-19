@@ -161,6 +161,11 @@ export class Events {
     MM.eventChangeHero(data);
   }
 
+  // союзник сменил рамку героя в тамбуре (pw-api refreshLobbyFrame)
+  static MMFrame(data) {
+    MM.eventFrame(data);
+  }
+
   static MMBanHero(data) {
     if (!NativeAPI.status) {
       return;
@@ -426,6 +431,22 @@ export class Events {
     const rect = el.getBoundingClientRect();
     tooltip.style.left = `${rect.left - tooltip.offsetWidth - 8}px`;
     tooltip.style.top = `${rect.top}px`;
+  }
+
+  // Лобби распалось (кто-то не подтвердил бой или не выбрал героя), а нас сервер
+  // вернул в очередь. Сразу закрываем «бой найден»/тамбур и показываем поиск с
+  // кнопкой отмены: data.hold мс сервер новый бой нам не подберёт — время отменить поиск.
+  static MMRequeue(data) {
+    if (!NativeAPI.status || MM.isInBattle) {
+      return;
+    }
+
+    if (data?.id && MM.id && String(MM.id) === String(data.id) && !MM.preview) {
+      Timer.stop();
+      MM.close();
+    }
+
+    MM.searchActive(true);
   }
 
   static MMKick(data) {

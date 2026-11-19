@@ -14,7 +14,7 @@
 
 import { ClientData, ABILITY_TYPES } from './clientData.js';
 import { runFormula, abilityScale } from './formula.js';
-import { precompileMarkup, renderUiMarkup, formatValue, escapeHtml } from './tooltipMarkup.js';
+import { precompileMarkup, renderUiMarkup, formatValue, escapeHtml, substituteMacros } from './tooltipMarkup.js';
 import { ddsToDataUrl } from './dds.js';
 
 const ABILITYFLAGS_SPENDLIFE = 16384;
@@ -423,7 +423,8 @@ export class TalentTooltip {
       for (const id of Object.keys(macros)) if (/^TThead|^TTbottom/.test(id)) macros[id] = '';
     }
     const env = this.env();
-    const ui = precompileMarkup(this.markRecommended(texts.description || texts.commonDescription || ''), env, macros);
+    const source = substituteMacros(this.markRecommended(texts.description || texts.commonDescription || ''), macros);
+    const ui = precompileMarkup(this.castleKitMarkup(source), env, macros);
     await TalentTooltip.preloadImages(ui);
     return renderUiMarkup(ui, env);
   }
@@ -443,7 +444,8 @@ export class TalentTooltip {
     const env = this.env();
     // блок набора; нет его — описание таланта без шапки
     if (!id) for (const name of Object.keys(macros)) if (/^TThead|^TTbottom/.test(name)) macros[name] = '';
-    let ui = precompileMarkup(id ? `$(${id})` : this.markRecommended(texts.description || texts.commonDescription || ''), env, macros);
+    const kitSource = substituteMacros(id ? `$(${id})` : this.markRecommended(texts.description || texts.commonDescription || ''), macros);
+    let ui = precompileMarkup(this.castleKitMarkup(kitSource), env, macros);
     // название набора сверху; «N/M» в билде — если текст сам не пишет «Название (собрано N)».
     // Блок набора с названием (красные наборы) заголовка не требует; у части наборов название
     // в блоке только для боя (<session>) — тогда заголовок нужен
@@ -454,6 +456,30 @@ export class TalentTooltip {
     }
     await TalentTooltip.preloadImages(ui);
     return renderUiMarkup(ui, env);
+  }
+
+  // Бонусы набора «N талантов» в замке. Часть наборов (Опытный воин и др.) подсвечивает их в
+  // <castle> по числу собранных: заголовок TT_MARK или TT_BodyLight, текст бонуса гаснет
+  // (TT_Body_Disable), между уровнями пустая строка. У остальных (Горячее время, Божественный
+  // потенциал, V1–V6 …) подсветка есть только для боя — <session><if=talent.if.BonusNActive>, —
+  // и лаунчер её прячет: заголовки белые, всё вплотную. Для них условие боя заменяем на
+  // «собрано ≥ N» (в бою BonusNActive — то же самое), и вид тот же, что у Опытного воина.
+  castleKitMarkup(text) {
+    if (!text || /<castle>\s*<if=talent\.activatedInKit/.test(text) || !/talent\.if\.Bonus/i.test(text)) return text;
+    const bonus = /<if=talent\.if\.Bonus(?:(\d+)Active|Active(\d+))>/i;
+    let out = text
+      // пустая строка между уровнями, как <br><br:5><castle><br></castle> у Опытного воина
+      .replace(/<br><br:5>(?=\s*<session>\s*<if=talent\.if\.Bonus)/gi, '<br><br:5><br>')
+      .replace(/<session>(\s*<if=talent\.if\.Bonus[^>]*>[\s\S]*?<\/if>\s*)<\/session>/gi, (match, body) => {
+        const m = bonus.exec(body);
+        return m ? body.replace(bonus, `<if=talent.activatedInKit.greaterOrEqual.${m[1] || m[2]}>`) : match;
+      });
+    // «(активировано N)» только для боя — в замке «(собрано N)», как у остальных наборов
+    if (!/<castle>\s*\(/.test(out)) {
+      const collected = this.lang === 'ru' ? 'собрано' : 'collected';
+      out = out.replace(/(<session>\s*\([^<]*<\/session>)/, `$1<castle>(${collected}</castle>`);
+    }
+    return out;
   }
 
   // название набора; у наборов с заглушкой вместо названия — имя таланта

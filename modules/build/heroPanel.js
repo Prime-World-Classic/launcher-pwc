@@ -256,7 +256,10 @@ export class HeroPanel {
       backgroundSize: '70%, 100%', backgroundPosition: 'center, center', backgroundRepeat: 'no-repeat, no-repeat',
     });
     // рамка по победам на герое (wins/frameType из build.heroAll) — под плашкой ранга
-    avatar.append(HeroFrame.createNode(HeroFrame.fromHeroList(MM.hero, hero.id)), DOM({ style: 'rank' }, rankIcon));
+    const frameNode = HeroFrame.createNode(HeroFrame.fromHeroList(MM.hero, hero.id));
+    // своя рамка героя меняется на месте (heroFrameSelect.js)
+    if (Number(hero.id) > 0) frameNode.dataset.ownHero = String(hero.id);
+    avatar.append(frameNode, DOM({ style: 'rank' }, rankIcon));
 
     // подсказка у аватара — в документе, рядом с ним
     document.querySelectorAll('.build-avatar-tip').forEach((el) => el.remove());

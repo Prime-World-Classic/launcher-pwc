@@ -80,7 +80,7 @@ export class Chat {
 
   static searchClosed = false;
 
-  // Прикреплённая картинка (только администрация): { blob, w, h, url } — уходит со следующим сообщением.
+  // Прикреплённая картинка (администрация и хелперы): { blob, w, h, url } — уходит со следующим сообщением.
   static attachment = null;
 
   static init() {
@@ -406,9 +406,9 @@ export class Chat {
     return Number(App?.storage?.data?.id || 0);
   }
 
-  // Картинки в общий чат — только администрация (сервер проверяет сам).
+  // Картинки в общий чат — администрация и хелперы (сервер проверяет сам).
   static get canAttach() {
-    return App.isAdmin() && Chat.tab === 'all';
+    return (App.isAdmin() || App.isHelper()) && Chat.tab === 'all';
   }
 
   static get canModerate() {
@@ -584,8 +584,16 @@ export class Chat {
   static async loadHistory() {
     Chat.history = { page: 0, loading: false, hasMore: true };
     Chat.updateCompose(); // вход уже выполнен — кнопка картинки для администрации
+    // Без входа бэкенд отвечает на историю «Access denied»: грузим после входа (authChanged).
+    if (!App.storage?.data?.token) return;
     await Chat.loadHistoryPage(0);
     await Chat.refreshPinned();
+  }
+
+  // Вход/регистрация/выход (App.notificationsAuthChanged). При запуске без входа история
+  // не загрузилась, а живые сообщения приходят — без этого лента оставалась почти пустой.
+  static authChanged() {
+    Chat.loadHistory().catch((error) => console.error('Failed to load chat history after login', error));
   }
 
   static async loadHistoryPage(page) {
@@ -1279,7 +1287,7 @@ export class Chat {
     }
   }
 
-  // ---- Картинки (только администрация) ----
+  // ---- Картинки (администрация и хелперы) ----
 
   static imageFrom(transfer) {
     for (const file of transfer?.files || []) {

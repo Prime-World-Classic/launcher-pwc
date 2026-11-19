@@ -67,6 +67,28 @@ export class CastleNAVBAR {
 
   static searchBanTimer = 0;
 
+  // Запуск тренировки: от нажатия до запуска игры (MMEnd → MM.finish) или ошибки
+  // кнопка «В бой!» серая, не нажимается и крутит загрузку — повторные нажатия
+  // упирались в кд бэкенда и сыпали ошибками. Таймер — страховка, если MMEnd не придёт.
+  static TRAINING_START_TIMEOUT_MS = 30000;
+
+  static trainingStarting = false;
+
+  static trainingStartingTimer = 0;
+
+  static setTrainingStarting(on) {
+    CastleNAVBAR.trainingStarting = Boolean(on);
+
+    clearTimeout(CastleNAVBAR.trainingStartingTimer);
+    CastleNAVBAR.trainingStartingTimer = 0;
+
+    if (on) {
+      CastleNAVBAR.trainingStartingTimer = setTimeout(() => CastleNAVBAR.setTrainingStarting(false), CastleNAVBAR.TRAINING_START_TIMEOUT_MS);
+    }
+
+    CastleNAVBAR.renderFightButton();
+  }
+
   static fightLabel() {
     return App.CURRENT_MM == 'mmtest' ? Lang.text('fight') + ' test' : Lang.text('fight');
   }
@@ -88,6 +110,14 @@ export class CastleNAVBAR {
     const button = CastleNAVBAR.body?.children[5];
 
     if (!button || CastleNAVBAR.state) {
+      return;
+    }
+
+    button.classList.toggle('castle-button-play-loading', CastleNAVBAR.trainingStarting);
+
+    if (CastleNAVBAR.trainingStarting) {
+      button.replaceChildren(DOM({ style: 'castle-button-play-spinner' }));
+      button.style.filter = 'grayscale(85%) brightness(0.8)';
       return;
     }
 

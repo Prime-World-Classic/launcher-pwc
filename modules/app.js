@@ -31,8 +31,8 @@ export class App {
   // PW_VERSION обязан совпадать с версией модели того режима, в который идёт
   // клиент: mm ↔ objects/mm.model.js, mmtest ↔ objects/mmtest.model.js
   // (`this.version`) — иначе каждый mm-запрос даёт «Вышло обновление …».
-  // С 2.16.0 обе модели одной версии (сейчас 3.1.0).
-  static PW_VERSION = '3.1.0';
+  // С 2.16.0 обе модели одной версии (сейчас 3.1.1).
+  static PW_VERSION = '3.1.1';
 
   // Режим матчмейкинга — по манифесту (clientChannel.js): тестовая сборка
   // (package.json.name с «Dev») → mmtest, публичная → mm. До 2026-10-19 значение
@@ -580,10 +580,10 @@ export class App {
       11, 7, 6, 5, 7, 5, 7, 8, 5, 5, 2, 3, 7, 7, 4, 4, 5, 4, 4, 5,
     ];
     const users = {
-      10: { nickname: 'Nesh', hero: 15, ready: 1, rating: 1300, team: 1, banhero: 59 },
-      1858: { nickname: 'DOK', hero: 6, ready: 1, rating: 1100, team: 1, banhero: 14 },
-      2: { nickname: 'Коао', hero: 12, ready: 1, rating: 1100, team: 1, banhero: 62 },
-      4: { nickname: 'LantarmОченьДлинныйНикнейм', hero: 24, ready: 1, rating: 1100, team: 1, banhero: 9 },
+      10: { nickname: 'Nesh', hero: 15, ready: 1, rating: 1300, playerRatingVisual: 1652, team: 1, banhero: 59 },
+      1858: { nickname: 'DOK', hero: 6, ready: 1, rating: 1100, playerRatingVisual: 1398, team: 1, banhero: 14 },
+      2: { nickname: 'Коао', hero: 12, ready: 1, rating: 1100, playerRatingVisual: 1517, team: 1, banhero: 62 },
+      4: { nickname: 'LantarmОченьДлинныйНикнейм', hero: 24, ready: 1, rating: 1100, playerRatingVisual: 2241, team: 1, banhero: 9 },
       5: { nickname: '123', hero: 8, ready: 1, rating: 1100, team: 2, banhero: 49 },
       6: { nickname: '123', hero: 2, ready: 1, rating: 1100, team: 2, banhero: 21 },
       7: { nickname: 'Farfania', hero: 9, ready: 1, rating: 1100, team: 2, banhero: 22 },
@@ -592,7 +592,7 @@ export class App {
     };
     users[previewUserId] = {
       nickname: App.storage.data.login || 'Вы', hero: 20, ready: 0,
-      rating: 1284, select: true, team: 1, commander: true, banhero: 16,
+      rating: 1284, playerRatingVisual: 1268, select: true, team: 1, commander: true, banhero: 16,
     };
     await MM.lobby({
       id: 1, users, target: previewUserId,
@@ -1026,6 +1026,7 @@ export class App {
     App.notificationsAuditPlayerId = 0;
     App.renderNotifications();
     App.autoLoginFromStoredGameAccount();
+    Chat.authChanged();
   }
 
   static getNotificationsToken() {

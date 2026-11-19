@@ -1,6 +1,7 @@
 import { DOM } from './dom.js';
 import { Lang } from './lang.js';
 import { View } from './view.js';
+import { HeroFrameSelect } from './heroFrameSelect.js';
 import { App } from './app.js';
 import { MM } from './mm.js';
 import { Build } from './build.js';
@@ -232,7 +233,6 @@ export async function syncFairGameFiles() {
 
 let shownTab = 'all';
 let sortMode = 'default';
-let hideOwned = false;
 
 function crystalCount() {
   return Number(View.castleTotalCrystal?.firstChild?.innerText) || 0;
@@ -348,11 +348,6 @@ export async function fair(tab = null, { previewData = null } = {}) {
     // стандартный экран / похвала — всегда в коллекции
     ctx.purchased.push({ id: 0, categoryId, externalId: 'default', local: true });
   }
-  // купленные экраны и похвалы (в shop.available их нет) — тоже в разделах ярмарки, скрываются «Скрыть купленные»
-  for (const item of ctx.purchased) {
-    if (!LOCAL_CATEGORIES.includes(item.categoryId) || item.id == 0) continue;
-    if (!ctx.available.some((a) => a.categoryId === item.categoryId && a.id == item.id)) ctx.available.push({ ...item, enabled: false });
-  }
 
   if (!previewData) await Shop.retrieveLastUpdate();
   const initialTimeLeft = previewData ? 3600000 : Shop.timeBeforeUpdate;
@@ -375,12 +370,6 @@ export async function fair(tab = null, { previewData = null } = {}) {
     sort.append(DOM({ tag: 'option', value }, Lang.text(label)));
   }
   sort.value = sortMode;
-  const hideCheck = DOM({ tag: 'input', type: 'checkbox', style: 'bs-check', id: 'fair-hide-owned', checked: hideOwned, domaudio: domAudioPresets.defaultSelect });
-  const hideRow = DOM(
-    { style: ['bs-row', 'bs-row--check', 'fair-hide'] },
-    hideCheck,
-    DOM({ tag: 'label', style: 'bs-row-label', htmlFor: 'fair-hide-owned' }, Lang.text('fairHideOwned')),
-  );
   const balanceValue = DOM({ tag: 'span' }, String(crystalCount()));
   const balance = DOM(
     { style: 'fair-balance' },
@@ -388,7 +377,7 @@ export async function fair(tab = null, { previewData = null } = {}) {
     DOM({ tag: 'img', src: 'content/img/queue/DiamondBlue.png', style: 'fair-gem' }),
     balanceValue,
   );
-  const toolbar = DOM({ style: 'fair-toolbar' }, search, sort, hideRow, balance);
+  const toolbar = DOM({ style: 'fair-toolbar' }, search, sort, balance);
 
   const title = DOM({ style: 'bs-header' });
   const quickbar = DOM({ style: 'fair-quickbar' });
@@ -442,11 +431,13 @@ export async function fair(tab = null, { previewData = null } = {}) {
     close.focus();
   };
 
-  const itemsOfTab = () => {
-    if (isCollectionTab(shownTab)) return ctx.purchased.slice();
-    if (shownTab === 'all') return ctx.available.slice();
-    const cat = CATEGORIES.find((c) => c.id === shownTab);
-    return ctx.available.filter((item) => item.categoryId === cat.categoryId);
+  // в разделах ярмарки — только то, что ещё можно купить; купленное — в «Коллекции»
+  const itemsOfTab = (id = shownTab) => {
+    if (isCollectionTab(id)) return ctx.purchased.slice();
+    const forSale = ctx.available.filter((item) => item.enabled);
+    if (id === 'all') return forSale;
+    const cat = CATEGORIES.find((c) => c.id === id);
+    return forSale.filter((item) => item.categoryId === cat.categoryId);
   };
 
   // в разделах ярмарки enabled = «можно купить», в коллекции — «можно выбрать»
@@ -484,7 +475,6 @@ export async function fair(tab = null, { previewData = null } = {}) {
         return text.toLowerCase().includes(query);
       });
     }
-    if (hideOwned && !isCollectionTab(shownTab)) items = items.filter((item) => !isOwned(item));
     const byName = (a, b) => itemName(a).localeCompare(itemName(b), Lang.target);
     if (sortMode === 'name') items.sort(byName);
     if (sortMode === 'priceAsc') items.sort((a, b) => (a.price || 0) - (b.price || 0));
@@ -569,7 +559,8 @@ export async function fair(tab = null, { previewData = null } = {}) {
     quickbar.classList.add('is-hidden');
 
     if (!items.length) {
-      cards.append(DOM({ style: 'bs-note' }, Lang.text('fairEmpty')));
+      const allOwned = !search.value.trim() && !isCollectionTab(shownTab);
+      cards.append(DOM({ style: 'bs-note' }, Lang.text(allOwned ? 'fairAllOwned' : 'fairEmpty')));
       return;
     }
 
@@ -770,6 +761,8 @@ export async function fair(tab = null, { previewData = null } = {}) {
       } else {
         await App.api.request('shop', 'apply', { id: item.id });
       }
+      // рамка из ярмарки — рамка по умолчанию: у героев без своей рамки она меняется сразу, на месте
+      if (item.categoryId === CAT.frame) HeroFrameSelect.setFairFrame(item.id == 0 ? 0 : parseInt(item.externalId, 10));
     } catch (e) {
       if (LOCAL_CATEGORIES.includes(item.categoryId)) ctx.local = before;
       App.error(e);
@@ -792,7 +785,6 @@ export async function fair(tab = null, { previewData = null } = {}) {
       el.classList.toggle('is-active', tid === id);
       el.setAttribute('aria-pressed', String(tid === id));
     }
-    hideRow.classList.toggle('is-disabled', isCollectionTab(id));
     const cat = CATEGORIES.find((c) => c.id === id);
     title.replaceChildren(
       DOM({ tag: 'span' }, Lang.text(shownTab === 'all' ? 'fairCatAll' : cat ? cat.label : 'shop_collection')),
@@ -809,9 +801,7 @@ export async function fair(tab = null, { previewData = null } = {}) {
 
   const counter = (id) => {
     if (isCollectionTab(id)) return ctx.purchased.filter((item) => item.id != 0).length;
-    if (id === 'all') return ctx.available.length;
-    const cat = CATEGORIES.find((c) => c.id === id);
-    return ctx.available.filter((item) => item.categoryId === cat.categoryId).length;
+    return itemsOfTab(id).length;
   };
 
   const refreshSidebar = () => {
@@ -840,10 +830,6 @@ export async function fair(tab = null, { previewData = null } = {}) {
   search.addEventListener('input', renderCards);
   sort.addEventListener('change', () => {
     sortMode = sort.value;
-    renderCards();
-  });
-  hideCheck.addEventListener('change', () => {
-    hideOwned = hideCheck.checked;
     renderCards();
   });
 

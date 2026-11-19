@@ -2,6 +2,7 @@ import { DOM } from './dom.js';
 import { ParentEvent } from './parentEvent.js';
 import { Lang } from './lang.js';
 import { View } from './view.js';
+import { HeroFrameSelect } from './heroFrameSelect.js';
 import { App } from './app.js';
 import { NativeAPI } from './nativeApi.js';
 import { Castle } from './castle.js';
@@ -831,6 +832,8 @@ export class Window {
                                       id: rItem.id,
                                     });
                                   }
+                                  // рамка по умолчанию у героев без своей рамки — сразу, на месте
+                                  if (Number(rItem.categoryId) === 2) HeroFrameSelect.setFairFrame(isDefault ? 0 : parseInt(rItem.externalId, 10));
                                 }
                               } catch (e) {
                                 App.error(e);
@@ -2501,6 +2504,51 @@ export class Window {
       DOM({ style: 'castle-menu-label' }, 'Флаги ', flags),
     );
   }
+  // Только для админов: уровень рамки у всех своих героев без учёта побед (0 — по победам, 1–4 — ступень).
+  // Хранит бэкенд (build.frameTier), действует в лаунчере, пати, лобби и бою; рамки меняются на месте.
+  static frameTierPanel() {
+    const buttons = [0, 1, 2, 3, 4].map((tier) => {
+      const button = DOM(
+        {
+          tag: 'button',
+          domaudio: domAudioPresets.defaultButton,
+          style: 'frame-tier-button',
+          data: { tip: tier === 0 ? Lang.text('heroFrameTierWins') : Lang.text(`frame_req_${tier}`) },
+        },
+        String(tier),
+      );
+      button.type = 'button';
+      button.disabled = true;
+      button.dataset.tier = String(tier);
+      return button;
+    });
+    const mark = (tier) => buttons.forEach((button) => button.classList.toggle('frame-tier-button--active', Number(button.dataset.tier) === tier));
+    const enable = (on) => buttons.forEach((button) => (button.disabled = !on));
+    buttons.forEach((button) =>
+      button.addEventListener('click', async () => {
+        const tier = Number(button.dataset.tier);
+        enable(false);
+        try {
+          mark(await HeroFrameSelect.setTier(tier));
+        } catch (error) {
+          App.error(error);
+        }
+        enable(true);
+      }),
+    );
+    HeroFrameSelect.loadTier()
+      .then((tier) => {
+        mark(tier);
+        enable(true);
+      })
+      .catch((error) => App.error(error));
+    return DOM(
+      { style: 'frame-tier-panel' },
+      DOM({ style: 'frame-tier-title', data: { tip: Lang.text('heroFrameTierHint') } }, Lang.text('heroFrameTier')),
+      DOM({ style: 'frame-tier-buttons' }, ...buttons),
+    );
+  }
+
   static async accountPanel() {
     return DOM({ id: 'wcastle-menu', style: 'wcastle-menu--quest-bg' }, DOM({style: 'title-modal'}, DOM({style: 'title-modal-text'}, Lang.text('account')),),
       DOM(
@@ -2558,6 +2606,7 @@ export class Window {
         },
         Lang.text('sideChange'),
       ),
+      ...(App.isAdmin() ? [DOM({ style: 'wcastle-menu__exit-separator' }), Window.frameTierPanel()] : []),
       DOM({ style: 'wcastle-menu__exit-separator' }),
       DOM(
         {

@@ -145,6 +145,9 @@ export function precompileMarkup(text, env, macros = {}) {
       } else if (item.kind === 'tag' && item.name === 'value') {
         const result = env.value(item.value, item.params);
         if (result !== null && result !== undefined) out += formatValue(result, item.params.format);
+        // Игра (ValueFragment::Value) при неразрешённом имени выводит текст формулы как есть:
+        // в данных так пишут числа — <value=3>, <value=0.7%>. Имена не выводим: их лаунчер может не знать.
+        else if (/^-?\d+(?:\.\d+)?%?$/.test(item.value.trim())) out += item.value.trim();
       } else if (item.kind === 'text') out += item.text;
     }
   };
@@ -176,6 +179,8 @@ class Output {
     this.align = '';
     this.hideDepth = 0; // внутри <session>
     this.pendingSpace = false;
+    this.lineStart = 0; // позиция в html, где начинается текущая строка
+    this.floatStart = -1; // позиция открытого <f_right>
   }
 
   emitText(text) {
@@ -209,16 +214,32 @@ class Output {
   }
 
   closeUntil(kind) {
-    const index = this.open.lastIndexOf(kind);
+    let index = this.open.lastIndexOf(kind);
     if (index === -1) return;
+    // </style> внешнего стиля внутри <f_right> закрывает и сам блок — сначала перенести его
+    if (kind !== 'right' && this.open.lastIndexOf('right') > index) {
+      this.closeRight();
+      index = this.open.lastIndexOf(kind);
+    }
     while (this.open.length > index) {
       this.open.pop();
       this.html += '</span>';
     }
   }
 
+  // Блок <f_right> в игре стоит справа в той строке, где объявлен, даже если перед ним уже есть текст
+  // («Сотворяемый Ультимативный <f_right>мана откат»). В CSS float после текста встаёт в строку,
+  // только если целиком помещается рядом с ним, иначе съезжает ниже, в описание. Поэтому готовый
+  // блок переносится в начало своей строки: float всегда остаётся в ней, текст обтекает его слева.
   closeRight() {
-    if (this.open.includes('right')) this.closeUntil('right');
+    if (!this.open.includes('right')) return;
+    this.closeUntil('right');
+    const start = this.floatStart;
+    this.floatStart = -1;
+    if (start > this.lineStart) {
+      const block = this.html.slice(start);
+      this.html = this.html.slice(0, this.lineStart) + block + this.html.slice(this.lineStart, start);
+    }
   }
 
   lineBreak(gap = 0) {
@@ -226,6 +247,7 @@ class Output {
     this.pendingSpace = false;
     if (gap) this.html += `<span class="pw-tt-gap" style="--pw-tt-gap:${Math.min(gap, 100) / 100}"></span>`;
     else this.html += '<br class="pw-tt-br">';
+    this.lineStart = this.html.length;
   }
 
   setAlign(align) {
@@ -237,6 +259,7 @@ class Output {
     this.align = align;
     this.html += `<div class="pw-tt-${align}">`;
     for (const kind of stack) this.html += kind === 'atom' ? '<span class="pw-tt-atom">' : '<span>';
+    this.lineStart = this.html.length;
     this.pendingSpace = false;
   }
 
@@ -292,6 +315,7 @@ class Output {
       case 'f_right':
         this.closeRight();
         this.raw('');
+        this.floatStart = this.html.length;
         this.html += '<span class="pw-tt-right">';
         this.open.push('right');
         return;
@@ -308,6 +332,7 @@ class Output {
   }
 
   finish() {
+    this.closeRight();
     while (this.open.length) {
       this.open.pop();
       this.html += '</span>';
