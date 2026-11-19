@@ -27,6 +27,21 @@ export class NativeAPI {
   static CONTENT_WATCH_FIRST_MS = 2 * 60 * 1000;
   static CONTENT_WATCH_INTERVAL_MS = 5 * 60 * 1000;
   static CONTENT_WATCH_RESTART_DELAY_MS = 10 * 1000;
+
+  // Петля повторных загрузок обновления. Апдейтер при любой ошибке сносил .git репозитория и
+  // клонировал канал заново (в game-pwc это ~3,4 ГиБ объектов вместо ~0,6 ГиБ дельты), поэтому
+  // сбой, причина которого не проходит сам (нет места на диске, репозиторий принадлежит другому
+  // аккаунту), превращался в «качаем заново на каждом запуске». Коды 7 и 9 — детерминированные
+  // исходы: после трёх одинаковых попыток того же релиза апдейтер больше не запускаем, а говорим
+  // игроку причину. Прочие сбои (сеть, занятые файлы) как чинились сами, так и чинятся.
+  static STOP_RETRY_CODES = new Set([7, 9]);
+  static UPDATE_ATTEMPTS_KEY = 'pwUpdateAttempts';
+  static UPDATE_MAX_ATTEMPTS = 3;
+  // Не «запретить до следующего релиза», а «не дёргать каждые полминуты»: игрок мог освободить
+  // место или закрыть игру через пять минут, и ждать сутки он не обязан. Скачанное при этом не
+  // теряется: обе цены (7 и 9) апдейтер забирает до начала загрузки.
+  static UPDATE_RETRY_BACKOFF_MS = 30 * 60 * 1000;
+  static UPDATE_CODE_LANG = { 7: 'updateNoSpace', 8: 'updateFilesBusy', 9: 'updateOwnerBlocked' };
   // Репозитории, которые обновляет NanoUpdater (пути от папки Launcher).
   // guardKey — ревизия, ради которой апдейтер уже запускали (защита от петли).
   static WATCH_REPOS = [
@@ -1042,6 +1057,13 @@ export class NativeAPI {
       }
       // новый этап виден сразу, ещё до первых процентов
       callback({ update: true, title: this.title, total: null });
+    } else if (json.type) {
+      // События апдейтера (#{"type":"mirror"|"clone"|"reclone"|"origin-switch"|"head-repaired"|
+      // "skip-rewind"|"nospace"|"deferred"|"worktree-deferred"|"shallow-unsupported"|"fetched"}).
+      // Всё, что стоит дорогое (переклонирование канала, пропуск отката, отказ по месту на томе),
+      // обязано остаться в update.log: без этого «игрок качает обновление каждый запуск» неразличимо
+      // разбирается только по состоянию чужой машины.
+      NativeAPI.logUpdate(`updater-${json.type}`, String(JSON.stringify(json)).slice(0, 400));
     }
   }
 
@@ -1167,7 +1189,18 @@ export class NativeAPI {
             while ((idx = buffer.indexOf('\n')) >= 0) {
               const line = buffer.slice(0, idx).trim();
               buffer = buffer.slice(idx + 1);
-              if (line && !line.startsWith('#{')) NativeAPI.logUpdate('updater-stage1-out', line.slice(0, 200));
+              if (!line) continue;
+            // Протокол #{...}: label/bar — рабочий прогресс стадии 1 (его показывает стадия 2),
+            // прочие типы — события, которые надо оставить в логе: стадия 1, упёршаяся в отсутствие
+            // места или в репозиторий другого владельца, иначе молча не обновила бы Tools.
+            if (line.startsWith('#{')) {
+              const type = (line.match(/"type"\s*:\s*"([a-z-]+)"/) || [])[1];
+              if (type && type != 'label' && type != 'bar') {
+                NativeAPI.logUpdate(`updater-stage1-${type}`, line.slice(0, 400));
+              }
+              continue;
+            }
+            NativeAPI.logUpdate('updater-stage1-out', line.slice(0, 200));
             }
           } catch (e) {
             NativeAPI.logUpdateError(e, 'updater-stage1-stdout');
@@ -1292,6 +1325,39 @@ export class NativeAPI {
         return true;
       }
 
+      // Ожидаемые сдвиги ревизий: и как гейт «вышел 0, но ничего не сделал», и как основание
+      // понять, ради какой ревизии вообще стоит запускать апдейтер (сверка с info/refs зеркал).
+      const expected = await NativeAPI.expectedRepoUpdates();
+
+      // Игра запущена — апдейтер пишет ровно те файлы, которые она держит (Bin/PW_Game.exe,
+      // Packs/*.pile). До правки апдейтера это кончалось сносом .git и повторной загрузкой канала.
+      if (PWGame.isGameRunning) {
+        PWGame.isUpToDate = true;
+        NativeAPI.logUpdate(
+          'skip-game-running',
+          `pending=${expected.map((r) => r.name).join(',') || 'none'}`
+        );
+        NativeAPI.startContentWatch();
+        return true;
+      }
+
+      // Три одинаковых сбоя одного и того же релиза (нет места на томе / репозиторий принадлежит
+      // другой учётке) — четвёртая попытка качает гигабайты впустую. Причина уже известна и
+      // сказана игроку; ждём, пока он её устранит или пока не выйдет следующая ревизия.
+      const repeated = NativeAPI.repeatedUpdateFailure(expected);
+      if (repeated) {
+        PWGame.isUpToDate = true;
+        NativeAPI.logUpdate(
+          'skip-repeated-failure',
+          `code=${repeated.code} fails=${repeated.fails} expected=${expected
+            .map((r) => `${r.name}:${String(r.remote || '').slice(0, 10)}`)
+            .join(',')}`
+        );
+        App.error(Lang.text(NativeAPI.UPDATE_CODE_LANG[repeated.code] || 'updateRepeatedFailure'));
+        NativeAPI.startContentWatch();
+        return true;
+      }
+
       // Флаг ставим заранее: пока стадия 1 возит апдейтер, второй update() не должен
       // его запустить
       NativeAPI.updateInProgress = true;
@@ -1331,9 +1397,6 @@ export class NativeAPI {
       );
 
       NativeAPI.updateInProgress = true;
-      // Ожидаемые сдвиги ревизий — чтобы «вышел 0, но ничего не сделал» не
-      // считался успехом (аналог updater-stage1-incomplete для стадии 2).
-      const expected = await NativeAPI.expectedRepoUpdates();
 
       let child;
       try {
@@ -1380,9 +1443,17 @@ export class NativeAPI {
             PWGame.isUpToDate = true;
           } else {
             PWGame.isUpdateFailed = true;
-            App.error(Lang.text('updateError') + code);
+            // Коды апдейтера 7/8/9 значат «места нет», «файлы игры заняты», «репозиторий другого
+            // владельца» — это диагноз, а не «Ошибка обновления: 7».
+            const codeKey = NativeAPI.UPDATE_CODE_LANG[code];
+            if (codeKey) {
+              App.error(Lang.text(codeKey));
+            } else {
+              App.error(Lang.text('updateError') + code);
+            }
           }
           NativeAPI.logUpdate('updater-close', `code=${code} bar=${NativeAPI.updated}`);
+          await NativeAPI.recordUpdateAttempt(expected, ok ? null : code);
 
           // Рестарт (reset: window.reloadIgnoringCache)
           // только если ревизия content реально изменилась (без git — чтение
@@ -1556,7 +1627,59 @@ export class NativeAPI {
   }
 
   static isSafeToRestart() {
-    return !MM.active && !MM.isInTambur && !MM.isInBattle && !NativeAPI.exitRequested;
+    // Игра запущена — её exe и память-мапнутые Packs/*.pile держатся процессом: апдейтер не
+    // может дописать дерево, и попытка только сожрала бы трафик (см. PWGame.isGameRunning).
+    return !MM.active && !MM.isInTambur && !MM.isInBattle && !NativeAPI.exitRequested && !PWGame.isGameRunning;
+  }
+
+  static readUpdateAttempts() {
+    try {
+      return JSON.parse(localStorage.getItem(NativeAPI.UPDATE_ATTEMPTS_KEY) || '{}') || {};
+    } catch {
+      return {};
+    }
+  }
+
+  // Учёт ведётся по ожидаемой удалённой ревизии каждого репозитория: вышел новый релиз — счётчик
+  // начинается заново, а «та же ревизия, тот же код, трижды» = петля.
+  static async recordUpdateAttempt(expected, code) {
+    if (!expected || !expected.length) return;
+    const attempts = NativeAPI.readUpdateAttempts();
+    const now = Date.now();
+    for (const r of expected) {
+      const prev = attempts[r.name];
+      const sameRev = prev && prev.rev === r.remote;
+      if (code == null || !NativeAPI.STOP_RETRY_CODES.has(code)) {
+        delete attempts[r.name];
+        continue;
+      }
+      attempts[r.name] = {
+        rev: r.remote,
+        local: r.local,
+        code,
+        fails: (sameRev ? prev.fails : 0) + 1,
+        at: now,
+      };
+    }
+    try {
+      localStorage.setItem(NativeAPI.UPDATE_ATTEMPTS_KEY, JSON.stringify(attempts));
+    } catch {}
+  }
+
+  // null — пробовать можно; иначе причина, по которой попытка уже трижды кончилась одинаково.
+  static repeatedUpdateFailure(expected) {
+    if (!expected || !expected.length) return null;
+    const attempts = NativeAPI.readUpdateAttempts();
+    const now = Date.now();
+    let worst = null;
+    for (const r of expected) {
+      const a = attempts[r.name];
+      if (!a || a.rev !== r.remote) return null;
+      if (now - a.at > NativeAPI.UPDATE_RETRY_BACKOFF_MS) return null;
+      if (a.fails < NativeAPI.UPDATE_MAX_ATTEMPTS) return null;
+      worst = a;
+    }
+    return worst;
   }
 
   static async checkContentUpdate() {

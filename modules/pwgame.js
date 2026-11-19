@@ -32,6 +32,11 @@ export class PWGame {
 
   static isUpdateFailed = false;
 
+  // Игра жива (её exe и память-мапнутые Packs/*.pile держат файлы дерева). Апдейтер, запущенный
+  // в этот момент, не может дописать дерево — фоновая проверка и старт обновления обязаны это
+  // учитывать (иначе прогон съедает трафик и оставляет полузаписанное дерево).
+  static isGameRunning = false;
+
   static isTestHashesFailed = false;
 
   // Протокол текущего запуска. Формируется в start() из токена сессии бэкенда;
@@ -288,21 +293,35 @@ export class PWGame {
 
     // игра закрыта — реплей этого боя на бэкенд (replayUpload.js), зрителю не нужно
     const onGameExit = (error = null) => {
+      PWGame.isGameRunning = false;
       GameSettingsSync.afterGame(settingsBefore);
       CrashReport.afterGame(error && error.code);
       if (method !== 'spectate') {
         ReplayUpload.afterGame(id);
       }
+      // файлы игры освобождены: пропущенный из-за игры апдейт можно догнать сразу, не дожидаясь
+      // следующего тика наблюдателя (он и так проверит isSafeToRestart — в поиске/бою не тронет)
+      try {
+        NativeAPI.checkContentUpdate().catch(() => {});
+      } catch {}
       callback();
     };
 
-    if (NativeAPI.platform == 'linux') {
-      let spawn = await NativeAPI.childProcess.exec(PWGame.LUTRIS_EXEC);
-      spawn.on('close', async (code) => {
-        onGameExit();
-      });
-    } else {
-      await NativeAPI.exec(PWGame.PATH, PWGame.WORKING_DIR_PATH, ['protocol', PWGame.currentPlayPwProtocol], onGameExit);
+    PWGame.isGameRunning = true;
+    try {
+      if (NativeAPI.platform == 'linux') {
+        let spawn = await NativeAPI.childProcess.exec(PWGame.LUTRIS_EXEC);
+        spawn.on('close', async (code) => {
+          onGameExit();
+        });
+        // запуск не состоялся (нет Lutris/игры) — иначе флаг «игра жива» заблокировал бы обновления
+        spawn.on('error', (error) => onGameExit(error || new Error('lutris spawn failed')));
+      } else {
+        await NativeAPI.exec(PWGame.PATH, PWGame.WORKING_DIR_PATH, ['protocol', PWGame.currentPlayPwProtocol], onGameExit);
+      }
+    } catch (error) {
+      PWGame.isGameRunning = false;
+      throw error;
     }
   }
 
