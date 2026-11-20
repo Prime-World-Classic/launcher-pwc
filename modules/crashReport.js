@@ -649,7 +649,8 @@ export class CrashReport {
       let detail = '';
       if (item.type === 'dll') {
         if (/^bad/.test(f.signature || '')) title = 'DLL с неверной подписью';
-        detail = fileOf(f.path || '');
+        else if (/^nofile/.test(f.signature || '')) title = 'DLL, файла которой нет на диске';
+        detail = `${fileOf(f.path || '')}${f.signer ? ` (подписал ${f.signer})` : ''}`;
       } else if (item.type === 'game_dll') {
         detail = `${fileOf(f.path || '')} (штамп ${f.stamp}, ждали ${f.expected_stamp})`;
       } else if (item.type === 'thread') {
@@ -657,9 +658,11 @@ export class CrashReport {
         const where = / where=(.*?)(?: region_size=\S+)?$/.exec(item.line);
         detail = `старт ${f.start}${where ? `, ${CrashReport.homePath(where[1])}` : ''}`;
       } else if (item.type === 'exec_pe') {
-        detail = `${f.base}, ${f.region_size ? `0x${f.region_size}` : ''} ${f.protect || ''}`.trim();
+        // чем назвался модуль (новые exe читают имя из экспорта, PDB и ресурса версии)
+        const names = [f.company, f.original || f.export].filter(Boolean).join(', ');
+        detail = `${f.base}, ${f.region_size ? `0x${f.region_size}` : ''} ${f.protect || ''}${names ? ` — ${names}` : ''}`.trim();
       } else if (item.type === 'hidden_image') {
-        detail = `${f.base} ${f.device_path || ''}`.trim();
+        detail = `${f.base} ${f.path ? fileOf(f.path) : f.device_path || ''}${f.signature ? `, подпись ${f.signature}` : ''}`.trim();
       } else if (item.type === 'text_patch') {
         const target = / target=(.*)$/.exec(item.line);
         detail = `${f.rva}, ${f.len} байт${target ? `, переход в ${CrashReport.homePath(target[1])}` : ''}`;
