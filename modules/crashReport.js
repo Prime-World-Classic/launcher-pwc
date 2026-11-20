@@ -659,8 +659,9 @@ export class CrashReport {
         detail = `старт ${f.start}${where ? `, ${CrashReport.homePath(where[1])}` : ''}`;
       } else if (item.type === 'exec_pe') {
         // чем назвался модуль (новые exe читают имя из экспорта, PDB и ресурса версии)
-        const names = [f.company, f.original || f.export].filter(Boolean).join(', ');
-        detail = `${f.base}, ${f.region_size ? `0x${f.region_size}` : ''} ${f.protect || ''}${names ? ` — ${names}` : ''}`.trim();
+        // у отображённого файла (type=mapped) ядро называет сам файл — он важнее имени
+        const names = [f.file ? fileOf(f.file) : '', f.company, f.original || f.export].filter(Boolean).join(', ');
+        detail = `${f.base}, ${f.region_size ? `0x${f.region_size}` : ''} ${f.protect || ''}${f.type === 'mapped' ? ' (файл)' : ''}${names ? ` — ${names}` : ''}`.trim();
       } else if (item.type === 'hidden_image') {
         detail = `${f.base} ${f.path ? fileOf(f.path) : f.device_path || ''}${f.signature ? `, подпись ${f.signature}` : ''}`.trim();
       } else if (item.type === 'text_patch') {
@@ -845,9 +846,14 @@ export class CrashReport {
   static async processSnapshot(crashTime = Date.now()) {
     if (!CrashReport.supported()) return '';
     const head = `Снято: ${new Date().toISOString()}, краш: ${new Date(crashTime).toISOString()}`;
+    // У процессов, запущенных от администратора, и у служб WMI пути не даёт; QueryFullProcessImageName
+    // с PROCESS_QUERY_LIMITED_INFORMATION (0x1000) отдаёт его и без прав администратора
     const script = [
       '[Console]::OutputEncoding = [Text.Encoding]::UTF8',
-      'Get-CimInstance Win32_Process | Sort-Object ProcessId | ForEach-Object { "{0}`t{1}`t{2}`t{3}" -f $_.ProcessId, $_.ParentProcessId, $_.Name, $_.ExecutablePath }',
+      '$sig = \'[DllImport("kernel32.dll")] public static extern IntPtr OpenProcess(uint a, bool b, uint c); [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] public static extern bool QueryFullProcessImageNameW(IntPtr h, uint f, System.Text.StringBuilder s, ref uint n); [DllImport("kernel32.dll")] public static extern bool CloseHandle(IntPtr h);\'',
+      'try { $k = Add-Type -MemberDefinition $sig -Name ImagePath -Namespace PwcSnapshot -PassThru } catch { $k = $null }',
+      'function Get-PwcImagePath($id) { if (-not $k) { return \'\' }; $h = $k::OpenProcess(0x1000, $false, [uint32]$id); if ($h -eq [IntPtr]::Zero) { return \'\' }; try { $sb = New-Object System.Text.StringBuilder 1024; $n = [uint32]1024; if ($k::QueryFullProcessImageNameW($h, 0, $sb, [ref]$n)) { $sb.ToString() } else { \'\' } } finally { [void]$k::CloseHandle($h) } }',
+      'Get-CimInstance Win32_Process | Sort-Object ProcessId | ForEach-Object { $p = $_.ExecutablePath; if (-not $p -and $_.ProcessId -gt 4) { $p = Get-PwcImagePath $_.ProcessId }; "{0}`t{1}`t{2}`t{3}" -f $_.ProcessId, $_.ParentProcessId, $_.Name, $p }',
     ].join('; ');
     const encoded = Buffer.from(script, 'utf16le').toString('base64');
     const cim = await CrashReport.runCapture('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded]);
