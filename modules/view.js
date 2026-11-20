@@ -984,6 +984,10 @@ export class View {
   static castleQuestBody = DOM({ style: ['quest', 'left-offset-no-shift'] });
   static castleQuestTimerIntervals = new Set();
   static castleQuestIssueTimeout = 0;
+  // Где игрок оставил список квестов (первый видимый) и какие квесты уже были с галочкой:
+  // при обновлении списка позиция сохраняется, наверх — только если появилась новая галочка.
+  static castleQuestStart = 0;
+  static castleQuestDoneIds = null;
   static completedQuestHeroRewards = new Set();
 
   static clearCastleQuestTimers() {
@@ -2653,8 +2657,16 @@ export class View {
 
     const list = DOM({ style: 'quest-list' });
     const PAGE = 4;
-    let start = 0;
     const items = [];
+
+    // Выполненные (status 2, галочка) бэкенд отдаёт первыми. Новая галочка — показываем верх
+    // списка, иначе остаёмся там, куда игрок промотал.
+    const doneIds = new Set(request.quests.filter((item) => Number(item.status) === 2).map((item) => String(item.id)));
+    const prevDoneIds = View.castleQuestDoneIds;
+    const newDone = !prevDoneIds || [...doneIds].some((id) => !prevDoneIds.has(id));
+    View.castleQuestDoneIds = doneIds;
+    let start = newDone && doneIds.size ? 0 : View.castleQuestStart;
+    start = Math.max(0, Math.min(Number(start) || 0, request.quests.length - PAGE));
 
     const btnUp = DOM({
       domaudio: domAudioPresets.smallButton,
@@ -2731,10 +2743,10 @@ export class View {
       );
 
       items.push(quest);
-      if (items.length <= PAGE) list.append(quest);
     }
 
     function render() {
+      View.castleQuestStart = start;
       list.innerHTML = '';
       const end = Math.min(start + PAGE, items.length);
       for (let i = start; i < end; i++) list.append(items[i]);
