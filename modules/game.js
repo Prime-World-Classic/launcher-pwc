@@ -83,6 +83,8 @@ export class Game {
 
     Game.chips = object.chips || null;
 
+    Game.kinds = Game.mode == 'duel' ? Game.makeKinds(object.map) : null;
+
     Game.sizeX = Number(object.sizeX) || object.map.length;
 
     Game.sizeY = Number(object.sizeY) || (object.map[0] ? object.map[0].length : 0);
@@ -171,6 +173,43 @@ export class Game {
     return coordinate ? `${coordinate * 100}cqh` : '0';
   }
 
+  // Номера видов талантов дуэли: по возрастанию id среди талантов стартового поля —
+  // у обоих игроков одинаковые цвета. Кристалл прайма без плашки.
+  static makeKinds(map) {
+    const ids = new Set();
+
+    for (const column of map || []) {
+      for (const id of column || []) {
+        if (id && id != Game.options.crystalId) {
+          ids.add(Number(id));
+        }
+      }
+    }
+
+    const kinds = new Map();
+
+    [...ids].sort((a, b) => a - b).forEach((id, index) => kinds.set(id, index));
+
+    return kinds;
+  }
+
+  static kindOf(id) {
+    id = Number(id);
+
+    if (!Game.kinds || !id || id == Game.options.crystalId) {
+      return -1;
+    }
+
+    // вида не было на стартовом поле — следующий свободный номер
+    if (!Game.kinds.has(id)) {
+      Game.kinds.set(id, Game.kinds.size);
+    }
+
+    return Game.kinds.get(id) % Game.KIND_COLORS;
+  }
+
+  static KIND_COLORS = 8;
+
   // chip — значок стата фишки (только дуэль): талант на всю клетку, значок — маленький
   // и полупрозрачный в углу поверх таланта
   static createUnit(id, x, y, chip = 0) {
@@ -188,7 +227,17 @@ export class Game {
         unit.classList.add('m3d-crystal');
       }
 
-      unit.style.backgroundImage = `url(content/talents/${id}.webp)`;
+      const kind = Game.kindOf(id);
+
+      if (kind < 0) {
+        unit.style.backgroundImage = `url(content/talents/${id}.webp)`;
+      } else {
+        // вид таланта — цветная плашка под иконкой (цвет по номеру вида в партии, main.css);
+        // url() в переменной CSS считается от файла стилей — поэтому адрес абсолютный
+        unit.dataset.kind = kind;
+
+        unit.style.setProperty('--talent', `url(${new URL(`content/talents/${id}.webp`, document.baseURI).href})`);
+      }
 
       if (chip) {
         const badge = DOM({ style: 'm3d-chip' });

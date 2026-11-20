@@ -9661,6 +9661,33 @@ button.build-action-item.btn-hover.color-1 .btn-duplicate {
   background-position: center;
 }
 
+/* talent kind: coloured plate under a slightly smaller icon, one colour per kind in the duel
+   (data-kind from game.js). Colour is the main cue, so similar icons are easy to tell apart.
+   The rim is an inset shadow in the plate margin: it never covers the icon. */
+.game-unit-item.m3d-cell[data-kind] {
+  --k-light: #ff7a6b;
+  --k-mid: #b3261e;
+  --k-dark: #3d0907;
+  border-radius: 24cqh;
+  background-image:
+    var(--talent),
+    radial-gradient(circle at 50% 38%, var(--k-light) 0%, var(--k-mid) 52%, var(--k-dark) 100%);
+  background-size: 80%, 100%;
+  background-position: center;
+  box-shadow:
+    inset 0 0 0 2.5cqh color-mix(in srgb, var(--k-light) 70%, white),
+    inset 0 0 0 5cqh rgba(0, 0, 0, 0.35),
+    0 1cqh 3cqh rgba(0, 0, 0, 0.55);
+}
+
+.game-unit-item.m3d-cell[data-kind='1'] { --k-light: #7cbcff; --k-mid: #1f5fc4; --k-dark: #0a1c45; }
+.game-unit-item.m3d-cell[data-kind='2'] { --k-light: #8af07e; --k-mid: #279434; --k-dark: #08310e; }
+.game-unit-item.m3d-cell[data-kind='3'] { --k-light: #ffe680; --k-mid: #c99612; --k-dark: #463004; }
+.game-unit-item.m3d-cell[data-kind='4'] { --k-light: #d9a6ff; --k-mid: #7a33c4; --k-dark: #260a45; }
+.game-unit-item.m3d-cell[data-kind='5'] { --k-light: #86f5f2; --k-mid: #149ca4; --k-dark: #053a3d; }
+.game-unit-item.m3d-cell[data-kind='6'] { --k-light: #ffb877; --k-mid: #cf620c; --k-dark: #451c03; }
+.game-unit-item.m3d-cell[data-kind='7'] { --k-light: #ffa3d8; --k-mid: #bd2c83; --k-dark: #410a2b; }
+
 /* stat chip badge: dark round backing with a gold rim, fully opaque.
    The rim is a radial gradient with soft stops (not a border): a fractional border on a
    rounded, scaled and rotated element renders jagged. --chip is set by game.js. */
