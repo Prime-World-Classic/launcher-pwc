@@ -784,16 +784,17 @@ export class Chat {
     }
 
     // Цвет роли важнее цвета звёзд: у администрации и хелперов со звёздами ник не перекрашивается.
+    // Админ из списка хелперов показывается всем как хелпер (права администратора остаются).
     const nick = DOM({ tag: 'span', style: 'chat-msg-nick' }, message.nickname);
     if (message.userId === 1) {
       nick.classList.add('owner-text');
       nick.dataset.tooltipRole = Lang.text('titleOwner');
-    } else if (App.isAdmin(message.userId)) {
-      nick.classList.add('administration-text');
-      nick.dataset.tooltipRole = Lang.text('titleAdministration');
     } else if (App.isHelper(message.userId)) {
       nick.classList.add('helper-text');
       nick.dataset.tooltipRole = Lang.text('titleHelper');
+    } else if (App.isAdmin(message.userId)) {
+      nick.classList.add('administration-text');
+      nick.dataset.tooltipRole = Lang.text('titleAdministration');
     } else if (message.star > 0) {
       nick.classList.add('chat-msg-nick--star');
     }
