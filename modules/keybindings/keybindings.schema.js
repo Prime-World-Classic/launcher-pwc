@@ -520,5 +520,23 @@ export function repairFileModel(fileModel, linkedGroups = LINKED_GROUPS) {
     bind.keys = freePlaceholder(fileModel);
     fixes.push(`cmd_action_bar_slot${n}: added '${comboOf(bind.keys)}'`);
   }
+  // Одна клавиша — один слот панели: как в игре (NivalInput Binds::DropSharedActionBarKeys), клавишу
+  // оставляет строка выше по файлу, у остальных слотов она меняется на заглушку
+  for (const section of fileModel.sections) {
+    const owner = new Map();
+    for (const bind of section.binds) {
+      if (bind.type !== 'bind' || !/^cmd_action_bar_slot\d+$/.test(bind.command)) continue;
+      const combo = comboOf(displayKeys(bind));
+      if (!combo) continue;
+      const first = owner.get(combo);
+      if (!first) {
+        owner.set(combo, bind.command);
+        continue;
+      }
+      if (first === bind.command) continue;
+      bind.keys = freePlaceholder(fileModel);
+      fixes.push(`${bind.command}: '${combo}' already on ${first} -> '${comboOf(bind.keys)}'`);
+    }
+  }
   return fixes;
 }
