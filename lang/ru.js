@@ -43,6 +43,7 @@ export const ru = {
     tamburBuildLoadError: 'Не удалось загрузить таланты',
     tamburBuildRowEmpty: 'Для этого ряда больше нет талантов',
     tamburBuildFilterEmpty: 'Под фильтр нет талантов этого ряда',
+    tamburBuildPriority: 'Приоритет',
     mmConfirmChoice: 'Подтвердить выбор',
     mmConfirmUrgent: 'Нажмите для подтверждения!',
     mmAllyBuildTitle: 'Билд союзника',

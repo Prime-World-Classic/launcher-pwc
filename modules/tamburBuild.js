@@ -24,6 +24,26 @@ import { Tooltip } from './build/tooltip.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI'];
 // как в build/library.js
+// Приоритетные характеристики (галочки build.profile, как в панели героя окна билда):
+// ключ стата -> место в profile и подпись. Таланты с этими статами в библиотеке идут первыми.
+const PRIORITY = [
+  { key: 'sila', index: 3, label: 'strength' },
+  { key: 'razum', index: 4, label: 'intelligence' },
+  { key: 'provorstvo', index: 5, label: 'agility' },
+  { key: 'hitrost', index: 6, label: 'dexterity' },
+  { key: 'stoikost', index: 7, label: 'stamina' },
+  { key: 'volia', index: 8, label: 'will' },
+];
+// семьи статов как в build/highlight.js: чистые ключи весят больше смешанных («к наибольшему»)
+const FAMILIES = {
+  sila: { pure: ['sila', 'silarz', 'silavz'], mixed: ['sr', 'srsv'] },
+  razum: { pure: ['razum', 'razumrz', 'razumvz'], mixed: ['sr', 'srsv'] },
+  provorstvo: { pure: ['provorstvo', 'provorstvorz', 'provorstvovz'], mixed: ['ph'] },
+  hitrost: { pure: ['hitrost', 'hitrostrz', 'hitrostvz'], mixed: ['ph'] },
+  stoikost: { pure: ['stoikost', 'stoikostrz'], mixed: ['sv', 'svvz', 'vs', 'srsv'] },
+  volia: { pure: ['volia', 'voliarz'], mixed: ['sv', 'svvz', 'vs', 'srsv'] },
+};
+const hasStat = (stats, key) => key in stats || `${key}buff` in stats;
 const RARITIES = [
   { id: '4', name: 'titleTheRed', image: 'red' },
   { id: '3', name: 'titleTheOrange', image: 'orange' },
@@ -116,6 +136,8 @@ class Session {
     for (const talent of this.body) if (talent) this.talents.set(Number(talent.id), talent);
     this.active = Array.from({ length: ACTIVE_SLOTS }, (_, i) => Number(data.active?.[i]) || 0);
     this.consumables = Array.from({ length: ACTIVE_SLOTS }, (_, i) => Number(data.consumables?.[i]) || 0);
+    this.realId = realId;
+    this.setProfile(data.profile);
     this.sync = new BuildSync(realId, this.body, this.active, { onReject: (result) => TamburBuild.onReject(this, result) });
     const items = BuildStore.catalog(this.heroId, realId, data.body) ??
       (await BuildStore.loadCatalog(this.heroId, realId, data.body, () => this.alive));
@@ -135,10 +157,49 @@ class Session {
   async loadPreview() {
     const fixture = (id, level, index) => ({ id, level, rarity: index % 4 + 1, refine: 0, active: index % 5 === 0 ? 1 : 0, stats: {}, statsRefine: {} });
     this.engine = new StatEngine({ stats: { hp: 6443, mp: 4862, sila: 195, razum: 445, provorstvo: 144, hitrost: 356, stoikost: 93, volia: 166 }, overallModifier: 1 });
+    this.setProfile([0, 0, 0, 0, 1, 0, 1, 0, 0]);
     this.body = TamburBuild.previewIds.map((id, slot) => (id ? fixture(id, levelOfSlot(slot), slot) : null));
     for (const talent of this.body) if (talent) this.talents.set(Number(talent.id), talent);
     this.addCatalog(Array.from({ length: 84 }, (_, index) => fixture(index + 37, index % 6 + 1, index)));
     return true;
+  }
+
+  // галочки приоритета билда (9 значений, 3–8 — статы) -> расчёт статов и подсказки
+  setProfile(profile) {
+    this.profile = Array.from({ length: 9 }, (_, i) => (Number(profile?.[i]) ? 1 : 0));
+    for (const { key, index } of PRIORITY) this.engine.profile[key] = this.profile[index];
+  }
+
+  // Переключить приоритет стата: сразу у себя, на сервер — build.setProfile (отказ — вернуть)
+  async toggleProfile(index) {
+    const value = this.profile[index] ? 0 : 1;
+    const profile = this.profile.slice();
+    profile[index] = value;
+    this.setProfile(profile);
+    if (this.preview) return true;
+    try {
+      await App.api.request('build', 'setProfile', { id: this.realId, index, value: !!value });
+      return true;
+    } catch (error) {
+      profile[index] = value ? 0 : 1;
+      this.setProfile(profile);
+      App.notify(String(error?.message ?? error));
+      return false;
+    }
+  }
+
+  // насколько талант про приоритетные статы: чистый стат 10, смешанный («к наибольшему») 3
+  priorityScore(talent) {
+    const stats = talent?.stats;
+    if (!stats) return 0;
+    let score = 0;
+    for (const { key } of PRIORITY) {
+      if (!this.engine.profile[key]) continue;
+      const family = FAMILIES[key];
+      if (family.pure.some((k) => hasStat(stats, k))) score += 10;
+      else if (family.mixed.some((k) => hasStat(stats, k))) score += 3;
+    }
+    return score;
   }
 
   addCatalog(items) {
@@ -225,15 +286,25 @@ export class TamburBuild {
   static show(field, { heroId, buildId, body, preview = false, onChange = null }) {
     const ids = toIds(body);
     const session = TamburBuild.session;
+    const popup = TamburBuild.popup;
+    let stale = false;
     if (session && (session.heroId !== Number(heroId) || session.buildId !== Number(buildId) || session.preview !== preview ||
       (session.loading && session.ids.join() !== ids.join()))) {
       TamburBuild.dropSession();
+      stale = true;
     }
-    if (TamburBuild.popup && (TamburBuild.view?.field !== field || TamburBuild.view?.buildId !== Number(buildId) || TamburBuild.view?.heroId !== Number(heroId))) TamburBuild.close();
+    // окно закрывается только крестиком: другой билд (вкладка, «Случайный билд») того же героя —
+    // библиотека того же ряда открывается заново уже по нему; другой герой или новый тамбур — закрыть
+    let reopen = null;
+    if (popup && (stale || TamburBuild.view?.field !== field || TamburBuild.view?.buildId !== Number(buildId) || TamburBuild.view?.heroId !== Number(heroId))) {
+      if (TamburBuild.view?.field === field && TamburBuild.view?.heroId === Number(heroId)) reopen = popup.slot;
+      TamburBuild.close();
+    }
     TamburBuild.fieldTooltip?.hide();
     if (preview) TamburBuild.previewIds = ids;
     TamburBuild.view = { field, heroId: Number(heroId), buildId: Number(buildId), ids, onChange, preview };
     TamburBuild.renderField();
+    if (reopen !== null) TamburBuild.open(reopen, { instant: true });
     if (!field.dataset.tamburBuild) {
       field.dataset.tamburBuild = '1';
       const onSlot = (event) => {
@@ -312,7 +383,8 @@ export class TamburBuild {
   }
 
   // Библиотека ряда слота — поверх списка героев
-  static async open(slot) {
+  // instant — без анимации появления (окно переоткрыто по другому билду)
+  static async open(slot, { instant = false } = {}) {
     const view = TamburBuild.view;
     if (!view?.field?.isConnected) return;
     if (!view.preview && !(view.buildId > 0)) return;
@@ -322,7 +394,8 @@ export class TamburBuild {
     }
     const column = view.field.closest('.mm-lobby')?.querySelector('.mm-lobby-middle-hero-column');
     if (!column) return;
-    if (TamburBuild.popup?.slot === slot) return TamburBuild.close();
+    // окно закрывается только крестиком: повторный клик по тому же слоту ничего не делает
+    if (TamburBuild.popup?.slot === slot) return;
     const level = levelOfSlot(slot);
     const session = TamburBuild.ensureSession();
     // окно уже открыто — только другой слот: новая строка и список, без переоткрытия
@@ -345,31 +418,34 @@ export class TamburBuild {
     );
     const row = DOM({ style: 'tambur-library-row' }, `${Lang.text('tamburBuildRow')} ${ROMAN[level]}`);
     const root = DOM(
-      { style: 'tambur-library', role: 'dialog', ariaLabel: Lang.text('library') },
+      { style: instant ? ['tambur-library', 'tambur-library--instant'] : 'tambur-library', role: 'dialog', ariaLabel: Lang.text('library') },
       DOM({ style: 'tambur-library-title' }, DOM({ tag: 'span' }, Lang.text('library')), row),
       closeButton,
     );
     const rarityView = TamburBuild.buildRarity();
+    const priorityView = TamburBuild.buildPriority();
     root.append(rarityView, list);
     const tooltip = new Tooltip(session);
-    const popup = { root, slot, row, tooltip, list, rarityView, session, ready: false, cleanups: [] };
+    const popup = { root, slot, row, tooltip, list, rarityView, priorityView, session, ready: false, cleanups: [] };
     TamburBuild.popup = popup;
     const listen = (target, type, handler, options) => {
       target.addEventListener(type, handler, options);
       popup.cleanups.push(() => target.removeEventListener(type, handler, options));
     };
-    listen(document, 'keydown', (event) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopPropagation();
-      TamburBuild.close();
-    }, true);
-    listen(document, 'pointerdown', (event) => {
-      if (root.contains(event.target) || view.field.contains(event.target)) return;
-      TamburBuild.close();
-    }, true);
     list.addEventListener('scroll', () => tooltip.hide(), { passive: true });
     column.append(root);
+    // окно приоритета — в левой колонке, у правого края, на уровне поля билда
+    const chat = view.field.closest('.mm-lobby')?.querySelector('.mm-lobby-middle-chat');
+    if (chat) {
+      chat.append(priorityView);
+      const place = () => {
+        if (!priorityView.isConnected || !view.field.isConnected) return;
+        priorityView.style.top = `${Math.round(view.field.getBoundingClientRect().top - chat.getBoundingClientRect().top)}px`;
+      };
+      place();
+      requestAnimationFrame(place);
+      listen(window, 'resize', place);
+    }
     TamburBuild.renderField();
 
     list.append(DOM({ style: 'tambur-library-empty' }, Lang.text('tamburBuildLoading')));
@@ -392,18 +468,22 @@ export class TamburBuild {
     if (!popup) return;
     const { session, list, slot, tooltip } = popup;
     TamburBuild.syncFilters();
+    TamburBuild.syncPriority();
     const rules = TamburBuild.rules;
-    // как в библиотеке окна билда: у таланта без поля (классовые без редкости) фильтр его скрывает
     const rowTalents = session.rowTalents(levelOfSlot(slot));
-    const talents = rowTalents.filter((talent) =>
-      Object.keys(rules).every((key) => key in talent && rules[key].includes(`${talent[key]}`)));
+    // как в библиотеке окна билда: у таланта без поля (классовые без редкости) фильтр его скрывает;
+    // таланты с приоритетными статами — первыми (сортировка устойчивая: дальше прежний порядок)
+    const talents = rowTalents
+      .filter((talent) => Object.keys(rules).every((key) => key in talent && rules[key].includes(`${talent[key]}`)))
+      .map((talent, order) => ({ talent, order, score: session.priorityScore(talent) }))
+      .sort((a, b) => b.score - a.score || a.order - b.order);
     tooltip.hide();
     if (!talents.length) {
       list.replaceChildren(DOM({ style: 'tambur-library-empty' }, Lang.text(rowTalents.length ? 'tamburBuildFilterEmpty' : 'tamburBuildRowEmpty')));
       return;
     }
     const fragment = document.createDocumentFragment();
-    for (const talent of talents) {
+    for (const { talent, score } of talents) {
       const id = Number(talent.id);
       const node = DOM({ domaudio: domAudioPresets.talent, style: 'build-talent-item' });
       node.dataset.id = id;
@@ -421,9 +501,52 @@ export class TamburBuild {
       };
       node.addEventListener('click', pick);
       node.addEventListener('contextmenu', pick);
-      fragment.append(DOM({ style: 'build-talent-item-container' }, node));
+      fragment.append(DOM({ style: score > 0 ? ['build-talent-item-container', 'tambur-library-recommended'] : 'build-talent-item-container' }, node));
     }
     list.replaceChildren(fragment);
+  }
+
+  // Приоритетные характеристики — маленькое окно с галочками слева от билда (те же галочки, что в
+  // панели героя окна билда). Открывается вместе с библиотекой и закрывается её крестиком.
+  static buildPriority() {
+    const list = DOM({ style: 'tambur-priority-list', role: 'group', ariaLabel: Lang.text('tamburBuildPriority') });
+    const view = DOM({ style: 'tambur-priority', role: 'dialog', ariaLabel: Lang.text('tamburBuildPriority') },
+      DOM({ style: 'tambur-priority-title' }, Lang.text('tamburBuildPriority')), list);
+    for (const { index, label } of PRIORITY) {
+      const box = DOM({ tag: 'img', style: 'tambur-library-priority-box', alt: '', src: 'content/icons/circle.webp' });
+      const line = DOM(
+        { tag: 'button', type: 'button', style: 'tambur-library-priority-line', domaudio: domAudioPresets.smallButton, data: { index }, title: Lang.text('makeStatPriorityTitle') },
+        box,
+        DOM({ tag: 'span' }, Lang.text(label)),
+      );
+      line.setAttribute('role', 'checkbox');
+      line.addEventListener('click', async () => {
+        const popup = TamburBuild.popup;
+        if (!popup?.ready || line.dataset.busy) return;
+        line.dataset.busy = '1'; // пока сервер не ответил, повторный клик не считается
+        const toggled = popup.session.toggleProfile(index);
+        TamburBuild.renderLibrary(); // сразу: галочка и порядок библиотеки
+        await toggled;
+        delete line.dataset.busy;
+        if (TamburBuild.popup === popup) TamburBuild.renderLibrary(); // сервер мог отказать
+      });
+      list.append(line);
+    }
+    return view;
+  }
+
+  static syncPriority() {
+    const popup = TamburBuild.popup;
+    if (!popup?.priorityView) return;
+    const profile = popup.ready ? popup.session.profile : null;
+    popup.priorityView.classList.toggle('tambur-priority--loading', !profile);
+    for (const line of popup.priorityView.querySelectorAll('[data-index]')) {
+      line.disabled = !profile;
+      const on = !!profile?.[Number(line.dataset.index)];
+      line.classList.toggle('tambur-library-priority-line--on', on);
+      line.setAttribute('aria-checked', String(on));
+      line.firstElementChild.src = on ? 'content/icons/checkbox.webp' : 'content/icons/circle.webp';
+    }
   }
 
   // Фильтр по редкости и активным — как в окне билда (build/library.js buildRarity):
@@ -513,8 +636,9 @@ export class TamburBuild {
     const popup = TamburBuild.popup;
     if (!popup) return;
     if (!popup.session.place(talent, popup.slot)) return;
-    TamburBuild.close();
+    // окно остаётся (закрывается только крестиком): поле и список — по новому билду
     TamburBuild.applyIds(popup.session.ids);
+    TamburBuild.renderLibrary();
   }
 
   // Поле тамбура и тело билда вкладки — по новому билду
@@ -545,6 +669,7 @@ export class TamburBuild {
     for (const cleanup of popup.cleanups.splice(0)) cleanup();
     popup.tooltip.destroy();
     popup.root.remove();
+    popup.priorityView?.remove();
     TamburBuild.renderField();
   }
 

@@ -18940,3 +18940,93 @@ body:has(.stats-screen) .launcher-hall-of-fame-quick-tab {
   pointer-events: none;
   z-index: 2147483647;
 }
+
+.tambur-library.tambur-library--instant {
+  animation: none;
+}
+
+/* tambour library: talents with the build's priority stats go first, soft gold edge */
+.tambur-library-list .tambur-library-recommended .build-talent-item {
+  box-shadow: 0 0 0 1px rgba(252, 214, 130, 0.55), 0 0 0.6cqw rgba(252, 214, 130, 0.35);
+}
+
+/* tambour: small "Priority" window with the build's priority stats (checkboxes), left of the build,
+   opens and closes together with the library; top is set by tamburBuild.js (level of the build field) */
+.mm-lobby-middle-chat:has(> .tambur-priority) {
+  position: relative;
+}
+
+.tambur-priority {
+  position: absolute;
+  top: 30cqh;
+  right: 0.6cqw;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  padding: 1cqh 0.6cqw 0.8cqh;
+  box-sizing: border-box;
+  border: 0.3cqh solid rgb(18, 52, 61);
+  border-radius: 1.4cqh;
+  box-shadow: 0 0 0 1px rgba(148, 212, 206, 0.35), 0 1cqh 3cqh rgba(0, 0, 0, 0.55);
+  background: linear-gradient(180deg, #03424e 0%, #044d59 50%, #03626d 100%);
+  animation: tamburPriorityIn 0.16s ease-out;
+}
+
+.tambur-priority.tambur-priority--loading .tambur-priority-list {
+  opacity: 0.5;
+}
+
+@keyframes tamburPriorityIn {
+  from { opacity: 0; transform: translateX(1.5cqw); }
+  to { opacity: 1; transform: none; }
+}
+
+.tambur-priority-title {
+  padding: 0 0.4cqw 0.6cqh;
+  text-align: center;
+  color: var(--mm-menu-text);
+  text-shadow: var(--mm-text-shadow);
+  font: 400 min(1.1cqw, 1.95cqh) / 1.2 'DejaVuSans', sans-serif;
+}
+
+.tambur-priority-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15cqh;
+}
+
+.tambur-library-priority-line {
+  display: flex;
+  align-items: center;
+  gap: 0.45cqw;
+  margin: 0;
+  padding: 0.35cqh 0.5cqw;
+  border: none;
+  border-radius: 0.6cqh;
+  background: transparent;
+  color: rgba(225, 239, 235, 0.65);
+  font: min(0.9cqw, 1.6cqh) / 1.2 'DejaVuSans', sans-serif;
+  text-align: left;
+  white-space: nowrap;
+  cursor: var(--cursor-pointer);
+  transition: background-color 0.12s ease-out, color 0.12s ease-out;
+}
+
+.tambur-library-priority-line:hover:not(:disabled) {
+  background-color: rgba(148, 212, 206, 0.12);
+  color: rgba(225, 239, 235, 0.9);
+}
+
+.tambur-library-priority-line.tambur-library-priority-line--on {
+  color: var(--mm-menu-text);
+}
+
+.tambur-library-priority-line:disabled {
+  cursor: default;
+}
+
+.tambur-library-priority-box {
+  flex: 0 0 auto;
+  width: min(1.1cqw, 1.95cqh);
+  height: min(1.1cqw, 1.95cqh);
+}

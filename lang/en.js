@@ -42,6 +42,7 @@ export const en = {
     tamburBuildLoadError: 'Could not load talents',
     tamburBuildRowEmpty: 'No more talents for this row',
     tamburBuildFilterEmpty: 'No talents of this row match the filter',
+    tamburBuildPriority: 'Priority',
     mmConfirmChoice: 'Confirm selection',
     mmConfirmUrgent: 'Click to confirm!',
     mmAllyBuildTitle: 'Ally build',

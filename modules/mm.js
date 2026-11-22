@@ -622,7 +622,6 @@ export class MM {
   static async lobbyBuildView(heroId) {
     MM.lobbySkinView(heroId);
     HeroFrameSelect.refreshLobby();
-    TamburBuild.close();
     MM.lobbyTabObserver?.disconnect();
     MM.lobbyTabObserver = null;
     if (MM.lobbyBuildField.firstChild) {
