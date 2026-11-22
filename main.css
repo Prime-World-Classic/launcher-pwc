@@ -18754,3 +18754,189 @@ body:has(.stats-screen) .launcher-hall-of-fame-quick-tab {
   background-color: #5a4310;
   color: #fff;
 }
+
+/* tambour: build completion (tamburBuild.js) - pulsing "+" in empty build slots, click on a slot opens
+   the library of that row over the hero list */
+.tambur-build-slot {
+  position: relative;
+  border-radius: 22%;
+  cursor: var(--cursor-pointer);
+  transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.tambur-build-slot:hover {
+  background-color: rgba(148, 212, 206, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(148, 212, 206, 0.5);
+}
+
+.tambur-build-slot.tambur-build-slot--open {
+  background-color: rgba(252, 229, 188, 0.12);
+  box-shadow: inset 0 0 0 2px rgba(252, 229, 188, 0.85), 0 0 0.8cqw rgba(252, 229, 188, 0.45);
+}
+
+.build-body-row .tambur-build-plus {
+  position: absolute;
+  inset: 24%;
+  width: auto;
+  min-width: 0;
+  height: auto;
+  border-radius: 50%;
+  border: 1px solid rgba(148, 212, 206, 0.6);
+  background: radial-gradient(circle, rgba(54, 115, 114, 0.75), rgba(3, 42, 51, 0.85));
+  box-shadow: 0 0 0.5cqw rgba(148, 212, 206, 0.35);
+  pointer-events: none;
+  animation: tamburBuildPlusPulse 1.8s ease-in-out infinite;
+}
+
+.build-body-row .tambur-build-plus::before,
+.build-body-row .tambur-build-plus::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 52%;
+  height: 12%;
+  border-radius: 1px;
+  background: rgba(252, 229, 188, 0.94);
+  transform: translate(-50%, -50%);
+}
+
+.build-body-row .tambur-build-plus::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.tambur-build-slot:hover .tambur-build-plus {
+  animation-play-state: paused;
+  opacity: 1;
+  border-color: rgba(252, 229, 188, 0.8);
+}
+
+@keyframes tamburBuildPlusPulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+.tambur-library {
+  position: absolute;
+  inset: 1.5cqh 0.2cqw 0.5cqh 0.3cqw;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  padding: 1.2cqh 0.9cqw 1.4cqh;
+  box-sizing: border-box;
+  border: 0.3cqh solid rgb(18, 52, 61);
+  border-radius: 1.4cqh;
+  box-shadow: 0 0 0 1px rgba(148, 212, 206, 0.35), 0 1cqh 3cqh rgba(0, 0, 0, 0.55);
+  background: linear-gradient(180deg, #03424e 0%, #044d59 25%, #035761 50%, #03626d 75%, #006f79 100%);
+  animation: tamburLibraryIn 0.16s ease-out;
+}
+
+@keyframes tamburLibraryIn {
+  from { opacity: 0; transform: translateX(-1.5cqw); }
+  to { opacity: 1; transform: none; }
+}
+
+.tambur-library-title {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.5cqw;
+  padding: 0 2.5cqw 1cqh;
+  color: var(--mm-menu-text);
+  text-shadow: var(--mm-text-shadow);
+  font: 400 1.3cqw / 1.2 'DejaVuSans', sans-serif;
+}
+
+.tambur-library-row {
+  color: rgba(225, 239, 235, 0.7);
+  font-size: 0.95cqw;
+}
+
+.tambur-library > .tambur-library-close,
+.tambur-library > .tambur-library-close:hover {
+  top: 0.8cqh;
+  right: 0.6cqw;
+  width: min(2.2cqw, 3.9cqh);
+  height: min(2.2cqw, 3.9cqh);
+  background-image: none;
+  transform: none;
+}
+
+.tambur-library > .tambur-library-close .close-image-style {
+  width: 100%;
+  height: 100%;
+}
+
+.tambur-library .tambur-library-list {
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: repeat(6, 1fr);
+  align-content: start;
+  gap: 0.6cqw;
+  padding: 0.3cqw;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.tambur-library-list .build-talent-item {
+  cursor: var(--cursor-pointer);
+  transition: transform 0.1s ease-out, filter 0.1s ease-out;
+}
+
+.tambur-library-list .build-talent-item:hover {
+  transform: scale(1.08);
+  filter: brightness(1.15);
+}
+
+.tambur-library-empty {
+  grid-column: 1 / -1;
+  padding: 2cqh 0;
+  text-align: center;
+  color: rgba(225, 239, 235, 0.65);
+  font: 0.95cqw / 1.3 'DejaVuSans', sans-serif;
+}
+
+/* tambour library: rarity / active filter, same buttons as the build window library */
+.tambur-library .tambur-library-rarity {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 100%;
+  container-type: inline-size;
+  flex: 0 0 auto;
+  gap: 1.2cqw;
+  padding: 0 0 1cqh;
+  z-index: 2;
+}
+
+.tambur-library .tambur-library-rarity > div {
+  width: 8.3cqw;
+  height: 8.3cqw;
+  margin: 0 0.35cqw;
+  position: relative;
+  cursor: var(--cursor-pointer);
+}
+
+.tambur-library .tambur-library-rarity > div[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  inset: auto;
+  height: auto;
+  top: calc(100% + 0.5vh);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(42vw, 52vh);
+  padding: 0.95vh 1.1vh;
+  border: 0.16vh solid rgba(90, 133, 130, 0.62);
+  border-radius: 0.9vh;
+  background: rgba(14, 31, 33, 0.85);
+  background-image: none;
+  color: rgba(255, 255, 255, 0.88);
+  font: 1.55vh / 1.28 'DejaVuSans', sans-serif;
+  white-space: pre;
+  text-align: center;
+  box-shadow: inset 0 0 0.42vh rgba(138, 194, 188, 0.15), 0 0.42vh 1.15vh rgba(0, 0, 0, 0.48);
+  pointer-events: none;
+  z-index: 2147483647;
+}

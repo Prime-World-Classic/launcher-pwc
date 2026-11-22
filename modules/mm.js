@@ -22,6 +22,7 @@ import { SOUNDS_LIBRARY } from './soundsLibrary.js';
 import { loadKeybinds } from './keybindings/keybindings.io.js';
 import { LanePositionQueue } from './lanePositionQueue.js';
 import { HeroFrameSelect } from './heroFrameSelect.js';
+import { TamburBuild } from './tamburBuild.js';
 
 export class MM {
   static id = '';
@@ -621,6 +622,7 @@ export class MM {
   static async lobbyBuildView(heroId) {
     MM.lobbySkinView(heroId);
     HeroFrameSelect.refreshLobby();
+    TamburBuild.close();
     MM.lobbyTabObserver?.disconnect();
     MM.lobbyTabObserver = null;
     if (MM.lobbyBuildField.firstChild) {
@@ -633,8 +635,9 @@ export class MM {
 
     if (MM.preview) {
       const renderPreviewBuild = (offset) => {
-        const previewBuild = Array.from({ length: 36 }, (_, index) => (index + offset) % 36 + 1);
-        MM.lobbyBuildField.replaceChildren(Build.viewModel(previewBuild, false, false));
+        // часть слотов пустая — видно «+» досборки
+        const previewBuild = Array.from({ length: 36 }, (_, index) => ((index + offset) % 7 === 3 ? 0 : (index + offset) % 36 + 1));
+        TamburBuild.show(MM.lobbyBuildField, { heroId, buildId: 0, body: previewBuild, preview: true });
       };
       renderPreviewBuild(0);
       const nameKeys = ['mmPreviewBuildMain', 'mmPreviewBuildLong', 'mmPreviewBuildTeam', 'mmPreviewBuildAttack', 'mmRandomBuild'];
@@ -664,6 +667,14 @@ export class MM {
 
     let target = 0;
 
+    // поле билда с досборкой (tamburBuild.js); правки оттуда — в тело билда вкладки
+    const showBuild = (build) => TamburBuild.show(MM.lobbyBuildField, {
+      heroId, buildId: build.id, body: build.body,
+      onChange: (ids) => {
+        build.body = ids;
+      },
+    });
+
     for (let build of builds) {
       let tab = DOM(
         {
@@ -681,11 +692,7 @@ export class MM {
 
               tab.style.background = 'rgba(255,255,255,0.3)';
 
-              if (MM.lobbyBuildField.firstChild) {
-                MM.lobbyBuildField.firstChild.remove();
-              }
-
-              MM.lobbyBuildField.append(Build.viewModel(build.body, false, false));
+              showBuild(build);
             },
           ],
         },
@@ -698,11 +705,7 @@ export class MM {
 
         tab.style.background = 'rgba(255,255,255,0.3)';
 
-        if (MM.lobbyBuildField.firstChild) {
-          MM.lobbyBuildField.firstChild.remove();
-        }
-
-        MM.lobbyBuildField.append(Build.viewModel(build.body, false, false));
+        showBuild(build);
       }
 
       MM.lobbyBuildTab.append(tab);
@@ -733,17 +736,12 @@ export class MM {
                 id: target,
               });
 
-              if (MM.lobbyBuildField.firstChild) {
-                MM.lobbyBuildField.firstChild.remove();
-              }
-
-              MM.lobbyBuildField.append(Build.viewModel(build.body, false, false));
-
               notify = true;
 
               for (let item of builds) {
                 if (item.id == target) {
                   item.body = build.body;
+                  showBuild(item);
                 }
               }
 

@@ -364,10 +364,12 @@ export class Library {
         // пусто — скрыты все; все — фильтра нет
         this.setRule('rarity', selected.size === RARITIES.length ? null : [...selected]);
       });
+      // ПКМ — только эта редкость; по уже единственной — снова все (как у фильтра рядов)
       button.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         delete this.rules.active;
-        this.setRule('rarity', [rarity.id]);
+        const solo = this.rules.rarity?.length === 1 && this.rules.rarity[0] === rarity.id;
+        this.setRule('rarity', solo ? null : [rarity.id]);
       });
     }
   }
