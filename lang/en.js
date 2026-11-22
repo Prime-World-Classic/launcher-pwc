@@ -134,7 +134,6 @@ export const en = {
     advNoteWaterSsr: 'Buildings and trees are reflected in the water. Needs water reflections, day and night cycle and building lights.',
     advNoteWeather: 'Rain and snow; under the clouds it gets darker and windier.',
     advNoteModesWings: 'All modes are shown next to the Battle button. Off — the mode menu opens on hovering the mode circle.',
-    advNoteQuestAutoAccept: 'One-day quests are accepted automatically as soon as they are issued: the timer starts at once. Off — accept them with the Start button, like quests lasting longer than a day. Applies from the next quest issue.',
     voiceOff: 'Turn off voice chat',
     advNoteVoiceOff: 'No one can call you and you cannot call anyone — neither friends nor allies in battle. The microphone is not used.',
     voiceOffPanel: 'Voice chat is off',

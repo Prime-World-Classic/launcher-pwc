@@ -1315,7 +1315,6 @@ const CASTLE_PAGES = {
     { type: 'note', label: 'advNoteModesWings' },
     // вкл — суточные квесты выдаются уже принятыми (quest.list autoAccept), выкл — кнопкой «Начать»
     { type: 'setting', id: 'questAutoAccept', label: 'questAutoAccept', get: () => S().questAutoAccept !== false, set: (on) => (S().questAutoAccept = on) },
-    { type: 'note', label: 'advNoteQuestAutoAccept' },
     { type: 'language' },
   ],
   voice: [
