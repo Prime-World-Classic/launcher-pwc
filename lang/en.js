@@ -4105,7 +4105,7 @@ export const en = {
       'The Caustic Substance Talent lowers the greatest of Stamina and Will by <num>%s</num> (from the greatest of Strength and Intellect), and slows down enemies by <num>20%</num>.',
     htalent_642_name: 'Protective Circle',
     htalent_642_description:
-      'While in the Alchemy Circle, the hero increases his Will by <num>%s</num> (from the greatest of Strength and Intellect) and replenishes <num>2%</num> of missing Health and Energy per second.<br>\r\Circle creates a zone of visibility, detecting invisibles.',
+      'While in the Alchemy Circle, the hero increases the highest of Stamina and Will by <num>%s</num> (from the greatest of Strength and Intellect) and replenishes <num>2%</num> of missing Health and Energy per second.<br>\r\nThe circle creates a zone of visibility, detecting invisibles.',
     htalent_643_name: 'The last frontier',
     htalent_643_description:
       'The Machine gun talent does not stop and deals <num>15%</num> more damage (+<fiz>%s</fiz> and +<mag>%s</mag>). The hero takes <num>30%</num> less damage while the talent is active.',
