@@ -18855,8 +18855,8 @@ body:has(.stats-screen) .launcher-hall-of-fame-quick-tab {
 .tambur-library > .tambur-library-close,
 .tambur-library > .tambur-library-close:hover {
   /* the button is the size of its icon (.close-image-style is 5vh !important): same gap at the top and right */
-  top: 0.4vh;
-  right: 0.4vh;
+  top: -0.6vh;
+  right: -0.6vh;
   width: 5vh;
   height: 5vh;
   background-image: none;
