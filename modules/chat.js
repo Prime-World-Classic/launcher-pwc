@@ -1215,7 +1215,8 @@ export class Chat {
     if (!message || message.userId <= 0) return;
     if (Chat.editId) Chat.cancelCompose();
     const body = Chat.field.value.startsWith(Chat.replyPrefix()) ? Chat.field.value.slice(Chat.replyPrefix().length) : Chat.field.value;
-    Chat.reply = { userId: message.userId, handle: Chat.replyHandle(message) };
+    // messageId — на какое сообщение ответ: по нему боты делают ответ цитатой в Telegram и ВК.
+    Chat.reply = { userId: message.userId, handle: Chat.replyHandle(message), messageId: Number(message.id || 0) };
     Chat.field.value = `${Chat.replyPrefix()}${body}`.slice(0, Chat.MAX_LENGTH);
     Chat.focusField();
     Chat.updateCompose();
@@ -1440,6 +1441,7 @@ export class Chat {
       await App.api.request('user', 'chat', {
         message: text,
         to: reply?.userId || 0,
+        ...(reply?.messageId > 0 ? { replyMessageId: reply.messageId } : {}),
         client,
         echoId,
         v: Chat.PROTOCOL,
