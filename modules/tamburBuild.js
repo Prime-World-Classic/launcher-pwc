@@ -293,7 +293,7 @@ export class TamburBuild {
       TamburBuild.dropSession();
       stale = true;
     }
-    // окно закрывается только крестиком: другой билд (вкладка, «Случайный билд») того же героя —
+    // окно закрывается только крестиком или Esc: другой билд (вкладка, «Случайный билд») того же героя —
     // библиотека того же ряда открывается заново уже по нему; другой герой или новый тамбур — закрыть
     let reopen = null;
     if (popup && (stale || TamburBuild.view?.field !== field || TamburBuild.view?.buildId !== Number(buildId) || TamburBuild.view?.heroId !== Number(heroId))) {
@@ -394,7 +394,7 @@ export class TamburBuild {
     }
     const column = view.field.closest('.mm-lobby')?.querySelector('.mm-lobby-middle-hero-column');
     if (!column) return;
-    // окно закрывается только крестиком: повторный клик по тому же слоту ничего не делает
+    // окно закрывается только крестиком или Esc: повторный клик по тому же слоту ничего не делает
     if (TamburBuild.popup?.slot === slot) return;
     const level = levelOfSlot(slot);
     const session = TamburBuild.ensureSession();
@@ -433,6 +433,13 @@ export class TamburBuild {
       popup.cleanups.push(() => target.removeEventListener(type, handler, options));
     };
     list.addEventListener('scroll', () => tooltip.hide(), { passive: true });
+    // закрыть — крестиком или Esc (клик мимо окна и повторный клик по слоту окно не закрывают)
+    listen(document, 'keydown', (event) => {
+      if (event.key !== 'Escape' && event.key !== 'Esc') return;
+      event.preventDefault();
+      event.stopPropagation();
+      TamburBuild.close();
+    }, true);
     column.append(root);
     // окно приоритета — в левой колонке, у правого края, на уровне поля билда
     const chat = view.field.closest('.mm-lobby')?.querySelector('.mm-lobby-middle-chat');
@@ -636,7 +643,7 @@ export class TamburBuild {
     const popup = TamburBuild.popup;
     if (!popup) return;
     if (!popup.session.place(talent, popup.slot)) return;
-    // окно остаётся (закрывается только крестиком): поле и список — по новому билду
+    // окно остаётся (закрывается крестиком или Esc): поле и список — по новому билду
     TamburBuild.applyIds(popup.session.ids);
     TamburBuild.renderLibrary();
   }
