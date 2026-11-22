@@ -2737,7 +2737,8 @@ export class View {
         DOM(
           { style: 'quest-item-portrait-background' },
           hero,
-          Number(item.status) === 0 ? DOM({ style: 'quest-item-exclamation' }) : Number(item.status) === 2 ? DOM({ style: 'quest-item-completed' }) : '',
+          // Квест выдаётся сразу принятым (таймер идёт), «!» — пока его ни разу не открывали (seen = 0)
+          Number(item.status) === 2 ? DOM({ style: 'quest-item-completed' }) : Number(item.seen) === 0 ? DOM({ style: 'quest-item-exclamation' }) : '',
         ),
         hasTimer ? timer : '',
       );

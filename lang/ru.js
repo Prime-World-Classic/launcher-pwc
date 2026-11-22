@@ -6918,7 +6918,6 @@ export const ru = {
     telegramInvite: 'Получить инвайт в Telegram',
     inviteCodeGet: 'Получить инвайт-код',
     inviteViaQr: 'через QR-код',
-    questStart: 'Начать',
     questFinish: 'Завершить',
     questHeroReward: 'Герой {name}',
     topHeroUnavailable: 'Рейтинг выбранного героя пока недоступен.',

@@ -1013,7 +1013,9 @@ export class Window {
   }
 
   static async quest(item) {
+    // quest.get отмечает квест открытым (seen = 1): убираем «!» в списке квестов замка
     let quest = await App.api.request('quest', 'get', { id: item.id });
+    if (Number(item.seen) === 0) View.castleQuestUpdate().catch((error) => App.error(error));
     const status = Number(quest.status ?? item.status);
     View.refreshQuestHeroAvailability([{ ...item, ...quest, reward: item.reward }]);
     let helpBtn = DOM({
@@ -1126,55 +1128,29 @@ export class Window {
     content.appendChild(rewards);
     content.appendChild(avatarContainer);
 
-    switch (status) {
-      case 0:
-        content.appendChild(
-          DOM(
-            {
-              domaudio: domAudioPresets.bigButton,
-              style: 'quest-accept-button',
-              domaudio: domAudioPresets.defaultButton,
-              event: [
-                'click',
-                async () => {
-                  await App.api.request('quest', 'start', { id: quest.id });
+    // Квест выдаётся сразу принятым, кнопка нужна только выполненному (status 2) — забрать награду
+    if (status === 2) {
+      content.appendChild(
+        DOM(
+          {
+            domaudio: domAudioPresets.finishQuestButton,
+            style: 'quest-accept-button',
+            domaudio: domAudioPresets.defaultButton,
+            event: [
+              'click',
+              async () => {
+                await App.api.request('quest', 'finish', { id: quest.id });
 
-                  Window.close('main');
+                Window.close('main');
 
-                  await View.castleQuestUpdate();
-                },
-              ],
-            },
-            DOM({ style: 'quest-button-text' }, Lang.text('questStart')),
-          ),
-        );
-
-        break;
-
-      case 2:
-        content.appendChild(
-          DOM(
-            {
-              domaudio: domAudioPresets.finishQuestButton,
-              style: 'quest-accept-button',
-              domaudio: domAudioPresets.defaultButton,
-              event: [
-                'click',
-                async () => {
-                  await App.api.request('quest', 'finish', { id: quest.id });
-
-                  Window.close('main');
-
-                  await View.castleQuestUpdate();
-                  if (rewardHeroId) View.refreshQuestHeroAvailability([], true);
-                },
-              ],
-            },
-            DOM({ style: 'quest-button-text' }, Lang.text('questFinish')),
-          ),
-        );
-
-        break;
+                await View.castleQuestUpdate();
+                if (rewardHeroId) View.refreshQuestHeroAvailability([], true);
+              },
+            ],
+          },
+          DOM({ style: 'quest-button-text' }, Lang.text('questFinish')),
+        ),
+      );
     }
 
     root.appendChild(content);

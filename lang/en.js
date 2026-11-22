@@ -6940,7 +6940,6 @@ export const en = {
     telegramInvite: 'Get an invite in Telegram',
     inviteCodeGet: 'Get an invite code',
     inviteViaQr: 'via QR code',
-    questStart: 'Start',
     questFinish: 'Complete',
     questHeroReward: 'Hero {name}',
     topHeroUnavailable: 'Rankings for the selected hero are not available yet.',
