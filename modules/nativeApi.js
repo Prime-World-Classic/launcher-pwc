@@ -865,6 +865,10 @@ export class NativeAPI {
     NativeAPI.exitRequested = true;
 
     try {
+      Settings.flushWindowBounds();
+    } catch {}
+
+    try {
       NativeAPI.stopKeyWatch();
     } catch {}
 

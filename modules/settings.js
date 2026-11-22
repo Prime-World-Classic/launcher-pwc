@@ -64,6 +64,9 @@ export class Settings {
     buildHighlightHue: 199,
     /** Толщина рамки подсветки (мм), макс. 1.5; по умолчанию как было 0.42cqh. */
     buildHighlightBorderMm: 0.42,
+    /** Окно в оконном режиме на момент закрытия: { x, y, width, height, maximized }.
+     *  x/y/width/height — обычные (не развёрнутые) границы; null — 1280×720 по центру. */
+    windowBounds: null,
   };
 
   static settings = JSON.parse(JSON.stringify(this.defaultSettings));
@@ -241,6 +244,142 @@ export class Settings {
     this.WriteSettings();
   }
 
+  // Размер и положение окна в оконном режиме. Раньше при каждом запуске (окно стартует в полном
+  // экране, NativeAPI.setDefaultWindow) и при выходе из полного экрана ставилось 1280×720 по
+  // центру. Теперь границы окна запоминаются в launcher.cfg (windowBounds) и восстанавливаются.
+  static WINDOW_MIN_W = 1280;
+  static WINDOW_MIN_H = 720;
+  static windowMaximized = false;
+  static windowBoundsTimer = null;
+  static windowBoundsDirty = false;
+  static windowCaptureTimer = null;
+
+  static validWindowBounds(b) {
+    if (!b || typeof b !== 'object') return null;
+    const n = (v) => (Number.isFinite(v) ? Math.round(v) : null);
+    const x = n(b.x), y = n(b.y), width = n(b.width), height = n(b.height);
+    if (x === null || y === null || width === null || height === null) return null;
+    if (width < 200 || height < 200) return null;
+    // окно должно заметно попадать на какой-нибудь экран (монитор могли отключить)
+    let screens = [];
+    try {
+      nw.Screen.Init();
+      screens = nw.Screen.screens || [];
+    } catch {}
+    if (screens.length) {
+      const visible = screens.some((s) => {
+        const a = s.work_area || s.bounds;
+        if (!a) return false;
+        const w = Math.min(x + width, a.x + a.width) - Math.max(x, a.x);
+        // по вертикали — верх окна (заголовок) должен быть на экране
+        const topVisible = y >= a.y - 8 && y < a.y + a.height - 40;
+        return w >= 150 && topVisible;
+      });
+      if (!visible) return null;
+    }
+    return { x, y, width: Math.max(width, this.WINDOW_MIN_W), height: Math.max(height, this.WINDOW_MIN_H), maximized: Boolean(b.maximized) };
+  }
+
+  static restoreWindowBounds() {
+    const win = NativeAPI.window;
+    if (!win) return;
+    const b = this.validWindowBounds(this.settings.windowBounds);
+    const apply = (again) => {
+      if (this.settings.fullscreen) return;
+      try {
+        if (again) {
+          // повтор нужен, только если Chromium перебил наши границы
+          if (b?.maximized && this.windowMaximized) return;
+          const want = b || { width: this.WINDOW_MIN_W, height: this.WINDOW_MIN_H };
+          if (win.width === want.width && win.height === want.height && (!b || (win.x === b.x && win.y === b.y))) return;
+        }
+        if (b) {
+          win.resizeTo(b.width, b.height);
+          win.moveTo(b.x, b.y);
+          if (b.maximized) win.maximize();
+        } else {
+          win.resizeTo(this.WINDOW_MIN_W, this.WINDOW_MIN_H);
+          win.setPosition('center');
+        }
+      } catch {}
+    };
+    apply(false);
+    // выход из полного экрана в Chromium завершается не сразу и может вернуть окну прежние
+    // границы поверх наших — повторяем после того, как переход закончится
+    setTimeout(() => apply(true), 400);
+  }
+
+  static isWindowedNormal() {
+    const win = NativeAPI.window;
+    if (!win || this.settings?.fullscreen || this.windowMinimized) return false;
+    if (document.body?.style.display === 'none') return false;
+    // во время смены режима окно проходит через промежуточные размеры
+    if (Date.now() < this.fullscreenGraceUntil) return false;
+    try {
+      if (win.isFullscreen) return false;
+    } catch {
+      return false;
+    }
+    return true;
+  }
+
+  static captureWindowBounds() {
+    const graceLeft = this.fullscreenGraceUntil - Date.now();
+    if (graceLeft > 0) {
+      // restore (в т. ч. из развёрнутого) включает паузу — дописать после неё
+      clearTimeout(this.windowCaptureTimer);
+      this.windowCaptureTimer = setTimeout(() => this.captureWindowBounds(), graceLeft + 50);
+      return;
+    }
+    if (!this.isWindowedNormal()) return;
+    const win = NativeAPI.window;
+    const prev = this.settings.windowBounds || {};
+    const next = { ...prev, maximized: this.windowMaximized };
+    // у развёрнутого окна храним обычные границы, к которым оно вернётся
+    if (!this.windowMaximized) {
+      next.x = win.x;
+      next.y = win.y;
+      next.width = win.width;
+      next.height = win.height;
+    }
+    if (!Number.isFinite(next.x) || !Number.isFinite(next.width)) return;
+    if (['x', 'y', 'width', 'height', 'maximized'].every((k) => prev[k] === next[k])) return;
+    this.settings.windowBounds = next;
+    this.windowBoundsDirty = true;
+    clearTimeout(this.windowBoundsTimer);
+    this.windowBoundsTimer = setTimeout(() => {
+      this.windowBoundsDirty = false;
+      this.WriteSettings();
+    }, 1000);
+  }
+
+  // при закрытии лаунчера (NativeAPI.exit): дописать границы, не дожидаясь таймера
+  static flushWindowBounds() {
+    if (!this.windowBoundsDirty) return;
+    clearTimeout(this.windowBoundsTimer);
+    this.windowBoundsDirty = false;
+    this.WriteSettingsSync();
+  }
+
+  static watchWindowBounds() {
+    const win = NativeAPI.window;
+    if (!NativeAPI.status || !win) return;
+    const later = () => setTimeout(() => this.captureWindowBounds(), 50);
+    try {
+      win.on('move', later);
+      win.on('resize', later);
+      win.on('maximize', () => {
+        this.windowMaximized = true;
+        later();
+      });
+      win.on('restore', () => {
+        // restore — и из развёрнутого, и из свёрнутого, и выход из полного экрана
+        if (!this.windowMinimized) this.windowMaximized = false;
+        later();
+      });
+    } catch {}
+  }
+
   // Показать уведомление о переключении режима
   static showFullscreenNotification() {
     if (typeof App !== 'undefined' && App.notify) {
@@ -275,8 +414,7 @@ export class Settings {
           await NativeAPI.window.enterFullscreen();
         } else if (!this.settings.fullscreen && currentMode) {
           await NativeAPI.window.leaveFullscreen();
-          NativeAPI.window.resizeTo(1280, 720);
-          NativeAPI.window.setPosition('center');
+          this.restoreWindowBounds();
         }
       }
 
@@ -315,6 +453,9 @@ export class Settings {
     // Инициализируем глобальные горячие клавиши
     this.initGlobalHotkeys();
 
+    // до watchFullscreen: его обработчик restore сбрасывает windowMinimized, а watchWindowBounds
+    // по этому флагу отличает разворот из свёрнутого от выхода из развёрнутого
+    this.watchWindowBounds();
     this.watchFullscreen();
 
     window.addEventListener('beforeunload', () => {
