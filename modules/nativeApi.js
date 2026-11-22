@@ -1945,6 +1945,27 @@ export class NativeAPI {
     }
   }
 
+  // Кнопка «Папка настроек» в окнах настроек: игроки не находят папку по пути (AppData скрыта в Проводнике).
+  // Папки ещё может не быть (игру не запускали) — создаём, чтобы Проводник открыл её, а не «Документы».
+  static openGameUserDir() {
+    const dir = NativeAPI.getGameUserDir();
+    if (!dir) return false;
+    try {
+      NativeAPI.fileSystem.mkdirSync(dir, { recursive: true });
+    } catch {}
+    try {
+      if (NativeAPI.platform === 'win32') {
+        const child = NativeAPI.childProcess.spawn('explorer.exe', [dir], { detached: true, stdio: 'ignore' });
+        child.on('error', () => nw.Shell.openItem(dir));
+        child.unref();
+      } else nw.Shell.openItem(dir);
+      return true;
+    } catch (e) {
+      console.error('open game user dir failed', e);
+      return false;
+    }
+  }
+
   // Как MoveFromDocuments в ProfileManager.cpp (кто запустился первым, тот и переносит): файлы из корня старой
   // папки до 1 МБ, которых нет в новой; логи, реплеи и папки остаются. Старая папка не трогается.
   static moveGameUserFiles(from, to) {

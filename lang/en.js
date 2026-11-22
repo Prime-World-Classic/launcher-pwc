@@ -7163,6 +7163,8 @@ export const en = {
     bsAdvWheelScale: 'Wheel size',
     bsAdvWheelTransparency: 'Wheel background transparency',
     bsBrowserOnly: 'In a browser the settings are not saved to the game files',
+    bsOpenSettingsFolder: 'Settings folder',
+    bsOpenSettingsFolderError: 'Could not open the game settings folder',
     bsCancel: 'Cancel',
     bsCatAdvanced: 'Advanced',
     bsCatChatWheel: 'Chat wheel',

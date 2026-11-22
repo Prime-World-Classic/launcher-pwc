@@ -7131,6 +7131,8 @@ export const ru = {
     bsAdvWheelScale: 'Размер колеса',
     bsAdvWheelTransparency: 'Прозрачность фона колеса',
     bsBrowserOnly: 'В браузере настройки не сохраняются в файлы игры',
+    bsOpenSettingsFolder: 'Папка настроек',
+    bsOpenSettingsFolderError: 'Не удалось открыть папку настроек игры',
     bsCancel: 'Отменить',
     bsCatAdvanced: 'Дополнительно',
     bsCatChatWheel: 'Колесо чата',

@@ -510,6 +510,16 @@ function button(text, onClick, red = false) {
   );
 }
 
+// «Папка настроек» во всех вкладках «Настроек боя» (все они пишут в user.cfg / input_new.cfg): открыть
+// в Проводнике папку игры — по пути её не находят, а AppData у многих скрыта. В браузере кнопки нет.
+// В «Настройках замка» её нет: там настройки лаунчера, не файлы игры.
+function settingsFolderButton() {
+  if (!NativeAPI.status) return null;
+  return button(Lang.text('bsOpenSettingsFolder'), () => {
+    if (!NativeAPI.openGameUserDir()) App.error(Lang.text('bsOpenSettingsFolderError'));
+  });
+}
+
 function checkbox(checked, onChange) {
   return DOM({
     tag: 'input',
@@ -1163,6 +1173,8 @@ export async function battleSettings() {
     } else if (id === 'voice') page = buildCastlePage(battleVoiceRows(), ctx);
     else page = buildRowsPage(PAGES[id], ctx);
     content.append(page);
+    const folder = settingsFolderButton();
+    if (folder) footer.append(folder);
     footer.append(button(Lang.text('back'), () => root.requestClose?.(), true));
   };
 
