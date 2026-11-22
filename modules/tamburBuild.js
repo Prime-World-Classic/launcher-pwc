@@ -97,9 +97,15 @@ class Session {
     return this.loading;
   }
 
+  // buildId тамбура — id строки build_user (так отдаёт build.my, его ждут build.target/rebuild),
+  // а build.data/inventory/optimisticLayout работают с id самого билда. Вкладка тамбура всегда
+  // выбранный билд (клик по ней сначала делает build.target), поэтому build.data без target
+  // отдаёт именно его, и настоящий id берётся из ответа.
   async loadServer() {
-    const data = await BuildStore.fetch(this.heroId, this.buildId, () => this.alive);
+    const data = await BuildStore.fetch(this.heroId, 0, () => this.alive);
     if (!data || !this.alive) return false;
+    const realId = Number(data.id);
+    if (!realId) throw new Error('build.data без id');
     if (!BuildClientTooltip.prepareSync(data.hero, this.heroId, data.body)) {
       await BuildClientTooltip.prepare(data.hero, this.heroId, data.body);
       if (!this.alive) return false;
@@ -110,10 +116,12 @@ class Session {
     for (const talent of this.body) if (talent) this.talents.set(Number(talent.id), talent);
     this.active = Array.from({ length: ACTIVE_SLOTS }, (_, i) => Number(data.active?.[i]) || 0);
     this.consumables = Array.from({ length: ACTIVE_SLOTS }, (_, i) => Number(data.consumables?.[i]) || 0);
-    this.sync = new BuildSync(this.buildId, this.body, this.active, { onReject: (result) => TamburBuild.onReject(this, result) });
-    const items = BuildStore.catalog(this.heroId, this.buildId, data.body) ??
-      (await BuildStore.loadCatalog(this.heroId, this.buildId, data.body, () => this.alive));
+    this.sync = new BuildSync(realId, this.body, this.active, { onReject: (result) => TamburBuild.onReject(this, result) });
+    const items = BuildStore.catalog(this.heroId, realId, data.body) ??
+      (await BuildStore.loadCatalog(this.heroId, realId, data.body, () => this.alive));
     if (!this.alive || !Array.isArray(items)) return false;
+    // справочник не пришёл (loadCatalog при ошибке отдаёт пустой) — ошибка, а не «нет талантов»
+    if (!items.some((item) => item && !this.talents.has(Number(item.id)))) throw new Error('build.inventory пуст');
     if (!BuildClientTooltip.talentsReady(items)) {
       await BuildClientTooltip.prepareTalents(items);
       if (!this.alive) return false;
