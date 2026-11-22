@@ -18854,17 +18854,17 @@ body:has(.stats-screen) .launcher-hall-of-fame-quick-tab {
 
 .tambur-library > .tambur-library-close,
 .tambur-library > .tambur-library-close:hover {
-  top: 0.15cqh;
-  right: 0.6cqw;
-  width: min(2.2cqw, 3.9cqh);
-  height: min(2.2cqw, 3.9cqh);
+  /* the button is the size of its icon (.close-image-style is 5vh !important): same gap at the top and right */
+  top: 0.4vh;
+  right: 0.4vh;
+  width: 5vh;
+  height: 5vh;
   background-image: none;
   transform: none;
 }
 
 .tambur-library > .tambur-library-close .close-image-style {
-  width: 100%;
-  height: 100%;
+  display: block;
 }
 
 .tambur-library .tambur-library-list {
