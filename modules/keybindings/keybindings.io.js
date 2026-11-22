@@ -187,6 +187,33 @@ export async function loadKeybinds() {
   return true;
 }
 
+/**
+ * «Сбросить» в «Клавишах»: input_new.cfg — клавиши по умолчанию (keybindsFallback.cfg). Удалить файл
+ * руками не помогает: лаунчер вернёт его из копии на сервере (gameSettingsSync.js), а сброс — изменение
+ * лаунчера, оно заменяет и копию на сервере.
+ */
+export async function resetKeybinds() {
+  try {
+    const r = await fetch('/content/keybindsFallback.cfg', { cache: 'no-store' });
+    if (!r.ok) throw new Error(`keybindsFallback.cfg: HTTP ${r.status}`);
+    const { model } = modelFromText(await r.text());
+    const cfg = NativeAPI.status ? await findConfigFile() : null;
+    if (cfg && cfg.type === 'native' && cfg.path) {
+      await NativeAPI.fileSystem.promises.writeFile(cfg.path, serializeCfg(model), 'utf8');
+      GameSettingsSync.launcherWrote(cfg.path, { user: true });
+      KeybindStore.init(model, cfg.type, cfg.path);
+    } else {
+      KeybindStore.init(model, KeybindStore.source || 'browser', KeybindStore.configPath || '/content/keybindsFallback.cfg');
+    }
+    App.notify(Lang.text('bsKeysResetDone'));
+    return true;
+  } catch (err) {
+    console.error('Failed to reset keybinds:', err);
+    App.error(Lang.text('errorKeybindings'));
+    return false;
+  }
+}
+
 export async function saveKeybinds() {
   try {
     const data = serializeCfg(KeybindStore.fileModel);
@@ -194,7 +221,7 @@ export async function saveKeybinds() {
     console.log(data);
     if (KeybindStore.source === 'native') {
       await NativeAPI.fileSystem.promises.writeFile(KeybindStore.configPath, data, 'utf8');
-      GameSettingsSync.launcherWrote(KeybindStore.configPath);
+      GameSettingsSync.launcherWrote(KeybindStore.configPath, { user: true });
     } else {
       const blob = new Blob([data], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);

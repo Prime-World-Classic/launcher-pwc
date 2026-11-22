@@ -225,7 +225,7 @@ export async function syncFairGameFiles() {
     const changes = {};
     if (UserCfg.num('praise_id', 0) !== praiseId) changes.praise_id = praiseId;
     if (UserCfg.get('fair_loadscreen', '') !== loadscreen) changes.fair_loadscreen = loadscreen;
-    if (Object.keys(changes).length) await UserCfg.set(changes);
+    if (Object.keys(changes).length) await UserCfg.set(changes, { user: false });
   } catch (e) {
     console.error('fair: game files write failed', e);
   }

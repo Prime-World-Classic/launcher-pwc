@@ -10,7 +10,7 @@ import { Settings } from './settings.js';
 import { Voice } from './voice.js';
 import { domAudioPresets } from './domAudioPresets.js';
 import { KeybindStore } from './keybindings/keybindings.store.js';
-import { loadKeybinds, saveKeybinds } from './keybindings/keybindings.io.js';
+import { loadKeybinds, saveKeybinds, resetKeybinds } from './keybindings/keybindings.io.js';
 import { normalizeKey, attachGameKeyCapture } from './keybindings/keybindings.input.js';
 import { GameSettingsSync } from './gameSettingsSync.js';
 
@@ -61,7 +61,9 @@ export const UserCfg = {
   },
 
   // changes: { name: value }; строки setvar меняются на месте, новые встают по алфавиту (как пишет игра)
-  async set(changes) {
+  // user — изменение игрока в окне настроек (не теряется, даже если копия с сервера ещё не получена);
+  // fair.js пишет выбор ярмарки сам и передаёт false
+  async set(changes, { user = true } = {}) {
     for (const [name, raw] of Object.entries(changes)) {
       const value = String(raw);
       this.values.set(name, value);
@@ -85,7 +87,7 @@ export const UserCfg = {
     try {
       await NativeAPI.fileSystem.promises.mkdir(NativeAPI.path.dirname(this.path), { recursive: true });
       await NativeAPI.fileSystem.promises.writeFile(this.path, this.lines.join(this.eol) + this.eol, 'utf8');
-      GameSettingsSync.launcherWrote(this.path); // изменение лончера — в копию на сервере
+      GameSettingsSync.launcherWrote(this.path, { user }); // изменение лончера — в копию на сервере
     } catch (e) {
       console.error('battleSettings: user.cfg write failed', e);
       App.error(Lang.text('bsSaveError'));
@@ -518,6 +520,26 @@ function settingsFolderButton() {
   return button(Lang.text('bsOpenSettingsFolder'), () => {
     if (!NativeAPI.openGameUserDir()) App.error(Lang.text('bsOpenSettingsFolderError'));
   });
+}
+
+// «Сбросить» в «Клавишах»: все клавиши — по умолчанию. Второе нажатие в течение 4 с подтверждает.
+function resetKeysButton(onReset) {
+  let armed = null;
+  const el = button(Lang.text('bsKeysReset'), async () => {
+    if (!armed) {
+      el.textContent = Lang.text('bsKeysResetConfirm');
+      armed = setTimeout(() => {
+        armed = null;
+        el.textContent = Lang.text('bsKeysReset');
+      }, 4000);
+      return;
+    }
+    clearTimeout(armed);
+    armed = null;
+    el.textContent = Lang.text('bsKeysReset');
+    await onReset();
+  });
+  return el;
 }
 
 function checkbox(checked, onChange) {
@@ -1166,6 +1188,11 @@ export async function battleSettings() {
           button(Lang.text('bsCancel'), async () => {
             ctx.keysDirty = true;
             await discardKeys();
+            page.refreshKeys?.();
+          }),
+          resetKeysButton(async () => {
+            if (!(await resetKeybinds())) return;
+            ctx.keysDirty = false;
             page.refreshKeys?.();
           }),
         );

@@ -15956,6 +15956,7 @@ body:has(> * > #wcastle-call)::before {
   border-top: 0.1cqh solid rgba(255, 255, 255, 0.2);
   margin-top: 0.8cqh;
   padding-bottom: 0;
+  gap: 1.2cqh; /* keys tab has 5 buttons */
 }
 
 #wbattle-settings .castle-menu-item-button.bs-button,

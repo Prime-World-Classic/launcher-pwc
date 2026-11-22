@@ -11,7 +11,13 @@ import { NativeAPI } from './nativeApi.js';
 // Любые другие изменения на диске (облако OneDrive, ручная правка, копирование) в базу не идут: при входе
 // в замок и перед каждым запуском игры (pull) файл, отличающийся от копии на сервере, перезаписывается ею.
 // Файл, которого на сервере ещё нет, отправляется как есть (source=first, сервер не перезапишет уже
-// сохранённый). Пока pull не прошёл (нет связи, не вошли), лончер ничего не шлёт.
+// сохранённый).
+//
+// Изменения лончера и игры, которые ещё не дошли до сервера, — в pending (и в localStorage, чтобы пережить
+// перезапуск лончера): pull их не перезаписывает, а досылает. Иначе (2026-11-22) правки клавиш в замке
+// «не сохранялись»: pull с медленной связью качал старую копию, игрок за это время сохранял клавиши, и копия
+// ложилась поверх; а если первый pull не прошёл, правки лончера и игры не слались вовсе, и следующий pull
+// перед боем возвращал старую копию.
 export class GameSettingsSync {
   static NAME = /^(user\.cfg|input_new\.cfg|[0-9A-F]{16}\.ignore)$/;
 
@@ -20,8 +26,18 @@ export class GameSettingsSync {
 
   static PULL_TIMEOUT_MS = 5000;
 
+  // get/put: без ответа очередь запросов не должна вставать навсегда
+  static REQUEST_TIMEOUT_MS = 15000;
+
+  static STORAGE_KEY = 'pwGameSettingsPending';
+
   // имя → sha256 копии на сервере (как её знает лончер)
   static known = new Map();
+
+  // имя → {sha256, source}: свои изменения (лончер/игра), ещё не принятые сервером
+  static pending = new Map();
+
+  static pendingLoaded = false;
 
   static pulled = false;
 
@@ -66,6 +82,69 @@ export class GameSettingsSync {
     }
   }
 
+  // файл есть, но в копию не помещается (больше MAX_BYTES) — такой не перезаписываем копией с сервера
+  static isOversized(name) {
+    try {
+      return NativeAPI.fileSystem.statSync(NativeAPI.path.join(GameSettingsSync.folder(), name)).size > GameSettingsSync.MAX_BYTES;
+    } catch {
+      return false;
+    }
+  }
+
+  // ---------------------------------------------------------------- pending
+
+  static loadPending() {
+    if (GameSettingsSync.pendingLoaded) return;
+    GameSettingsSync.pendingLoaded = true;
+    try {
+      const saved = JSON.parse(localStorage.getItem(GameSettingsSync.STORAGE_KEY) || 'null');
+      if (!saved || saved.folder !== GameSettingsSync.folder() || !saved.files) return;
+      for (const [name, entry] of Object.entries(saved.files)) {
+        if (GameSettingsSync.NAME.test(name) && entry && typeof entry.sha256 === 'string') {
+          GameSettingsSync.pending.set(name, { sha256: entry.sha256, source: entry.source === 'game' ? 'game' : 'launcher' });
+        }
+      }
+    } catch {}
+  }
+
+  static savePending() {
+    try {
+      if (!GameSettingsSync.pending.size) localStorage.removeItem(GameSettingsSync.STORAGE_KEY);
+      else
+        localStorage.setItem(
+          GameSettingsSync.STORAGE_KEY,
+          JSON.stringify({ folder: GameSettingsSync.folder(), files: Object.fromEntries(GameSettingsSync.pending) }),
+        );
+    } catch {}
+  }
+
+  // файл на диске сейчас — своё изменение (лончер/игра): запомнить до отправки
+  static markPending(name, source) {
+    GameSettingsSync.loadPending();
+    const file = GameSettingsSync.readFile(name);
+    if (!file) return;
+    GameSettingsSync.pending.set(name, { sha256: file.sha256, source });
+    GameSettingsSync.savePending();
+  }
+
+  // на диске всё ещё своё неотправленное изменение
+  static isPendingOnDisk(name, sha256) {
+    const entry = GameSettingsSync.pending.get(name);
+    return Boolean(entry && sha256 && entry.sha256 === sha256);
+  }
+
+  // ---------------------------------------------------------------- запросы
+
+  static request(method, data, ms = GameSettingsSync.REQUEST_TIMEOUT_MS) {
+    let timer = null;
+    return Promise.race([
+      App.api.request('settings', method, data),
+      new Promise((resolve, reject) => {
+        timer = setTimeout(() => reject(new Error(`settings.${method} timeout`)), ms);
+      }),
+    ]).finally(() => clearTimeout(timer));
+  }
+
   // запросы к серверу — по одному, чтобы put после pull не обогнал его
   static run(task) {
     const next = GameSettingsSync.queue.then(task, task);
@@ -74,7 +153,7 @@ export class GameSettingsSync {
   }
 
   static async put(name, file, source) {
-    const result = await App.api.request('settings', 'put', {
+    const result = await GameSettingsSync.request('put', {
       name,
       content: file.bytes.toString('base64'),
       sha256: file.sha256,
@@ -84,37 +163,72 @@ export class GameSettingsSync {
     return result;
   }
 
+  // Своё неотправленное — на сервер (внутри run, после pull). Файл, который с тех пор изменил кто-то
+  // другой, из pending убирается: это уже не изменение лончера или игры.
+  static async flushPending() {
+    if (!GameSettingsSync.pulled) return;
+    for (const [name, entry] of [...GameSettingsSync.pending]) {
+      const file = GameSettingsSync.readFile(name);
+      if (!file || file.sha256 !== entry.sha256 || GameSettingsSync.known.get(name) === file.sha256) {
+        GameSettingsSync.pending.delete(name);
+        continue;
+      }
+      try {
+        await GameSettingsSync.put(name, file, entry.source);
+        if (GameSettingsSync.pending.get(name)?.sha256 === entry.sha256) GameSettingsSync.pending.delete(name);
+      } catch (e) {
+        console.error('game settings put failed', name, e); // останется в pending до следующего pull
+      }
+    }
+    GameSettingsSync.savePending();
+  }
+
+  // ---------------------------------------------------------------- pull
+
   // Копию с сервера — на диск, свои файлы, которых там нет, — на сервер. Возвращает, что перезаписано.
   static pull() {
     return GameSettingsSync.run(async () => {
       const folder = GameSettingsSync.folder();
       if (!folder || GameSettingsSync.gameRunning) return [];
-      const list = await Promise.race([
-        App.api.request('settings', 'list', {}),
-        new Promise((resolve, reject) => setTimeout(() => reject(new Error('settings.list timeout')), GameSettingsSync.PULL_TIMEOUT_MS)),
-      ]);
+      GameSettingsSync.loadPending();
+      const list = await GameSettingsSync.request('list', {}, GameSettingsSync.PULL_TIMEOUT_MS);
       const remote = new Map(((list && list.files) || []).filter((f) => GameSettingsSync.NAME.test(f.name)).map((f) => [f.name, f.sha256]));
       const local = GameSettingsSync.readLocal();
       const restored = [];
       GameSettingsSync.known = new Map(remote);
 
       for (const [name, sha256] of remote) {
-        if (local.get(name)?.sha256 === sha256) continue;
-        const file = await App.api.request('settings', 'get', { name });
+        const before = local.get(name)?.sha256;
+        if (before === sha256) continue;
+        if (GameSettingsSync.isPendingOnDisk(name, before)) continue; // своё изменение — уйдёт на сервер ниже
+        if (!before && GameSettingsSync.isOversized(name)) {
+          console.warn('game settings: local file too big for the server copy, kept as is:', name);
+          continue;
+        }
+        let file = null;
+        try {
+          file = await GameSettingsSync.request('get', { name });
+        } catch (e) {
+          console.error('game settings get failed', name, e);
+          continue;
+        }
         if (!file || !file.content || file.sha256 !== sha256) continue;
         const bytes = Uint8Array.from(atob(file.content), (c) => c.charCodeAt(0));
         if (GameSettingsSync.sha256(bytes) !== sha256) continue;
         if (GameSettingsSync.gameRunning) break; // перед боем pull не дождались — игра уже читает файлы
+        // пока качали, игрок сохранил настройки (клавиши) — не затирать
+        if (GameSettingsSync.isPendingOnDisk(name, GameSettingsSync.readFile(name)?.sha256)) continue;
         NativeAPI.fileSystem.mkdirSync(folder, { recursive: true });
         NativeAPI.fileSystem.writeFileSync(NativeAPI.path.join(folder, name), bytes);
         restored.push(name);
       }
 
       for (const [name, file] of local) {
-        if (!remote.has(name)) await GameSettingsSync.put(name, file, 'first');
+        if (!remote.has(name) && !GameSettingsSync.pending.has(name)) await GameSettingsSync.put(name, file, 'first');
       }
 
       GameSettingsSync.pulled = true;
+      await GameSettingsSync.flushPending();
       if (restored.length) console.log('game settings restored from server:', restored);
       return restored;
     });
@@ -133,16 +247,14 @@ export class GameSettingsSync {
     }
   }
 
-  // лончер записал файл (path — полный путь)
-  static launcherWrote(path) {
+  // Лончер записал файл (path — полный путь). user — запись по действию игрока (сохранил настройки,
+  // сбросил клавиши): она не теряется, даже если pull ещё не прошёл. Автоматические записи до первого
+  // pull (починка клавиш при старте) не шлются: pull вернёт копию с сервера, и починка пройдёт по ней.
+  static launcherWrote(path, { user = false } = {}) {
     const name = NativeAPI.path.basename(String(path || ''));
     if (!GameSettingsSync.NAME.test(name)) return;
-    GameSettingsSync.run(async () => {
-      if (!GameSettingsSync.pulled) return;
-      const file = GameSettingsSync.readFile(name);
-      if (!file || GameSettingsSync.known.get(name) === file.sha256) return;
-      await GameSettingsSync.put(name, file, 'launcher');
-    }).catch((e) => console.error('game settings put failed', e));
+    if (user || GameSettingsSync.pulled) GameSettingsSync.markPending(name, 'launcher');
+    GameSettingsSync.run(() => GameSettingsSync.flushPending()).catch((e) => console.error('game settings put failed', e));
   }
 
   // Перед запуском игры (после записи лончером user.cfg): отпечатки файлов на момент старта
@@ -157,12 +269,10 @@ export class GameSettingsSync {
   static afterGame(snapshot) {
     GameSettingsSync.gameRunning = false;
     if (!snapshot) return;
-    GameSettingsSync.run(async () => {
-      if (!GameSettingsSync.pulled) return;
-      for (const [name, file] of GameSettingsSync.readLocal()) {
-        if (snapshot.get(name) === file.sha256 || GameSettingsSync.known.get(name) === file.sha256) continue;
-        await GameSettingsSync.put(name, file, 'game');
-      }
-    }).catch((e) => console.error('game settings put after game failed', e));
+    for (const [name, file] of GameSettingsSync.readLocal()) {
+      if (snapshot.get(name) === file.sha256 || GameSettingsSync.known.get(name) === file.sha256) continue;
+      GameSettingsSync.markPending(name, 'game');
+    }
+    GameSettingsSync.run(() => GameSettingsSync.flushPending()).catch((e) => console.error('game settings put after game failed', e));
   }
 }
