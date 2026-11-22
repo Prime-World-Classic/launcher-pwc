@@ -1128,7 +1128,31 @@ export class Window {
     content.appendChild(rewards);
     content.appendChild(avatarContainer);
 
-    // Квест выдаётся сразу принятым, кнопка нужна только выполненному (status 2) — забрать награду
+    // «Начать» — квест дольше суток, без срока или суточный при выключенном автопринятии (status 0):
+    // таймер day суток пойдёт с нажатия
+    if (status === 0) {
+      content.appendChild(
+        DOM(
+          {
+            style: 'quest-accept-button',
+            domaudio: domAudioPresets.defaultButton,
+            event: [
+              'click',
+              async () => {
+                await App.api.request('quest', 'start', { id: quest.id });
+
+                Window.close('main');
+
+                await View.castleQuestUpdate();
+              },
+            ],
+          },
+          DOM({ style: 'quest-button-text' }, Lang.text('questStart')),
+        ),
+      );
+    }
+
+    // Выполненный квест (status 2) — забрать награду
     if (status === 2) {
       content.appendChild(
         DOM(

@@ -2627,7 +2627,8 @@ export class View {
     let request;
 
     try {
-      request = await App.api.request('quest', 'list');
+      // autoAccept — «Автопринятие ежедневных квестов» (Настройки замка → Интерфейс): суточные выдаются уже принятыми
+      request = await App.api.request('quest', 'list', { autoAccept: Settings.settings.questAutoAccept !== false });
 
       if (!('crystal' in request)) {
         alert(request);
@@ -2737,8 +2738,12 @@ export class View {
         DOM(
           { style: 'quest-item-portrait-background' },
           hero,
-          // Квест выдаётся сразу принятым (таймер идёт), «!» — пока его ни разу не открывали (seen = 0)
-          Number(item.status) === 2 ? DOM({ style: 'quest-item-completed' }) : Number(item.seen) === 0 ? DOM({ style: 'quest-item-exclamation' }) : '',
+          // «!» — квест ещё не открывали (seen = 0) или не приняли (status 0, кнопка «Начать»)
+          Number(item.status) === 2
+            ? DOM({ style: 'quest-item-completed' })
+            : Number(item.status) === 0 || Number(item.seen) === 0
+              ? DOM({ style: 'quest-item-exclamation' })
+              : '',
         ),
         hasTimer ? timer : '',
       );

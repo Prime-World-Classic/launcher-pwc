@@ -1313,6 +1313,9 @@ const CASTLE_PAGES = {
     // вкл — все режимы видны у «В бой», выкл — меню по наведению на круг режима
     { type: 'setting', id: 'castleModesWings', label: 'castleModesWings', get: () => S().castleModesWings === true, set: (on, ctx) => ((S().castleModesWings = on), ctx.onModesWings?.()) },
     { type: 'note', label: 'advNoteModesWings' },
+    // вкл — суточные квесты выдаются уже принятыми (quest.list autoAccept), выкл — кнопкой «Начать»
+    { type: 'setting', id: 'questAutoAccept', label: 'questAutoAccept', get: () => S().questAutoAccept !== false, set: (on) => (S().questAutoAccept = on) },
+    { type: 'note', label: 'advNoteQuestAutoAccept' },
     { type: 'language' },
   ],
   voice: [

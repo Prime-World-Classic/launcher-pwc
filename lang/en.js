@@ -112,6 +112,7 @@ export const en = {
     waterSsr: 'Water reflections from scene geometry (SSR)',
     weather: 'Rain and snow',
     castleModesWings: 'Modes always visible',
+    questAutoAccept: 'Auto-accept daily quests',
     // Castle settings (same look as Battle settings)
     advCatCastle: 'Castle (3D)',
     advCatSound: 'Sound',
@@ -133,6 +134,7 @@ export const en = {
     advNoteWaterSsr: 'Buildings and trees are reflected in the water. Needs water reflections, day and night cycle and building lights.',
     advNoteWeather: 'Rain and snow; under the clouds it gets darker and windier.',
     advNoteModesWings: 'All modes are shown next to the Battle button. Off — the mode menu opens on hovering the mode circle.',
+    advNoteQuestAutoAccept: 'One-day quests are accepted automatically as soon as they are issued: the timer starts at once. Off — accept them with the Start button, like quests lasting longer than a day. Applies from the next quest issue.',
     voiceOff: 'Turn off voice chat',
     advNoteVoiceOff: 'No one can call you and you cannot call anyone — neither friends nor allies in battle. The microphone is not used.',
     voiceOffPanel: 'Voice chat is off',
@@ -6940,6 +6942,7 @@ export const en = {
     telegramInvite: 'Get an invite in Telegram',
     inviteCodeGet: 'Get an invite code',
     inviteViaQr: 'via QR code',
+    questStart: 'Start',
     questFinish: 'Complete',
     questHeroReward: 'Hero {name}',
     topHeroUnavailable: 'Rankings for the selected hero are not available yet.',
