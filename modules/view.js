@@ -37,6 +37,7 @@ import { CrashReport } from './crashReport.js';
 import { HeroFrame } from './heroFrame.js';
 import { HeroFrameSelect } from './heroFrameSelect.js';
 import { HeroStar } from './heroStar.js';
+import { CastleHeroDrag } from './castleHeroDrag.js';
 import { Stats } from './stats.js';
 import { CastleFarm } from './castleFarm.js';
 
@@ -1008,7 +1009,7 @@ export class View {
   static castleTotalCrystal = DOM({ tag: 'div', style: ['question-icon'] }, DOM({ style: 'quest-counter' }, ''));
 
   static setCss(name = 'content/style.css') {
-    const cssVersion = '20261118-fair-unowned-1';
+    const cssVersion = '20261123-hero-drag-1';
     const separator = name.includes('?') ? '&' : '?';
     const href = `${name}${separator}v=${cssVersion}`;
     // Каждый показ замка звал setCss заново и плодил одинаковые <link>: после
@@ -3108,6 +3109,97 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
     }
   }
 
+  // контекст для castleHeroDrag.js: что можно бросить куда и что делать после броска
+  static getCastleHeroDragCtx() {
+    if (View.castleHeroDragCtx) return View.castleHeroDragCtx;
+    const sounds = {
+      pick: SOUNDS_LIBRARY.CLICK_BUTTON_PRESS_SMALL,
+      add: SOUNDS_LIBRARY.CLICK_OPEN_BIG,
+      remove: SOUNDS_LIBRARY.CLICK_CLOSE,
+      deny: SOUNDS_LIBRARY.ERROR,
+    };
+    View.castleHeroDragCtx = {
+      selectedList: () => Number(View.castleHeroSelectedList) || 0,
+      inList: (item, listId) => View.isCastleHeroInList(item, listId),
+      listName: (listId) => View.getCastleHeroListName(listId),
+      targets: () => {
+        const bar = View.castleHeroListsBar;
+        if (!bar || bar.classList.contains('castle-friend-lists-bar') || bar.classList.contains('castle-building-types-bar')) return [];
+        const visibleCount = Math.max(View.getCastleCreatedHeroListCount(), View.castleHeroPhantomList || 0);
+        // низ вкладок заходит под полосу героев и обрезан (clip-path) — ловить бросок только над полосой
+        const clipBottom = View.castleBottom?.getBoundingClientRect().top;
+        return Array.from(bar.querySelectorAll('[data-hero-drop]')).map((el) => {
+          const isNew = el.dataset.heroDrop === 'new';
+          return { el, isNew, clipBottom, listId: isNew ? View.castleHeroPhantomList || visibleCount + 1 : Number(el.dataset.heroDrop) };
+        });
+      },
+      apply: (action, listId, item) => View.applyCastleHeroDrag(action, listId, item),
+      text: (key) => Lang.text(key),
+      sound: (name) => {
+        const src = sounds[name];
+        if (!src) return;
+        try {
+          Sound.play(src, { id: `hero-drag-${name}`, volume: Castle.GetVolume(Castle.AUDIO_SOUNDS) });
+        } catch {}
+      },
+    };
+    return View.castleHeroDragCtx;
+  }
+
+  // герой брошен во вкладку (add) или из открытого списка мимо вкладок (remove):
+  // меняем сразу и перерисовываем с анимацией, сервер — следом
+  static applyCastleHeroDrag(action, listId, item) {
+    const id = Number(listId) || 0;
+    const heroId = Number(item?.id);
+    if (id < 1 || id > View.CASTLE_HERO_LISTS_MAX || !Number.isFinite(heroId)) return;
+    View.patchCastleHeroListLocal(action, id, [heroId]);
+    View.castleHeroEditSelection?.delete?.(heroId);
+    View.castleHeroDeleteConfirmListId = 0;
+    if (action === 'add') {
+      View.rememberCastleHeroLastActiveList(id);
+      if (View.castleHeroPhantomList === id) View.castleHeroPhantomList = 0;
+    } else if (id === View.castleHeroSelectedList) {
+      // открытый список опустел — оставляем его вкладку (пунктиром), а не прячем из-под ног
+      const empty = !(View.castleHeroAll || []).some((hero) => View.isCastleHeroInList(hero, id));
+      if (empty && id > View.getCastleCreatedHeroListCount()) View.castleHeroPhantomList = id;
+    }
+    View.renderCastleHeroesAnimated();
+    View.updateCastleHeroListBackend(action, id, [heroId]);
+  }
+
+  // перерисовка полосы героев с FLIP: оставшиеся карточки съезжают на новые места, новые проявляются
+  static renderCastleHeroesAnimated() {
+    const container = View.castleBottom;
+    if (!container) return;
+    const before = new Map();
+    container.querySelectorAll('.castle-hero-item[data-hero-id]').forEach((el) => {
+      before.set(el.dataset.heroId, el.getBoundingClientRect().left);
+    });
+    View.renderCastleHeroesFromCache();
+    const width = container.getBoundingClientRect();
+    container.querySelectorAll('.castle-hero-item[data-hero-id]').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.right < width.left || r.left > width.right) return;
+      const was = before.get(el.dataset.heroId);
+      if (was === undefined) {
+        el.animate(
+          [
+            { transform: 'scale(0.7)', opacity: 0 },
+            { transform: 'scale(1)', opacity: 1 },
+          ],
+          { duration: 320, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        );
+        return;
+      }
+      const dx = was - r.left;
+      if (Math.abs(dx) < 0.5) return;
+      el.animate([{ transform: `translateX(${dx}px)` }, { transform: 'translateX(0)' }], {
+        duration: 340,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      });
+    });
+  }
+
   static getCastleListButtonLabel(listId) {
     return listId === 0 ? '' : String(listId);
   }
@@ -3255,6 +3347,8 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
         },
         View.getCastleListButtonLabel(i),
       );
+      // приёмник перетаскивания героя (castleHeroDrag.js)
+      btn.dataset.heroDrop = String(i);
       bar.append(btn);
     }
 
@@ -3283,6 +3377,7 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
         },
         '',
       );
+      addBtn.dataset.heroDrop = 'new';
       bar.append(addBtn);
     }
 
@@ -3606,6 +3701,9 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
 
       // выбор рамки героя — под портретом (heroFrameSelect.js); в правке списков не нужен
       if (!editMode) hero.append(HeroFrameSelect.button(item));
+
+      // перетаскивание во вкладку списка / из открытого списка — куда угодно, кроме вкладок
+      CastleHeroDrag.attach(hero, item, View.getCastleHeroDragCtx());
 
       if (editMode) {
         const selected = View.castleHeroEditSelection.has(Number(item.id));

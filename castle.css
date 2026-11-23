@@ -7599,3 +7599,203 @@ body > :has(> #wbuild) .castle-bottom-content {
 .castle-banner-online .farm-corner-item--gold + .banner-separator {
   display: none;
 }
+
+/* Hero drag into lists (castleHeroDrag.js) */
+.castle-hero-dragging,
+.castle-hero-dragging * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+.castle-hero-drag-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 20000;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.castle-hero-drag-ghost .castle-hero-drag-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  transition:
+    transform 0.14s ease-out,
+    filter 0.18s ease-out;
+  filter: drop-shadow(0 1.4vh 1.6vh rgba(0, 0, 0, 0.65));
+  box-shadow: 0 0 0 0.2vh rgba(217, 193, 111, 0.85), 0 0 1.6vh rgba(255, 226, 122, 0.45);
+  border-radius: 0.4vh;
+}
+
+.castle-hero-drag-add .castle-hero-drag-card {
+  filter: drop-shadow(0 0 1.6vh rgba(127, 224, 255, 0.9)) brightness(1.15);
+}
+
+.castle-hero-drag-remove .castle-hero-drag-card {
+  filter: drop-shadow(0 1vh 1.4vh rgba(0, 0, 0, 0.7)) grayscale(0.55) sepia(0.35) hue-rotate(-30deg) saturate(1.6) brightness(0.9);
+  box-shadow: 0 0 0 0.2vh rgba(255, 110, 90, 0.9), 0 0 1.8vh rgba(255, 90, 70, 0.55);
+}
+
+.castle-hero-drag-already .castle-hero-drag-card {
+  filter: drop-shadow(0 1vh 1.4vh rgba(0, 0, 0, 0.7)) grayscale(0.7) brightness(0.8);
+}
+
+.castle-hero-drag-badge {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 3.2vh;
+  height: 3.2vh;
+  margin: -1.6vh 0 0 -1.6vh;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: bold 2.6vh / 1 'DejaVuSans', sans-serif;
+  color: #fff;
+  text-shadow: 0 0 0.4vh rgba(0, 0, 0, 0.9);
+  border: 0.2vh solid rgb(217, 193, 111);
+  box-shadow: 0 0.3vh 0.8vh rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.14s ease-out,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.14s;
+}
+
+.castle-hero-drag-add .castle-hero-drag-badge,
+.castle-hero-drag-remove .castle-hero-drag-badge {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.castle-hero-drag-add .castle-hero-drag-badge {
+  background: radial-gradient(circle at 35% 30%, rgb(110, 220, 120), rgb(20, 120, 50));
+}
+
+.castle-hero-drag-remove .castle-hero-drag-badge {
+  background: radial-gradient(circle at 35% 30%, rgb(255, 120, 100), rgb(160, 30, 25));
+}
+
+.castle-hero-drag-label {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translate(-50%, 0) scale(0.85);
+  white-space: nowrap;
+  padding: 0.45vh 1vh;
+  border-radius: 0.6vh;
+  border: 0.11vh solid rgba(217, 193, 111, 0.8);
+  background: rgba(6, 41, 56, 0.92);
+  color: rgba(242, 236, 196, 0.95);
+  font: bold 1.35vh / 1.2 'DejaVuSans', sans-serif;
+  text-shadow: 0 0 0.3vh #000;
+  box-shadow: 0 0.3vh 0.9vh rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition:
+    opacity 0.14s ease-out,
+    transform 0.18s ease-out;
+}
+
+.castle-hero-drag-label-visible {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.castle-hero-drag-remove .castle-hero-drag-label {
+  border-color: rgba(255, 120, 100, 0.85);
+  background: rgba(70, 14, 10, 0.92);
+}
+
+.castle-hero-drag-source {
+  opacity: 0.35;
+  filter: grayscale(0.8) !important;
+  transition: opacity 0.15s;
+}
+
+.castle-hero-drag-returning {
+  opacity: 0;
+}
+
+/* list tabs while a hero is dragged */
+.castle-hero-lists-bar .castle-hero-list-btn.castle-hero-drop-ready {
+  transition:
+    transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.16s,
+    background-color 0.16s;
+  animation: castle-hero-drop-invite 1.1s ease-in-out infinite;
+}
+
+.castle-hero-lists-bar .castle-hero-list-btn.castle-hero-drop-has {
+  animation: none;
+  opacity: 0.6;
+}
+
+.castle-hero-lists-bar .castle-hero-list-btn.castle-hero-drop-hover {
+  animation: none;
+  opacity: 1;
+  transform: translateY(-0.9cqh) scale(1.18);
+  background: rgb(7, 153, 248);
+  box-shadow:
+    inset 0 0 0 1px rgb(70, 50, 30),
+    0 0 1.2cqh rgba(127, 224, 255, 0.95),
+    0 0 2.4cqh rgba(255, 226, 122, 0.6);
+  z-index: 2;
+}
+
+.castle-hero-lists-bar .castle-hero-list-btn.castle-hero-drop-has.castle-hero-drop-hover {
+  background: rgb(80, 80, 80);
+  box-shadow:
+    inset 0 0 0 1px rgb(70, 50, 30),
+    0 0 1.2cqh rgba(255, 110, 90, 0.8);
+  transform: translateY(-0.4cqh) scale(1.05);
+}
+
+.castle-hero-lists-bar .castle-hero-list-btn.castle-hero-drop-flash {
+  box-shadow:
+    inset 0 0 0 1px rgb(70, 50, 30),
+    0 0 1.6cqh rgba(255, 226, 122, 1),
+    0 0 3cqh rgba(127, 224, 255, 0.8);
+  filter: brightness(1.5);
+  transition:
+    box-shadow 0.6s ease-out,
+    filter 0.6s ease-out;
+}
+
+@keyframes castle-hero-drop-invite {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px rgb(70, 50, 30),
+      0 0 0.3cqh rgba(255, 226, 122, 0.25);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px rgb(70, 50, 30),
+      0 0 1cqh rgba(255, 226, 122, 0.75);
+  }
+}
+
+.castle-hero-drop-plus {
+  position: fixed;
+  z-index: 20001;
+  pointer-events: none;
+  font: bold 2.2vh / 1 'DejaVuSans', sans-serif;
+  color: rgb(255, 226, 122);
+  text-shadow:
+    0 0 0.5vh #000,
+    0 0 1vh rgba(255, 180, 60, 0.8);
+}
+
+.castle-hero-drop-spark {
+  position: fixed;
+  z-index: 20001;
+  width: 0.7vh;
+  height: 0.7vh;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 0.8vh currentColor;
+}
