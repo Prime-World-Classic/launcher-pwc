@@ -6966,7 +6966,7 @@ export const en = {
     chatReplyTo: 'Reply to',
     chatReplyMissing: 'Message unavailable',
     chatReplyJump: 'Show message',
-    chatRepliesNext: 'Unread replies to you — go to the next one',
+    chatRepliesNext: 'Unread replies',
     chatEditing: 'Editing message',
     chatReply: 'Reply',
     chatEdit: 'Edit',
