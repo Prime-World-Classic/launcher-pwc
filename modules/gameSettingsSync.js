@@ -1,5 +1,6 @@
 import { App } from './app.js';
 import { NativeAPI } from './nativeApi.js';
+import { ChatFilter } from './chatFilter.js';
 
 // Копия файлов настроек игры на сервере по аккаунту (pw-api objects/settings.model.js): user.cfg, input_new.cfg,
 // *.ignore из корня папки игры (NativeAPI.getGameUserDir).
@@ -230,6 +231,7 @@ export class GameSettingsSync {
       GameSettingsSync.pulled = true;
       await GameSettingsSync.flushPending();
       if (restored.length) console.log('game settings restored from server:', restored);
+      if (restored.includes('user.cfg')) ChatFilter.refresh(); // мат-фильтр чата — из user.cfg
       return restored;
     });
   }
@@ -268,6 +270,7 @@ export class GameSettingsSync {
   // Игра закрыта: всё, что изменилось с beforeGame, изменила игра
   static afterGame(snapshot) {
     GameSettingsSync.gameRunning = false;
+    ChatFilter.refresh(); // мат-фильтр могли переключить в настройках игры
     if (!snapshot) return;
     for (const [name, file] of GameSettingsSync.readLocal()) {
       if (snapshot.get(name) === file.sha256 || GameSettingsSync.known.get(name) === file.sha256) continue;

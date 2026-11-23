@@ -13,6 +13,7 @@ import { KeybindStore } from './keybindings/keybindings.store.js';
 import { loadKeybinds, saveKeybinds, resetKeybinds } from './keybindings/keybindings.io.js';
 import { normalizeKey, attachGameKeyCapture } from './keybindings/keybindings.input.js';
 import { GameSettingsSync } from './gameSettingsSync.js';
+import { ChatFilter } from './chatFilter.js';
 
 // ---------------------------------------------------------------- user.cfg
 
@@ -49,6 +50,7 @@ export const UserCfg = {
       const m = /^\s*setvar\s+(\S+)\s*=\s*(.*?)\s*$/.exec(line);
       if (m) this.values.set(m[1], m[2]);
     }
+    ChatFilter.setEnabled(this.num(ChatFilter.VARIABLE, 1) !== 0); // мат-фильтр чата замка — та же настройка
   },
 
   get(name, def) {
@@ -83,6 +85,7 @@ export const UserCfg = {
       }
       this.lines.splice(at, 0, line);
     }
+    if (ChatFilter.VARIABLE in changes) ChatFilter.setEnabled(Number(changes[ChatFilter.VARIABLE]) !== 0);
     if (!this.path) return;
     try {
       await NativeAPI.fileSystem.promises.mkdir(NativeAPI.path.dirname(this.path), { recursive: true });
@@ -135,6 +138,7 @@ const PAGES = {
     { type: 'check', id: 'show_ability_status', variable: 'show_ability_status_messages', def: 1, label: 'bsAdvShowAbilityStatus' },
     { type: 'note', label: 'bsAdvNoteAbilityStatus' },
     { type: 'check', id: 'bad_words', variable: 'use_badwords_filter', def: 1, label: 'bsPrefUseBadWordsFilter' },
+    { type: 'note', label: 'advNoteBadWordsFilter' },
     { type: 'check', id: 'chat_off', variable: 'session_chat_off', def: 0, label: 'bsPrefChatOff' },
     // голосовой чат — отдельной вкладкой «Голосовая связь» (battleVoiceRows)
   ],
@@ -1315,6 +1319,19 @@ const CASTLE_PAGES = {
     { type: 'note', label: 'advNoteModesWings' },
     // вкл — суточные квесты выдаются уже принятыми (quest.list autoAccept), выкл — кнопкой «Начать»
     { type: 'setting', id: 'questAutoAccept', label: 'questAutoAccept', get: () => S().questAutoAccept !== false, set: (on) => (S().questAutoAccept = on) },
+    // мат-фильтр — игровая настройка (user.cfg use_badwords_filter), та же галочка, что в «Настройках боя» и в игре;
+    // файл перечитывается перед записью, чтобы не затереть остальное; чат замка меняется в UserCfg.set
+    {
+      type: 'setting',
+      id: 'badWordsFilter',
+      label: 'bsPrefUseBadWordsFilter',
+      get: () => ChatFilter.enabled,
+      set: async (on) => {
+        await UserCfg.load();
+        await UserCfg.set({ [ChatFilter.VARIABLE]: on ? 1 : 0 });
+      },
+    },
+    { type: 'note', label: 'advNoteBadWordsFilter' },
     { type: 'language' },
   ],
   voice: [

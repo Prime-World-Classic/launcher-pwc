@@ -7,6 +7,7 @@ import { domAudioPresets } from './domAudioPresets.js';
 import { uiIcon } from './uiIcon.js';
 import { CastleFarm } from './castleFarm.js';
 import { ChatImages } from './chatImages.js';
+import { ChatFilter } from './chatFilter.js';
 
 // Общий чат замка.
 // У сообщения один id — chat_message.id из БД: его несут и живая рассылка
@@ -102,6 +103,13 @@ export class Chat {
 
   static init() {
     Chat.initView();
+
+    // Мат-фильтр включили/выключили (настройки замка, боя, игра) — уже показанные сообщения сразу меняются.
+    if (!Chat.filterHooked) {
+      Chat.filterHooked = true;
+      ChatFilter.onChange(() => ChatFilter.apply(Chat.body));
+    }
+    ChatFilter.refresh();
 
     document.addEventListener('keydown', (event) => {
       if (event.code == 'KeyM' && (event.ctrlKey || event.metaKey)) {
@@ -1055,12 +1063,13 @@ export class Chat {
           });
           text.append(link);
         } else {
-          text.append(part);
+          text.append(ChatFilter.node(part));
         }
       }
       return text;
     }
-    text.textContent = message.text;
+    // мат-фильтр (игровая настройка use_badwords_filter): закрывается только показ, message.text не меняется
+    text.append(ChatFilter.node(message.text));
     return text;
   }
 
@@ -1241,7 +1250,7 @@ export class Chat {
     const quote = DOM(
       { style: ['chat-reply-quote', ...(tone ? [`chat-reply-quote--${tone}`] : [])] },
       DOM({ tag: 'span', style: 'chat-reply-nick' }, data?.nickname || Lang.text('chatReplyTo')),
-      DOM({ tag: 'span', style: ['chat-reply-text', ...(data ? [] : ['chat-reply-text--missing'])] }, preview),
+      DOM({ tag: 'span', style: ['chat-reply-text', ...(data ? [] : ['chat-reply-text--missing'])] }, data ? ChatFilter.node(preview) : preview),
     );
     if (jump) {
       quote.title = Lang.text('chatReplyJump');
@@ -1366,7 +1375,11 @@ export class Chat {
         event: ['click', () => Chat.setPinnedOpen(!Chat.pinnedOpen)],
       },
       uiIcon('pin'),
-      DOM({ tag: 'span', style: 'chat-pinned-preview' }, DOM({ tag: 'b' }, `${latest.nickname}: `), ChatImages.caption(latest) || Lang.text('chatImage')),
+      DOM(
+        { tag: 'span', style: 'chat-pinned-preview' },
+        DOM({ tag: 'b' }, `${latest.nickname}: `),
+        ChatImages.caption(latest) ? ChatFilter.node(ChatImages.caption(latest)) : Lang.text('chatImage'),
+      ),
       DOM({ tag: 'span', style: 'chat-pinned-count' }, String(list.length)),
     );
 
