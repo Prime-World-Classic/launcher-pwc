@@ -61,6 +61,22 @@ export class Chat {
   static history = { page: 0, loading: false, hasMore: true };
   static jumping = false;
 
+  // Непрочитанные ответы мне (и обращения): id по возрастанию. Прочитано — когда сообщение
+  // побыло на экране в открытом чате или к нему перешли кнопкой счётчика. Хранится в localStorage
+  // по аккаунту: ответы, пришедшие, пока лаунчер был закрыт, тоже считаются.
+  static replyUnread = [];
+
+  // Последний учтённый id; -1 — первый запуск: старую историю не считаем, только новое.
+  static replyLast = -1;
+
+  static replyUser = 0;
+
+  static replySeenAt = new Map();
+
+  static replyTimer = 0;
+
+  static REPLY_READ_MS = 700;
+
   static syncing = false;
 
   // Вкладка: 'all' — общий чат, 'team' — чат команды (пати в замке или своя команда в лобби).
@@ -185,10 +201,23 @@ export class Chat {
       return button;
     };
 
+    // Непрочитанные ответы мне: число, клик — к следующему, от старых к новым.
+    Chat.repliesButton = DOM(
+      {
+        tag: 'button',
+        style: 'chat-replies',
+        domaudio: domAudioPresets.smallButton,
+        title: Lang.text('chatRepliesNext'),
+        event: ['click', () => Chat.jumpNextReply()],
+      },
+      DOM({ tag: 'span', style: 'chat-replies-count' }),
+    );
+
     Chat.input = DOM(
       { style: 'chat-input-container' },
       Chat.field,
       Chat.counter,
+      Chat.repliesButton,
       DOM({ style: 'chat-tabs' }, tab('all', Lang.text('chatTabAll')), tab('team', Lang.text('chatTabTeam'))),
       Chat.attachButton,
       Chat.fileInput,
@@ -225,8 +254,14 @@ export class Chat {
     });
     Chat.initResizeAnchor();
 
+    // Чат открыт (наведение или фокус) — следим, какие ответы мне видны, и отмечаем прочитанными.
+    Chat.body.addEventListener('mouseenter', () => Chat.watchReplies());
+    Chat.body.addEventListener('focusin', () => Chat.watchReplies());
+    Chat.list.addEventListener('scroll', () => Chat.watchReplies(), { passive: true });
+
     Chat.initTooltip();
     Chat.setTab('all');
+    Chat.updateReplyBadge();
   }
 
   static NOTICE_MS = 6000;
@@ -399,6 +434,153 @@ export class Chat {
       toggle.classList.toggle('chat-menu-item--muted', Chat.hide);
       toggle.setAttribute('aria-pressed', String(!Chat.hide));
     }
+    Chat.updateReplyBadge();
+  }
+
+  // ---- Непрочитанные ответы мне ----
+
+  static replyStorageKey() {
+    return `pwChatReplies:${Chat.myId}`;
+  }
+
+  // Состояние — своё у каждого аккаунта: при смене входа перечитываем.
+  static ensureReplyState() {
+    const userId = Chat.myId;
+    if (Chat.replyUser === userId) return userId > 0;
+    Chat.replyUser = userId;
+    Chat.replyUnread = [];
+    Chat.replyLast = -1;
+    Chat.replySeenAt.clear();
+    if (!(userId > 0)) return false;
+    try {
+      const saved = JSON.parse(localStorage.getItem(Chat.replyStorageKey()) || 'null');
+      if (saved && Number.isFinite(Number(saved.last))) {
+        Chat.replyLast = Number(saved.last);
+        Chat.replyUnread = (Array.isArray(saved.unread) ? saved.unread : []).map(Number).filter((id) => id > 0);
+      }
+    } catch {
+      // нет доступа к хранилищу — считаем только за этот запуск
+    }
+    return true;
+  }
+
+  static saveReplyState() {
+    if (!(Chat.replyUser > 0) || Chat.replyLast < 0) return;
+    try {
+      localStorage.setItem(Chat.replyStorageKey(), JSON.stringify({ last: Chat.replyLast, unread: Chat.replyUnread.slice(-200) }));
+    } catch {
+      // не сохранилось — до перезапуска счётчик живёт в памяти
+    }
+  }
+
+  static isReplyToMe(message) {
+    if (!(message?.id > 0) || Chat.isOwn(message)) return false;
+    if (Chat.isMention(message)) return true;
+    return message.replyMessageId > 0 && Chat.replyQuoteData(message)?.userId === Chat.myId;
+  }
+
+  // live — пришло сейчас (UChat); история до первой загрузки не считается (первый запуск).
+  static trackReply(message, live) {
+    if (!Chat.ensureReplyState()) return;
+    const id = Number(message?.id || 0);
+    if (!(id > 0)) return;
+    const fresh = Chat.replyLast >= 0 ? id > Chat.replyLast : live;
+    if (Chat.replyLast >= 0 && id > Chat.replyLast) Chat.replyLast = id;
+    if (!fresh || Chat.replyUnread.includes(id) || !Chat.isReplyToMe(message)) return;
+    Chat.replyUnread.push(id);
+    Chat.replyUnread.sort((a, b) => a - b);
+    Chat.saveReplyState();
+    Chat.updateReplyBadge();
+    Chat.watchReplies();
+  }
+
+  // Первая загрузка истории без сохранённого состояния: всё, что уже в ленте, считаем прочитанным.
+  static setReplyBaseline() {
+    if (!Chat.ensureReplyState() || Chat.replyLast >= 0) return;
+    Chat.replyLast = Math.max(0, ...Chat.items.keys(), ...Chat.replyUnread);
+    Chat.saveReplyState();
+  }
+
+  static markReplyRead(id) {
+    const index = Chat.replyUnread.indexOf(id);
+    Chat.replySeenAt.delete(id);
+    if (index < 0) return;
+    Chat.replyUnread.splice(index, 1);
+    Chat.saveReplyState();
+    Chat.updateReplyBadge();
+  }
+
+  // menuItem — кнопка чата в меню, ещё не вставленная в документ (view.js).
+  static updateReplyBadge(menuItem = null) {
+    const count = Chat.ensureReplyState() ? Chat.replyUnread.length : 0;
+    const text = count > 99 ? '99+' : String(count);
+    if (Chat.repliesButton) {
+      Chat.repliesButton.classList.toggle('chat-replies--visible', count > 0);
+      Chat.repliesButton.lastChild.textContent = text;
+    }
+    // То же число на кнопке чата в меню замка — кружком, как число друзей онлайн.
+    const toggles = new Set(document.querySelectorAll('.chat-menu-item'));
+    if (menuItem) toggles.add(menuItem);
+    for (const toggle of toggles) {
+      let badge = toggle.querySelector('.chat-menu-replies');
+      if (!badge) {
+        badge = DOM({ tag: 'span', style: ['friends-menu-online-count', 'chat-menu-replies'] });
+        toggle.append(badge);
+      }
+      badge.textContent = text;
+      badge.style.display = count > 0 ? '' : 'none';
+    }
+  }
+
+  // Клик по счётчику: к самому старому непрочитанному ответу; он считается прочитанным.
+  static jumpNextReply() {
+    if (Chat.tab !== 'all') Chat.setTab('all');
+    while (Chat.replyUnread.length) {
+      const id = Chat.replyUnread[0];
+      if (Chat.flash(id)) {
+        Chat.markReplyRead(id);
+        return;
+      }
+      Chat.markReplyRead(id); // сообщения больше нет в ленте (скрыли)
+    }
+  }
+
+  static isChatOpen() {
+    return Boolean(
+      Chat.body?.isConnected &&
+        !Chat.hide &&
+        Chat.tab === 'all' &&
+        document.visibilityState !== 'hidden' &&
+        Chat.body.matches(':hover, :focus-within'),
+    );
+  }
+
+  // Пока чат открыт и есть непрочитанные — раз в 0,3 с смотрим, какие из них на экране.
+  static watchReplies() {
+    if (Chat.replyTimer || !Chat.replyUnread.length) return;
+    Chat.replyTimer = setInterval(() => Chat.checkVisibleReplies(), 300);
+    Chat.checkVisibleReplies();
+  }
+
+  static checkVisibleReplies() {
+    if (!Chat.replyUnread.length || !Chat.isChatOpen()) {
+      clearInterval(Chat.replyTimer);
+      Chat.replyTimer = 0;
+      Chat.replySeenAt.clear();
+      return;
+    }
+    const view = Chat.list.getBoundingClientRect();
+    const now = Date.now();
+    for (const id of [...Chat.replyUnread]) {
+      const rect = Chat.items.get(id)?.getBoundingClientRect();
+      const visible = rect && rect.height > 0 && Math.min(rect.bottom, view.bottom) - Math.max(rect.top, view.top) >= Math.min(rect.height, view.height) * 0.6;
+      if (!visible) {
+        Chat.replySeenAt.delete(id);
+        continue;
+      }
+      if (!Chat.replySeenAt.has(id)) Chat.replySeenAt.set(id, now);
+      else if (now - Chat.replySeenAt.get(id) >= Chat.REPLY_READ_MS) Chat.markReplyRead(id);
+    }
   }
 
   // ---- Данные ----
@@ -529,6 +711,7 @@ export class Chat {
     }
     const isNew = !Chat.items.has(message.id);
     Chat.upsert(message, true);
+    Chat.trackReply(Chat.messages.get(message.id), true);
     if (isNew && !Chat.isOwn(message)) Chat.bumpTab('all');
     if (isNew && !Chat.isOwn(message) && !Chat.isAtBottom()) {
       Chat.unread++;
@@ -558,6 +741,7 @@ export class Chat {
     Chat.messages.delete(id);
     if (Chat.pinnedIds.delete(id)) Chat.renderPinned();
     if (Chat.editId === id) Chat.cancelCompose();
+    Chat.markReplyRead(id);
     // Исходное скрыли — у ответов на него цитата без текста.
     for (const message of Chat.messages.values()) {
       if (message.replyMessageId === id) message.replyQuote = null;
@@ -645,8 +829,11 @@ export class Chat {
       const rows = await App.api.request('user', 'loadForumMessage', { category: 0, page });
       const list = Array.isArray(rows) ? rows : [];
       for (const row of list) {
-        Chat.upsert(Chat.fromHistory(row), true);
+        const message = Chat.fromHistory(row);
+        Chat.upsert(message, true);
+        Chat.trackReply(Chat.messages.get(message.id), false);
       }
+      if (page === 0) Chat.setReplyBaseline();
       if (list.length < Chat.HISTORY_PAGE_SIZE) Chat.history.hasMore = false;
       Chat.history.page = Math.max(Chat.history.page, page);
     } catch (error) {
@@ -692,6 +879,7 @@ export class Chat {
           for (const row of list) {
             const message = Chat.fromHistory(row);
             Chat.upsert(message, true);
+            Chat.trackReply(Chat.messages.get(message.id), false);
             cursor = Math.max(cursor, message.id);
           }
           total += list.length;

@@ -8511,6 +8511,36 @@ button.build-action-item.btn-hover.color-1 .btn-duplicate {
   display: none;
 }
 
+/* Unread replies to me: the count left of the tabs, click jumps to the next one (oldest first) */
+.chat .chat-replies {
+  flex: none;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 2.6cqh;
+  height: 2.6cqh;
+  padding: 0 0.6cqh;
+  border: 0.12cqh solid rgba(110, 235, 160, 0.75);
+  border-radius: 999px;
+  background: rgba(70, 200, 130, 0.28);
+  color: #c9ffe0;
+  font-size: 1.35cqh;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 0 0.8cqh rgba(70, 200, 130, 0.45);
+  transition: background-color 0.15s ease-out;
+}
+
+.chat .chat-replies:hover {
+  background: rgba(70, 200, 130, 0.45);
+}
+
+.chat .chat-replies.chat-replies--visible {
+  display: inline-flex;
+}
+
 /* Only one feed is visible: the general one or the team one */
 .chat-body--team,
 .chat.chat--team .chat-body,
@@ -12092,9 +12122,28 @@ i-success {
   height: auto;
 }
 
-.chat-menu-item--muted {
+/* Chat hidden: grey icon and frame, but the replies count keeps its colour
+   (filter on the button itself would grey the count too). */
+.chat-menu-item.chat-menu-item--muted {
+  background-image: none;
+}
+
+.chat-menu-item--muted::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: url('icons/chat.webp') center / contain no-repeat;
+  filter: grayscale(0.72) saturate(0.4);
+  pointer-events: none;
+}
+
+.chat-menu-item--muted > .castle-menu-icon-frame {
   filter: grayscale(0.72) saturate(0.4);
 }
+
+/* Unread replies to me on the chat button: the same circle as friends online
+   (.friends-menu-online-count in castle.css, class set in chat.js). */
 
 #wally-build,
 #wplayer-build {

@@ -6944,6 +6944,7 @@ export const ru = {
     chatReplyTo: 'Ответ',
     chatReplyMissing: 'Сообщение недоступно',
     chatReplyJump: 'Показать сообщение',
+    chatRepliesNext: 'Непрочитанные ответы вам — к следующему',
     chatEditing: 'Редактирование сообщения',
     chatReply: 'Ответить',
     chatEdit: 'Редактировать',

@@ -2357,13 +2357,7 @@ export class View {
         Chat.changeChatVisibility();
       }
     });
-    chatMenuItem.setAttribute('aria-pressed', String(!Chat.hide));
-    chatMenuItem.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        Chat.changeChatVisibility();
-      }
-    });
+    Chat.updateReplyBadge(chatMenuItem); // чат скрыт — число непрочитанных ответов мне на кнопке
     let notificationsMenuItem = App.createNotificationsButton();
     let heroesMenuItem = DOM({
       domaudio: domAudioPresets.defaultButton,
