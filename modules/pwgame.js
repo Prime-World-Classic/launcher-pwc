@@ -3,6 +3,7 @@ import { Lang } from './lang.js';
 import { NativeAPI } from './nativeApi.js';
 import { ReplayUpload } from './replayUpload.js';
 import { CrashReport } from './crashReport.js';
+import { BattleLeave } from './battleLeave.js';
 import { GameSettingsSync } from './gameSettingsSync.js';
 import { renderBackendToken } from './gameRender.js';
 
@@ -291,6 +292,11 @@ export class PWGame {
     // краш игры (окно «Unhandled Exception») — дамп, лог и реплей на бэкенд, не дожидаясь закрытия окна (crashReport.js)
     CrashReport.watch(id);
 
+    // как игрок уйдёт из боя (кнопка «Выйти», вылет, снятый процесс, сеть) — battleLeave.js
+    if (method !== 'spectate') {
+      BattleLeave.start(id);
+    }
+
     // игра закрыта — реплей этого боя на бэкенд (replayUpload.js), зрителю не нужно
     const onGameExit = (error = null) => {
       PWGame.isGameRunning = false;
@@ -298,6 +304,7 @@ export class PWGame {
       CrashReport.afterGame(error && error.code);
       if (method !== 'spectate') {
         ReplayUpload.afterGame(id);
+        BattleLeave.finish(error && error.code).catch((e) => console.warn('leave: finish failed', e));
       }
       // файлы игры освобождены: пропущенный из-за игры апдейт можно догнать сразу, не дожидаясь
       // следующего тика наблюдателя (он и так проверит isSafeToRestart — в поиске/бою не тронет)

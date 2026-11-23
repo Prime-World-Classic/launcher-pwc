@@ -34,6 +34,7 @@ import { uiIcon } from './uiIcon.js';
 import { TalentAdmin } from './talentAdmin.js';
 import { ReplayUpload } from './replayUpload.js';
 import { CrashReport } from './crashReport.js';
+import { BattleLeave } from './battleLeave.js';
 import { HeroFrame } from './heroFrame.js';
 import { HeroFrameSelect } from './heroFrameSelect.js';
 import { HeroStar } from './heroStar.js';
@@ -1565,6 +1566,7 @@ export class View {
     GameSettingsSync.pullOnLogin().finally(() => syncFairGameFiles());
     ReplayUpload.resume(); // недосланные реплеи боёв (после перезапуска лончера тоже)
     CrashReport.resume(); // недосланные отчёты о крашах игры
+    BattleLeave.resume(); // как игрок ушёл из прошлых боёв (недосланное, бой при закрытом лончере)
 
     View.setCss('content/castle.css');
 
