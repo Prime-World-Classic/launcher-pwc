@@ -3146,31 +3146,70 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
     return View.castleHeroDragCtx;
   }
 
-  // герой брошен во вкладку (add) или из открытого списка мимо вкладок (remove):
-  // меняем сразу и перерисовываем с анимацией, сервер — следом
+  // герой брошен во вкладку (add) или из открытого списка мимо вкладок (remove).
+  // Полосу героев не перерисовываем: обновляются вкладки и карточка редактора списка, а из полосы
+  // убирается только карточка, которая в ней больше не должна быть. Сервер — следом.
   static applyCastleHeroDrag(action, listId, item) {
     const id = Number(listId) || 0;
     const heroId = Number(item?.id);
     if (id < 1 || id > View.CASTLE_HERO_LISTS_MAX || !Number.isFinite(heroId)) return;
+    const selected = Number(View.castleHeroSelectedList) || 0;
     View.patchCastleHeroListLocal(action, id, [heroId]);
     View.castleHeroEditSelection?.delete?.(heroId);
     View.castleHeroDeleteConfirmListId = 0;
+    View.updateCastleHeroListBackend(action, id, [heroId]);
     if (action === 'add') {
       View.rememberCastleHeroLastActiveList(id);
       if (View.castleHeroPhantomList === id) View.castleHeroPhantomList = 0;
-    } else if (id === View.castleHeroSelectedList) {
-      // из открытого списка убрали последнего героя — открываем «все герои»
-      const empty = !(View.castleHeroAll || []).some((hero) => View.isCastleHeroInList(hero, id));
-      if (empty) {
-        View.castleHeroSelectedList = 0;
-        View.castleHeroListEditMode = '';
-        View.castleHeroEditSelection = new Set();
-        if (View.castleHeroPhantomList === id) View.castleHeroPhantomList = 0;
-        View.persistCastleHeroSelectedList();
-      }
     }
-    View.renderCastleHeroesAnimated();
-    View.updateCastleHeroListBackend(action, id, [heroId]);
+
+    // из открытого списка убрали последнего героя — открываем «все герои» (тут полоса меняется целиком)
+    if (action === 'remove' && id === selected && !(View.castleHeroAll || []).some((hero) => View.isCastleHeroInList(hero, id))) {
+      View.castleHeroSelectedList = 0;
+      View.castleHeroListEditMode = '';
+      View.castleHeroEditSelection = new Set();
+      if (View.castleHeroPhantomList === id) View.castleHeroPhantomList = 0;
+      View.persistCastleHeroSelectedList();
+      View.renderCastleHeroesAnimated();
+      return;
+    }
+
+    View.renderCastleHeroListsToolbar();
+    if (selected > 0) View.castleHeroPinnedEditor?.replaceChildren(View.buildCastleHeroListEditorCard(selected));
+
+    // видна ли карточка в полосе теперь (те же правила, что в renderCastleHeroesFromCache)
+    if (selected > 0) {
+      const inList = View.isCastleHeroInList(item, selected);
+      const visible = View.castleHeroListEditMode === 'add' ? !inList : inList;
+      if (!visible) View.removeCastleHeroCardAnimated(heroId);
+    }
+  }
+
+  // убрать из полосы одну карточку: соседние плавно съезжают на её место
+  static removeCastleHeroCardAnimated(heroId) {
+    const container = View.castleBottom;
+    const card = container?.querySelector(`.castle-hero-item[data-hero-id="${heroId}"]`);
+    if (!card) return;
+    const rest = Array.from(container.querySelectorAll('.castle-hero-item[data-hero-id]')).filter((el) => el !== card);
+    if (!rest.length) {
+      // полоса опустела — нужна надпись «список пуст»
+      View.renderCastleHeroesFromCache({ refreshToolbar: false });
+      return;
+    }
+    const before = rest.map((el) => el.getBoundingClientRect().left);
+    card.remove();
+    const box = container.getBoundingClientRect();
+    rest.forEach((el, i) => {
+      const r = el.getBoundingClientRect();
+      if (r.right < box.left || r.left > box.right) return;
+      const dx = before[i] - r.left;
+      if (Math.abs(dx) < 0.5) return;
+      el.animate([{ transform: `translateX(${dx}px)` }, { transform: 'translateX(0)' }], {
+        duration: 340,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      });
+    });
+    View.updateArrows();
   }
 
   // перерисовка полосы героев с FLIP: оставшиеся карточки съезжают на новые места, новые проявляются
