@@ -1009,7 +1009,7 @@ export class View {
   static castleTotalCrystal = DOM({ tag: 'div', style: ['question-icon'] }, DOM({ style: 'quest-counter' }, ''));
 
   static setCss(name = 'content/style.css') {
-    const cssVersion = '20261123-hero-drag-1';
+    const cssVersion = '20261123-hero-drag-2';
     const separator = name.includes('?') ? '&' : '?';
     const href = `${name}${separator}v=${cssVersion}`;
     // Каждый показ замка звал setCss заново и плодил одинаковые <link>: после
@@ -3159,9 +3159,15 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
       View.rememberCastleHeroLastActiveList(id);
       if (View.castleHeroPhantomList === id) View.castleHeroPhantomList = 0;
     } else if (id === View.castleHeroSelectedList) {
-      // открытый список опустел — оставляем его вкладку (пунктиром), а не прячем из-под ног
+      // из открытого списка убрали последнего героя — открываем «все герои»
       const empty = !(View.castleHeroAll || []).some((hero) => View.isCastleHeroInList(hero, id));
-      if (empty && id > View.getCastleCreatedHeroListCount()) View.castleHeroPhantomList = id;
+      if (empty) {
+        View.castleHeroSelectedList = 0;
+        View.castleHeroListEditMode = '';
+        View.castleHeroEditSelection = new Set();
+        if (View.castleHeroPhantomList === id) View.castleHeroPhantomList = 0;
+        View.persistCastleHeroSelectedList();
+      }
     }
     View.renderCastleHeroesAnimated();
     View.updateCastleHeroListBackend(action, id, [heroId]);
@@ -3526,6 +3532,11 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
             View.castleHeroListEditMode = '';
             View.castleHeroDeleteConfirmListId = 0;
             View.cleanupCastleHeroPhantomList();
+            // убрали последнего героя — открываем «все герои»
+            if (action === 'remove' && !(View.castleHeroAll || []).some((hero) => View.isCastleHeroInList(hero, listId))) {
+              View.castleHeroSelectedList = 0;
+              View.persistCastleHeroSelectedList();
+            }
             View.renderCastleHeroesFromCache();
           },
         ],

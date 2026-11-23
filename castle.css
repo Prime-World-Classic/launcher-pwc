@@ -7623,7 +7623,8 @@ body > :has(> #wbuild) .castle-bottom-content {
   margin: 0;
   transition:
     transform 0.14s ease-out,
-    filter 0.18s ease-out;
+    filter 0.18s ease-out,
+    opacity 0.14s ease-out;
   filter: drop-shadow(0 1.4vh 1.6vh rgba(0, 0, 0, 0.65));
   box-shadow: 0 0 0 0.2vh rgba(217, 193, 111, 0.85), 0 0 1.6vh rgba(255, 226, 122, 0.45);
   border-radius: 0.4vh;
@@ -7631,6 +7632,7 @@ body > :has(> #wbuild) .castle-bottom-content {
 
 .castle-hero-drag-add .castle-hero-drag-card {
   filter: drop-shadow(0 0 1.6vh rgba(127, 224, 255, 0.9)) brightness(1.15);
+  opacity: 0.82;
 }
 
 .castle-hero-drag-remove .castle-hero-drag-card {
@@ -7639,7 +7641,14 @@ body > :has(> #wbuild) .castle-bottom-content {
 }
 
 .castle-hero-drag-already .castle-hero-drag-card {
-  filter: drop-shadow(0 1vh 1.4vh rgba(0, 0, 0, 0.7)) grayscale(0.7) brightness(0.8);
+  filter: drop-shadow(0 1vh 1.4vh rgba(0, 0, 0, 0.7)) grayscale(0.45) brightness(0.92);
+  opacity: 0.82;
+}
+
+/* no tooltips over the dragged card */
+.castle-hero-dragging .ui-tip,
+.castle-hero-dragging [data-tooltip]::after {
+  display: none !important;
 }
 
 .castle-hero-drag-badge {
@@ -7710,14 +7719,15 @@ body > :has(> #wbuild) .castle-bottom-content {
   background: rgba(70, 14, 10, 0.92);
 }
 
+/* !important: PreloadImages leaves inline opacity: 1 on the card */
 .castle-hero-drag-source {
-  opacity: 0.35;
+  opacity: 0.35 !important;
   filter: grayscale(0.8) !important;
   transition: opacity 0.15s;
 }
 
 .castle-hero-drag-returning {
-  opacity: 0;
+  opacity: 0 !important;
 }
 
 /* list tabs while a hero is dragged */

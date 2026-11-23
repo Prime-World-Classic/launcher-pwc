@@ -107,9 +107,12 @@ function startDrag(card, item, ctx, startX, startY) {
   const clone = card.cloneNode(true);
   clone.removeAttribute('id');
   clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
-  clone.querySelectorAll('.castle-hero-list-pick').forEach((el) => el.remove());
+  // у призрака — только портрет: своя круглая кнопка рамки путалась бы со значком «+»/«−»
+  clone.querySelectorAll('.castle-hero-list-pick, .hero-frame-select').forEach((el) => el.remove());
   clone.classList.remove('hover-brightness', 'castle-hero-item-build-open', 'castle-hero-drag-source');
   clone.classList.add('castle-hero-drag-card');
+  // PreloadImages ставит карточке inline opacity: 1 — он перебивал бы прозрачность из castle.css
+  clone.style.removeProperty('opacity');
   clone.style.transformOrigin = `${offX}px ${offY}px`;
 
   const label = document.createElement('div');
@@ -154,6 +157,12 @@ function startDrag(card, item, ctx, startX, startY) {
   for (const target of active.targets) {
     target.el.classList.add('castle-hero-drop-ready');
     if (target.has) target.el.classList.add('castle-hero-drop-has');
+    // подсказка вкладки («Список 2», uiTooltip.js) всплывала поверх карточки — на время перетаскивания убираем
+    const el = target.el;
+    target.savedTitle = el.getAttribute('title');
+    target.savedTip = el.dataset.tip;
+    el.removeAttribute('title');
+    delete el.dataset.tip;
   }
   document.documentElement.classList.add('castle-hero-dragging');
   card.classList.add('castle-hero-drag-source');
@@ -221,11 +230,9 @@ function moveDrag(x, y) {
   else if (drag.sourceList && !insideSource(x, y)) state = 'remove';
   setState(state, target);
 
-  const scale = state === 'add' ? 0.5 : state === 'already' ? 0.62 : state === 'remove' ? 0.74 : 0.82;
-  // над вкладкой карточка зависает выше неё, чтобы вкладку было видно
-  const lift = target ? -Math.round(drag.rect.height * 0.42) : 0;
-  drag.clone.style.transform = `translateY(${lift}px) scale(${scale}) rotate(${(drag.tilt - 3).toFixed(2)}deg)`;
-  drag.badge.style.translate = lift ? `0 ${Math.round(lift * 0.75)}px` : '';
+  // над вкладкой карточка остаётся под курсором, только уменьшается (и просвечивает — см. castle.css)
+  const scale = state === 'add' ? 0.5 : state === 'already' ? 0.56 : state === 'remove' ? 0.74 : 0.82;
+  drag.clone.style.transform = `scale(${scale}) rotate(${(drag.tilt - 3).toFixed(2)}deg)`;
 }
 
 function setState(state, target) {
@@ -278,7 +285,10 @@ function endDrag() {
   const drag = active;
   if (!drag) return;
   for (const target of drag.targets) {
-    target.el.classList.remove('castle-hero-drop-ready', 'castle-hero-drop-has', 'castle-hero-drop-hover');
+    const el = target.el;
+    el.classList.remove('castle-hero-drop-ready', 'castle-hero-drop-has', 'castle-hero-drop-hover');
+    if (target.savedTitle) el.setAttribute('title', target.savedTitle);
+    if (target.savedTip) el.dataset.tip = target.savedTip;
   }
   document.documentElement.classList.remove('castle-hero-dragging');
   drag.card.classList.remove('castle-hero-drag-source');
