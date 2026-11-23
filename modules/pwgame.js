@@ -6,6 +6,7 @@ import { CrashReport } from './crashReport.js';
 import { BattleLeave } from './battleLeave.js';
 import { GameSettingsSync } from './gameSettingsSync.js';
 import { renderBackendToken } from './gameRender.js';
+import { readExeVersion } from './gameExeVersion.js';
 
 export class PWGame {
   static PATH = '../Game/Bin/PW_Game.exe';
@@ -39,6 +40,11 @@ export class PWGame {
   static isGameRunning = false;
 
   static isTestHashesFailed = false;
+
+  // Последняя сверка версии exe не прошла: на диске PW_Game.exe другой версии, чем
+  // App.PW_VERSION. В отличие от прочих предупреждений об обновлении, это блок: игра
+  // с такой строкой запуска сразу закрывается окном «Game update has failed!».
+  static exeVersionBlocked = false;
 
   // Протокол текущего запуска. Формируется в start() из токена сессии бэкенда;
   // до запуска игры протокола нет (дебажной сессии с фиксированным токеном больше нет).
@@ -266,6 +272,15 @@ export class PWGame {
       }
     }
 
+    // exe не той версии закроется сам окном «Game update has failed! Try to run from web-launcher» —
+    // не запускаем его, говорим игроку причину и докачиваем обновление
+    const exeProblem = await PWGame.exeVersionProblem();
+    if (exeProblem) {
+      App.error(exeProblem, 30000);
+      callback();
+      return;
+    }
+
     // копия настроек с сервера на диск (чужие изменения файлов не уходят в базу) — параллельно с замером серверов
     const pulling = Promise.race([GameSettingsSync.pull(), new Promise((resolve) => setTimeout(resolve, 3000))]).catch((e) =>
       console.error('game settings pull before game failed', e),
@@ -349,7 +364,39 @@ export class PWGame {
     await NativeAPI.fileSystem.promises.access(PWGame.PATH);
   }
 
+  // Сверка версии PW_Game.exe с App.PW_VERSION. null — всё в порядке или проверить нечем
+  // (нет файла, нет ресурса версии: тогда решает сам exe); иначе текст для игрока.
+  // При расхождении заново запускает обновление (если апдейтер есть и сейчас свободен).
+  static async exeVersionProblem() {
+    PWGame.exeVersionBlocked = false;
+    if (!NativeAPI.fileSystem) return null;
+    const have = await readExeVersion(NativeAPI.fileSystem, PWGame.PATH);
+    const need = App.PW_VERSION;
+    if (!have || !need || have === need) return null;
+
+    PWGame.exeVersionBlocked = true;
+    const updaterPath = NativeAPI.platform == 'linux' ? PWGame.PATH_UPDATE_LINUX : PWGame.PATH_UPDATE;
+    let hasUpdater = false;
+    try {
+      await NativeAPI.fileSystem.promises.access(updaterPath);
+      hasUpdater = true;
+    } catch {}
+    try {
+      NativeAPI.logUpdate('exe-version-mismatch', `exe=${have} launcher=${need} updater=${hasUpdater}`);
+    } catch {}
+    if (hasUpdater && !NativeAPI.updateInProgress && !PWGame.isGameRunning) {
+      try {
+        Promise.resolve(NativeAPI.update(null, { background: true })).catch(() => {});
+      } catch {}
+    }
+    return Lang.text(hasUpdater ? 'gameExeOutdated' : 'gameExeOutdatedSteam').replace('{have}', have).replace('{need}', need);
+  }
+
   static async checkUpdates() {
+    const exeProblem = await PWGame.exeVersionProblem();
+    if (exeProblem) {
+      throw exeProblem;
+    }
     if (PWGame.isUpdateFailed) {
       throw 'Не удалось обновить игру! Обратитесь в поддержку PWClassic';
     }

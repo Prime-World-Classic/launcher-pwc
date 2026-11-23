@@ -453,6 +453,9 @@ export const en = {
     updateOwnerBlocked: 'The update files belong to another Windows account - run the launcher as the user who installed the game',
     updateRepeatedFailure: 'The update has not completed for several launches in a row - please contact PWClassic support, the reason is in Launcher\\update.log',
     updateBattleBlocked: 'An update is in progress — you can go to battle once it finishes',
+    updateGameIncomplete: 'The launcher was updated but the game files were not. Restart the launcher to finish the update; the reason is in Launcher\\update.log',
+    gameExeOutdated: 'The game was not updated: the game file is version {have}, but {need} is required. The update has been restarted — you can go to battle once it finishes. If that does not help, restart the launcher; the reason is in Launcher\\update.log',
+    gameExeOutdatedSteam: 'The game was not updated: the game file is version {have}, but {need} is required. Verify the game files in Steam (Properties → Installed Files → Verify integrity) and restart Steam',
     updateSearchStopped: 'An update has started — battle search stopped',
     updateGameStartWait: 'An update is in progress — the game will start as soon as it finishes',
 

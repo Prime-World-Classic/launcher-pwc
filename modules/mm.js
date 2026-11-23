@@ -383,6 +383,7 @@ export class MM {
     try {
       if (!MM.active) {
         PWGame.gameConnectionTestIsActive = true;
+        PWGame.exeVersionBlocked = false;
 
         await PWGame.check();
 
@@ -399,7 +400,12 @@ export class MM {
         MM.button.firstChild.innerText = Lang.text('fight');
       }
 
-      return App.error(error);
+      App.error(error);
+
+      // exe не той версии — в поиск не пускаем: бой найдётся, а игра закроется
+      // окном «Game update has failed!». Остальные ошибки проверки — только
+      // предупреждение, как и раньше.
+      return PWGame.exeVersionBlocked ? false : undefined;
     }
   }
 
@@ -415,7 +421,10 @@ export class MM {
     CastleNAVBAR.setTrainingStarting(true);
 
     try {
-      await MM.gameStartCheck();
+      if ((await MM.gameStartCheck()) === false) {
+        CastleNAVBAR.setTrainingStarting(false);
+        return;
+      }
       await App.api.request(App.CURRENT_MM, 'heroParty', { id: MM.partyId, hero: heroId });
       await App.api.request(App.CURRENT_MM, 'start', {
         version: App.PW_VERSION, mode: CastleNAVBAR.TRAINING_MODE, mac: await NativeAPI.getMACAdresses(), cache: await NativeAPI.getCacheIndex(), v: 2,
@@ -451,7 +460,9 @@ export class MM {
     }
 
     if (NativeAPI.status) {
-      await MM.gameStartCheck();
+      if ((await MM.gameStartCheck()) === false) {
+        return;
+      }
     } else {
       const downloadMessage = DOM({
         tag: 'p',

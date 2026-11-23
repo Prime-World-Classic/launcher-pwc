@@ -1445,6 +1445,9 @@ export class NativeAPI {
 
           if (ok) {
             PWGame.isUpToDate = true;
+            // прошлый сбой исправлен этим прогоном (фоновая проверка докачала) — флаг сбоя
+            // держался до перезапуска лончера; ниже его снова поставит проверка «код 0, но не обновил»
+            PWGame.isUpdateFailed = false;
           } else {
             PWGame.isUpdateFailed = true;
             // Коды апдейтера 7/8/9 значат «места нет», «файлы игры заняты», «репозиторий другого
@@ -1480,6 +1483,16 @@ export class NativeAPI {
               );
               PWGame.isUpdateFailed = true;
               App.error(Lang.text('updateError') + ' 0');
+            } else if (moved.length && expected.some((r) => r.name === 'game' && revsAfter.game === r.local)) {
+              // Лончер обновился, а игровая часть нет. Раньше это не ловилось вовсе: окно
+              // перезагружалось на новый content, и игрок шёл в бой со старым PW_Game.exe
+              // («Game update has failed!» при загрузке). Бой при смене версии теперь держит
+              // сверка exe (PWGame.exeVersionProblem), здесь — запись в лог и подсказка игроку.
+              NativeAPI.logUpdate(
+                'updater-incomplete-game',
+                `expected=${expected.map((r) => `${r.name}:${r.local || 'none'}->${r.remote || 'init'}`).join(',')} code=${code}`,
+              );
+              App.error(Lang.text('updateGameIncomplete'));
             }
           }
 
