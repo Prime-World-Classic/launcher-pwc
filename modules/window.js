@@ -105,11 +105,21 @@ export class Window {
       // недоигравшее закрытие прошлого окна билда не должно мешать новому
       document.querySelectorAll('#wbuild.wbuild--closing').forEach((old) => old.remove());
     }
+    // Зал славы поверх своего билда (аватар героя в окне билда): билд не закрывается, а прячется
+    // и возвращается как был, когда Зал славы закроют. Зал славы сменяет сам себя (другой герой,
+    // вкладка) — билд ждёт дальше; любое другое окно вместо Зала славы — спрятанный билд закрывается.
+    const currentMain = category === 'main' ? Window.windows.main : null;
+    const hideBuild = template.id === 'wtop' && currentMain?.id === 'wbuild';
+    if (category === 'main' && !hideBuild && !(template.id === 'wtop' && currentMain?.id === 'wtop')) Window.dropHiddenBuild();
     if (category in Window.windows) {
       // окно билда сменяется окном билда (другой герой): страница «Герой» переезжает в новое живой
       if (template.id === 'wbuild' && Window.windows[category].id === 'wbuild') View.stashBuildHeroesFrame();
-      Window.windows[category].cleanup?.();
-      Window.windows[category].remove();
+      if (hideBuild) {
+        Window.hideBuild(currentMain);
+      } else {
+        Window.windows[category].cleanup?.();
+        Window.windows[category].remove();
+      }
       const index = Window.windowOrder.indexOf(category);
       if (index > -1) {
         Window.windowOrder.splice(index, 1);
@@ -294,7 +304,9 @@ export class Window {
       } catch {}
     }
 
-    if (category === 'main' && typeof Build !== 'undefined' && Build.cleanup) {
+    // закрывают Зал славы над спрятанным билдом — билд остаётся жить и сейчас вернётся
+    const restoreBuild = category === 'main' && Window.windows.main?.id === 'wtop' && Window.hiddenBuild;
+    if (category === 'main' && !restoreBuild && typeof Build !== 'undefined' && Build.cleanup) {
       Build.cleanup();
     }
 
@@ -333,9 +345,52 @@ export class Window {
       if (index > -1) {
         Window.windowOrder.splice(index, 1);
       }
+      if (restoreBuild) Window.restoreHiddenBuild();
       return true;
     }
     return false;
+  }
+
+  // Спрятанное окно билда (под Залом славы): { template, editor }
+  static hiddenBuild = null;
+
+  static hideBuild(template) {
+    Window.dropHiddenBuild();
+    template.style.display = 'none';
+    if (template.windowOverlay) template.windowOverlay.style.display = 'none';
+    Window.hiddenBuild = { template, editor: Build.shown };
+  }
+
+  static restoreHiddenBuild() {
+    const hidden = Window.hiddenBuild;
+    Window.hiddenBuild = null;
+    if (!hidden) return;
+    const { template, editor } = hidden;
+    // ушли с экрана замка или билд уже сменили — возвращать нечего
+    if (!template.isConnected || (editor && Build.shown !== editor)) {
+      Window.discardBuild(hidden);
+      return;
+    }
+    template.style.display = '';
+    if (template.windowOverlay) template.windowOverlay.style.display = '';
+    Window.windows.main = template;
+    Window.windowOrder.unshift('main');
+    View.setCastleOpenedBuildHero(Number(template.dataset.buildHero) || 0);
+    View.fitBuildWindowToHeroList();
+    requestAnimationFrame(() => Voice.updatePanelPosition());
+  }
+
+  static dropHiddenBuild() {
+    const hidden = Window.hiddenBuild;
+    Window.hiddenBuild = null;
+    if (hidden) Window.discardBuild(hidden);
+  }
+
+  static discardBuild({ template, editor }) {
+    template.cleanup?.();
+    template.remove();
+    // новый билд уже открыт (например, после «Украсть билд») — старый редактор он закрыл сам
+    if (editor && Build.shown === editor) Build.cleanup();
   }
   static closeLast() {
     if (Window.windowOrder.length > 0) {
