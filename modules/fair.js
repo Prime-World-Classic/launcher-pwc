@@ -42,8 +42,8 @@ const FRAME_WINS = [25, 50, 75, 100];
 const CATEGORIES = [
   // single — подпись на карточке товара (множественное число — только в названиях категорий), notes — подсказки раздела
   { id: 'skin', categoryId: CAT.skin, label: 'fairCatSkins', single: 'fairItemSkin', hint: 'fairHintSkins' },
-  { id: 'flag', categoryId: CAT.flag, label: 'fairCatFlags', single: 'fairItemFlag', hint: 'fairHintFlags' },
   { id: 'frame', categoryId: CAT.frame, label: 'fairCatFrames', single: 'fairItemFrame', hint: 'fairHintFrames' },
+  { id: 'flag', categoryId: CAT.flag, label: 'fairCatFlags', single: 'fairItemFlag', hint: 'fairHintFlags' },
   {
     id: 'loadscreen',
     categoryId: CAT.loadscreen,
