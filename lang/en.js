@@ -6964,6 +6964,8 @@ export const en = {
     chatTitle: 'Chat',
     chatMute: 'Mute',
     chatReplyTo: 'Reply to',
+    chatReplyMissing: 'Message unavailable',
+    chatReplyJump: 'Show message',
     chatEditing: 'Editing message',
     chatReply: 'Reply',
     chatEdit: 'Edit',

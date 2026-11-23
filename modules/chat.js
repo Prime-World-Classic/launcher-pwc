@@ -59,6 +59,7 @@ export class Chat {
   static unread = 0;
 
   static history = { page: 0, loading: false, hasMore: true };
+  static jumping = false;
 
   static syncing = false;
 
@@ -449,6 +450,7 @@ export class Chat {
       source: Chat.sourceOf(data),
       tgTag: String(data?.tgTag || ''),
       ...Chat.imageOf(data),
+      ...Chat.replyOf(data),
       echoId: String(data?.echoId || ''),
     };
   }
@@ -469,8 +471,28 @@ export class Chat {
       source: Chat.sourceOf(row),
       tgTag: String(row?.tgTag || ''),
       ...Chat.imageOf(row),
+      ...Chat.replyOf(row),
       echoId: '',
     };
+  }
+
+  // На какое сообщение эфира ответ (replyMessageId) и его цитата от pw-api (ник, начало текста):
+  // по ней цитата видна, даже если исходное не загружено в ленту. Старый pw-api цитату не шлёт.
+  static replyOf(data) {
+    const replyMessageId = Number(data?.replyMessageId || 0);
+    if (!(replyMessageId > 0)) return { replyMessageId: 0, replyQuote: null };
+    const replyQuote = data?.replyNickname
+      ? {
+          userId: Number(data?.replyUserId || 0),
+          nickname: String(data.replyNickname),
+          text: String(data?.replyText ?? ''),
+          image: Boolean(data?.replyImage),
+          source: String(data?.replySource || ''),
+          tgTag: String(data?.replyTgTag || ''),
+          star: 0,
+        }
+      : null;
+    return { replyMessageId, replyQuote };
   }
 
   static imageOf(data) {
@@ -536,6 +558,23 @@ export class Chat {
     Chat.messages.delete(id);
     if (Chat.pinnedIds.delete(id)) Chat.renderPinned();
     if (Chat.editId === id) Chat.cancelCompose();
+    // Исходное скрыли — у ответов на него цитата без текста.
+    for (const message of Chat.messages.values()) {
+      if (message.replyMessageId === id) message.replyQuote = null;
+    }
+    Chat.refreshReplies(id);
+  }
+
+  // Исходное сообщение появилось в ленте или изменилось — перерисовываем цитаты ответов на него.
+  static refreshReplies(id) {
+    if (!(id > 0)) return;
+    for (const [replyId, element] of Chat.items) {
+      const message = Chat.messages.get(replyId);
+      if (!message || message.replyMessageId !== id) continue;
+      const fresh = Chat.renderMessage(message);
+      element.replaceWith(fresh);
+      Chat.items.set(replyId, fresh);
+    }
   }
 
   // Совместимость: старые вызовы Chat.viewMessage(UChat-данные).
@@ -556,6 +595,7 @@ export class Chat {
       if (existing) existing.replaceWith(element);
       else Chat.insertByOrder(element, merged.id);
       Chat.items.set(merged.id, element);
+      Chat.refreshReplies(merged.id);
     }
 
     const wasPinned = Chat.pinnedIds.has(merged.id);
@@ -953,15 +993,113 @@ export class Chat {
       Chat.renderTime(message),
       ...Chat.renderAuthor(message),
       DOM({ tag: 'span', style: 'chat-msg-colon' }, ': '),
-      Chat.renderText(message),
-      actions,
     );
+    // Ответ — как в Telegram: цитата исходного над текстом, обращение «@ник, » в тексте не повторяем.
+    const quote = Chat.renderReplyQuote(message);
+    if (quote) {
+      element.classList.add('chat-msg--reply');
+      element.append(quote, Chat.renderText({ ...message, text: Chat.stripQuotedHandle(message) }));
+    } else {
+      element.append(Chat.renderText(message));
+    }
+    element.append(actions);
     element.dataset.id = String(message.id || '');
     element.addEventListener('contextmenu', (event) => {
       event.preventDefault();
       if (message.id > 0) Chat.openMenu(message.id);
     });
     return element;
+  }
+
+  // ---- Ответы (цитата как в Telegram) ----
+
+  // Что показать в цитате: исходное из ленты (свежий текст после правки), иначе цитата от pw-api.
+  static replyQuoteData(message) {
+    const original = Chat.messages.get(message.replyMessageId);
+    if (original) {
+      return {
+        userId: original.userId,
+        nickname: original.nickname,
+        text: ChatImages.caption(original),
+        image: Boolean(original.image || original.imageUrl),
+        source: original.source,
+        tgTag: original.tgTag,
+        star: original.star,
+      };
+    }
+    return message.replyQuote || null;
+  }
+
+  // Цвет ника — как в ленте: владелец, хелпер, администрация, звёзды, обычный.
+  static nickTone(userId, star) {
+    if (userId === 1) return 'owner';
+    if (App.isHelper(userId)) return 'helper';
+    if (App.isAdmin(userId)) return 'administration';
+    return star > 0 ? 'star' : '';
+  }
+
+  static renderReplyQuote(message, { jump = true } = {}) {
+    const id = Number(message.replyMessageId || 0);
+    if (!(id > 0)) return null;
+    const data = Chat.replyQuoteData(message);
+    let preview = '';
+    if (data) {
+      preview = Chat.stripReplyHandle(data.image && data.text === ChatImages.PLACEHOLDER ? '' : data.text).trim();
+      if (!preview && data.image) preview = Lang.text('chatImage');
+    } else {
+      preview = Lang.text('chatReplyMissing');
+    }
+    const tone = data ? Chat.nickTone(data.userId, data.star) : '';
+    const quote = DOM(
+      { style: ['chat-reply-quote', ...(tone ? [`chat-reply-quote--${tone}`] : [])] },
+      DOM({ tag: 'span', style: 'chat-reply-nick' }, data?.nickname || Lang.text('chatReplyTo')),
+      DOM({ tag: 'span', style: ['chat-reply-text', ...(data ? [] : ['chat-reply-text--missing'])] }, preview),
+    );
+    if (jump) {
+      quote.title = Lang.text('chatReplyJump');
+      quote.addEventListener('click', (event) => {
+        event.stopPropagation();
+        Chat.jumpTo(id);
+      });
+    }
+    return quote;
+  }
+
+  // Обращение к автору исходного в начале ответа («@ник, ») — его уже показывает цитата.
+  static stripQuotedHandle(message) {
+    const text = String(message.text || '');
+    const data = Chat.replyQuoteData(message);
+    if (!data) return text;
+    const handles = [`@${String(data.nickname || '').trim()}`];
+    if (data.tgTag) handles.push(`@${data.tgTag.replace(/^@+/, '')}`);
+    const lower = text.toLowerCase();
+    for (const handle of handles) {
+      if (handle.length < 2) continue;
+      const prefix = `${handle.toLowerCase()},`;
+      if (!lower.startsWith(prefix)) continue;
+      const rest = text.slice(prefix.length).replace(/^\s+/, '');
+      return rest || text;
+    }
+    return text;
+  }
+
+  // Клик по цитате: показать исходное; если его нет в ленте — догрузить историю (не больше 10 страниц).
+  static async jumpTo(id) {
+    if (Chat.flash(id)) return;
+    if (Chat.jumping) return;
+    Chat.jumping = true;
+    try {
+      for (let step = 0; step < 10 && !Chat.items.has(id) && Chat.history.hasMore; step++) {
+        const page = Chat.history.page + 1;
+        await Chat.loadHistoryPage(page);
+        if (Chat.history.page < page) break; // не загрузилось (нет связи)
+        const oldest = Math.min(...[...Chat.items.keys()].filter((key) => key > 0));
+        if (oldest > 0 && oldest < id) break; // исходное старше не будет — его скрыли
+      }
+    } finally {
+      Chat.jumping = false;
+    }
+    Chat.flash(id);
   }
 
   static actionButton(content, title, callback) {
@@ -1269,9 +1407,12 @@ export class Chat {
     else if (Chat.reply) label = `${Lang.text('chatReplyTo')} ${Chat.reply.handle}`;
     Chat.banner.replaceChildren();
     Chat.banner.classList.toggle('chat-compose-banner--visible', Boolean(label || Chat.attachment));
+    // Ответ — цитатой, как будет в ленте (клик — к исходному).
+    const quote = !Chat.editId && Chat.reply ? Chat.renderReplyQuote({ replyMessageId: Chat.reply.messageId }) : null;
+    if (quote) quote.firstChild.textContent = `${Lang.text('chatReplyTo')} ${quote.firstChild.textContent}`;
     if (label) {
       Chat.banner.append(
-        DOM({ tag: 'span' }, label),
+        quote || DOM({ tag: 'span' }, label),
         DOM({ tag: 'button', style: 'chat-msg-action', title: Lang.text('cancel'), event: ['click', () => Chat.cancelCompose()] }, uiIcon('cross')),
       );
     }
@@ -1413,6 +1554,8 @@ export class Chat {
       userId: Chat.myId,
       nickname: String(App.storage.data.login || ''),
       to: reply?.userId || 0,
+      replyMessageId: reply?.messageId || 0,
+      replyQuote: null,
       flag: 0,
       star: 0,
       text,

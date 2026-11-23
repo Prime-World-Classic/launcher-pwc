@@ -6942,6 +6942,8 @@ export const ru = {
     chatTitle: 'Чат',
     chatMute: 'Выдать мут',
     chatReplyTo: 'Ответ',
+    chatReplyMissing: 'Сообщение недоступно',
+    chatReplyJump: 'Показать сообщение',
     chatEditing: 'Редактирование сообщения',
     chatReply: 'Ответить',
     chatEdit: 'Редактировать',

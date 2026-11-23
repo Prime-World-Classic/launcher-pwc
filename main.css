@@ -8277,6 +8277,93 @@ button.build-action-item.btn-hover.color-1 .btn-duplicate {
   object-fit: contain;
 }
 
+/* Reply quote (Telegram-like): original author + first line above the reply text.
+   Bar and nickname use the author's chat nickname colour. */
+.chat-reply-quote {
+  --reply-color: rgb(250, 229, 108);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: fit-content;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0.25cqh 0 0.3cqh;
+  padding: 0.2cqh 0.8cqh 0.25cqh 0.7cqh;
+  border-left: 0.3cqh solid var(--reply-color);
+  border-radius: 0.4cqh;
+  background: color-mix(in srgb, var(--reply-color) 13%, transparent);
+  font-size: 1.4cqh;
+  line-height: 1.3;
+  overflow: hidden;
+  cursor: var(--cursor-pointer);
+  transition: background-color 0.15s ease-out;
+}
+
+.chat-reply-quote:hover {
+  background: color-mix(in srgb, var(--reply-color) 22%, transparent);
+}
+
+.chat-reply-quote--star {
+  --reply-color: #ffd06a;
+}
+
+.chat-reply-quote--helper {
+  --reply-color: #48d1cc;
+}
+
+.chat-reply-quote--administration {
+  --reply-color: rgb(255, 136, 0);
+}
+
+.chat-reply-quote--owner {
+  --reply-color: rgb(255, 50, 0);
+}
+
+.chat-reply-nick,
+.chat-reply-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-reply-nick {
+  font-weight: 600;
+  color: var(--reply-color);
+}
+
+.chat-reply-text {
+  color: rgba(240, 240, 230, 0.78);
+}
+
+.chat-reply-text--missing {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* Own bubble: quote on top, text below it, author row at the bottom. */
+.chat-msg--own.chat-msg--reply > .chat-reply-quote {
+  grid-row: 1;
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  width: auto;
+}
+
+.chat-msg--own.chat-msg--reply > .chat-msg-text {
+  grid-row: 2;
+}
+
+.chat-msg--own.chat-msg--reply > :is(.chat-flag, .chat-source-icon, .chat-star, .chat-msg-nick, .chat-msg-time) {
+  grid-row: 3;
+}
+
+/* Reply being composed: the same quote in the banner above the input. */
+.chat-compose-banner > .chat-reply-quote {
+  flex: 1;
+  width: auto;
+  margin: 0;
+}
+
 .chat-msg-picture--loading .chat-msg-picture-img,
 .chat-msg-picture--failed .chat-msg-picture-img {
   visibility: hidden;
