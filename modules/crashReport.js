@@ -159,6 +159,13 @@ export class CrashReport {
     C0000602: 'fail fast (RaiseFailFastException)',
     CFFFFFFF: 'игра закрыта как зависшая',
     E0000BAD: 'главный поток не отвечал, стек снят сторожем',
+    // игра выходит с HRESULT Direct3D, когда устройство не восстановить (Render/renderer.cpp ExitOnDeviceFailure)
+    88760874: 'видеодрайвер завис и был сброшен Windows (D3DERR_DEVICEHUNG)',
+    88760870: 'видеокарта отключена или драйвер переустановлен (D3DERR_DEVICEREMOVED)',
+    88760827: 'внутренняя ошибка видеодрайвера (D3DERR_DRIVERINTERNALERROR)',
+    88760869: 'не удалось восстановить видеоустройство (D3DERR_DEVICENOTRESET)',
+    '8876086C': 'не удалось восстановить видеоустройство (D3DERR_INVALIDCALL)',
+    '8876017C': 'не хватило видеопамяти при восстановлении (D3DERR_OUTOFVIDEOMEMORY)',
     80000003: 'breakpoint',
     40000015: 'abort()',
     E06D7363: 'необработанное C++-исключение',
@@ -234,9 +241,10 @@ export class CrashReport {
     return (code >>> 0).toString(16).toUpperCase().padStart(8, '0');
   }
 
-  // NTSTATUS-ошибки (0xC…), breakpoint, abort() — краш; прочие коды игра ставит сама
+  // NTSTATUS-ошибки (0xC…), breakpoint, abort(), ошибки Direct3D (0x8876xxxx: видеоустройство
+  // не восстановить) — краш; прочие коды игра ставит сама
   static isCrashExit(code) {
-    return code >= 0xc0000000 || code === 0x80000003 || code === 0x40000015 || code === 3;
+    return code >= 0xc0000000 || code === 0x80000003 || code === 0x40000015 || code === 3 || code >>> 16 === 0x8876;
   }
 
   // Папка логов этого запуска: самая новая, созданная после старта игры
