@@ -472,7 +472,8 @@ export function voiceMicControls(inputStyle = 'bs-key') {
 }
 
 // клавиша игры (input_new.cfg): имена клавиш — как у игры, конфликт подсвечивается
-function bindKeyInput(command, value = null, onChange = null) {
+// onBefore(before) — до изменения (before — клавиши до него), onChange(before, after) — после
+function bindKeyInput(command, value = null, onChange = null, onBefore = null) {
   const input = DOM({ tag: 'input', style: 'bs-key', readOnly: true });
   const refresh = () => {
     input.value = formatKeys(KeybindStore.displayKeys(command, value));
@@ -480,17 +481,17 @@ function bindKeyInput(command, value = null, onChange = null) {
     input.classList.toggle('is-conflict', conflict);
     input.title = conflict ? Lang.text('keybindConflict') : '';
   };
+  const change = (apply) => {
+    const before = formatKeys(KeybindStore.displayKeys(command, value));
+    onBefore?.(before);
+    apply();
+    refresh();
+    const after = formatKeys(KeybindStore.displayKeys(command, value));
+    onChange?.(before, after);
+  };
   attachGameKeyCapture(input, {
-    onKeys: (keys) => {
-      KeybindStore.setBind(command, keys, value);
-      refresh();
-      onChange?.();
-    },
-    onClear: () => {
-      KeybindStore.clearBind(command, value);
-      refresh();
-      onChange?.();
-    },
+    onKeys: (keys) => change(() => KeybindStore.setBind(command, keys, value)),
+    onClear: () => change(() => KeybindStore.clearBind(command, value)),
   });
   input.refresh = refresh;
   refresh();
@@ -1122,16 +1123,30 @@ function buildGamePage(ctx) {
 
 // ---------------------------------------------------------------- страница «Клавиши»
 
+// Клавиши сохраняются сразу после назначения (как остальные настройки окна). Каждое изменение
+// кладёт в ctx.keysHistory снимок модели до него — «Отменить» возвращает по одному шагу, в том числе
+// «Сбросить». История живёт, пока открыто окно.
 function buildKeysPage(ctx) {
   const page = DOM({ style: 'bs-page' });
   const inputs = [];
   for (const group of KEY_GROUPS) {
     page.append(header(group.title));
     for (const r of group.rows) {
-      const input = bindKeyInput(r.command, r.value ?? null, () => {
-        ctx.keysDirty = true;
-        inputs.forEach((i) => i.refresh());
-      });
+      let snapshot = null;
+      const input = bindKeyInput(
+        r.command,
+        r.value ?? null,
+        async (before, after) => {
+          inputs.forEach((i) => i.refresh());
+          if (before === after) return;
+          ctx.keysHistory.push({ model: snapshot, what: `${Lang.text(r.label)}: ${before || '—'} → ${after || '—'}` });
+          ctx.onKeysHistory?.();
+          await ctx.saveKeys();
+        },
+        () => {
+          snapshot = structuredClone(KeybindStore.fileModel);
+        },
+      );
       inputs.push(input);
       page.append(row(Lang.text(r.label), input));
     }
@@ -1159,21 +1174,19 @@ export async function battleSettings() {
   const keysLoaded = await loadKeybinds();
   NativeAPI.unregisterVoiceHotkeys?.();
 
-  const ctx = { keysDirty: false };
+  // записи файла клавиш идут по очереди: быстрые переназначения не обгоняют друг друга
+  let keysSaving = Promise.resolve();
+  const ctx = {
+    keysHistory: [],
+    saveKeys: (opts) => (keysSaving = keysSaving.then(() => saveKeybinds(opts))),
+  };
   const content = DOM({ style: ['bs-content', 'wtop-list-scroll'] });
   const footer = DOM({ style: 'bs-footer' });
   const sidebar = DOM({ style: 'bs-sidebar' });
   const catButtons = new Map();
 
-  // несохранённые клавиши «Клавиш» отбрасываются при уходе со страницы (как «Отменить» в игре)
-  const discardKeys = async () => {
-    if (!ctx.keysDirty) return;
-    ctx.keysDirty = false;
-    await loadKeybinds();
-  };
-
   const show = async (id) => {
-    if (shownCategory === 'keys' && id !== 'keys') await discardKeys();
+    ctx.onKeysHistory = null;
     shownCategory = id;
     for (const [cid, el] of catButtons) el.classList.toggle('is-active', cid === id);
     content.replaceChildren();
@@ -1185,18 +1198,30 @@ export async function battleSettings() {
     else if (id === 'keys') {
       page = keysLoaded ? buildKeysPage(ctx) : DOM({ style: 'bs-note' }, Lang.text('settingsReadError'));
       if (keysLoaded) {
+        // «Отменить» — шаг назад по истории; подсказка говорит, что именно вернётся
+        const undo = button(Lang.text('bsCancel'), async () => {
+          const step = ctx.keysHistory.pop();
+          if (!step) return;
+          KeybindStore.init(step.model, KeybindStore.source, KeybindStore.configPath);
+          page.refreshKeys?.();
+          updateUndo();
+          if (await ctx.saveKeys({ quiet: true })) App.notify(`${Lang.text('bsKeysUndone')} ${step.what}`);
+        });
+        const updateUndo = () => {
+          const last = ctx.keysHistory.at(-1);
+          undo.classList.toggle('is-disabled', !last);
+          undo.title = last ? `${Lang.text('bsKeysUndoHint')} ${last.what}` : '';
+        };
+        ctx.onKeysHistory = updateUndo;
+        updateUndo();
         footer.append(
-          button(Lang.text('bsAccept'), async () => {
-            if (await saveKeybinds()) ctx.keysDirty = false;
-          }),
-          button(Lang.text('bsCancel'), async () => {
-            ctx.keysDirty = true;
-            await discardKeys();
-            page.refreshKeys?.();
-          }),
+          undo,
           resetKeysButton(async () => {
+            const snapshot = structuredClone(KeybindStore.fileModel);
+            await keysSaving;
             if (!(await resetKeybinds())) return;
-            ctx.keysDirty = false;
+            ctx.keysHistory.push({ model: snapshot, what: Lang.text('bsKeysResetStep') });
+            updateUndo();
             page.refreshKeys?.();
           }),
         );
@@ -1230,7 +1255,6 @@ export async function battleSettings() {
   if (!NativeAPI.status) root.append(DOM({ style: 'bs-warning' }, Lang.text('bsBrowserOnly')));
 
   root.cleanup = () => {
-    if (ctx.keysDirty) loadKeybinds();
     NativeAPI.refreshVoiceHotkeys?.();
   };
 

@@ -16095,6 +16095,18 @@ body:has(> * > #wcastle-call)::before {
   gap: 1.2cqh; /* keys tab has 5 buttons */
 }
 
+/* footer buttons: a quarter of the width each (4 buttons on the keys tab fill the row,
+   2 on other tabs stay the same size, centered) and never overflow the window */
+#wbattle-settings .bs-footer > .castle-menu-item-button.bs-button {
+  flex: 0 1 calc((100% - 3 * 1.2cqh) / 4);
+  min-width: 0;
+  padding-left: 1cqh;
+  padding-right: 1cqh;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 #wbattle-settings .castle-menu-item-button.bs-button,
 #wfair .castle-menu-item-button.bs-button {
   width: auto;

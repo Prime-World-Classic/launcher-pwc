@@ -214,7 +214,7 @@ export async function resetKeybinds() {
   }
 }
 
-export async function saveKeybinds() {
+export async function saveKeybinds({ quiet = false } = {}) {
   try {
     const data = serializeCfg(KeybindStore.fileModel);
     console.log('Saving keybinds to', KeybindStore.source, KeybindStore.configPath);
@@ -241,7 +241,7 @@ export async function saveKeybinds() {
       a.click();
     }
 
-    App.notify(Lang.text('savedKeybindings'));
+    if (!quiet) App.notify(Lang.text('savedKeybindings'));
     return true;
   } catch (err) {
     console.error('Failed to save keybinds:', err);
