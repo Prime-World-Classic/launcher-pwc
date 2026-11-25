@@ -788,7 +788,7 @@ export const en = {
     loadscreen_adorn_bow_name: 'The bow',
     loadscreen_angel_name: 'Angel',
     loadscreen_angel_fire_name: 'Fire angel',
-    loadscreen_red_moon_name: 'Red moon',
+    loadscreen_red_moon_name: 'Assassin',
     loadscreen_priest_name: 'Priest',
     loadscreen_sunset_name: 'Sunset',
     praise_default_name: 'Default praise',

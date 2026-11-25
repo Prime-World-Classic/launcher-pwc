@@ -796,7 +796,7 @@ export const ru = {
     loadscreen_adorn_bow_name: 'Поклон',
     loadscreen_angel_name: 'Ангел',
     loadscreen_angel_fire_name: 'Огненный ангел',
-    loadscreen_red_moon_name: 'Красная луна',
+    loadscreen_red_moon_name: 'Ассасин',
     loadscreen_priest_name: 'Священник',
     loadscreen_sunset_name: 'Закат',
     praise_default_name: 'Стандартная похвала',
