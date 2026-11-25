@@ -13,6 +13,8 @@ import { ChatFilter } from './chatFilter.js';
 // в замок и перед каждым запуском игры (pull) файл, отличающийся от копии на сервере, перезаписывается ею.
 // Файл, которого на сервере ещё нет, отправляется как есть (source=first, сервер не перезапишет уже
 // сохранённый).
+// Исключение — админы (App.isAdmin): их файл на диске, отличающийся от копии, считается их правкой и
+// уходит на сервер (source=launcher); удалённый файл возвращается из копии, как у всех.
 //
 // Изменения лончера и игры, которые ещё не дошли до сервера, — в pending (и в localStorage, чтобы пережить
 // перезапуск лончера): pull их не перезаписывает, а досылает. Иначе (2026-11-22) правки клавиш в замке
@@ -202,6 +204,11 @@ export class GameSettingsSync {
         const before = local.get(name)?.sha256;
         if (before === sha256) continue;
         if (GameSettingsSync.isPendingOnDisk(name, before)) continue; // своё изменение — уйдёт на сервер ниже
+        // админам ручная правка файла (user.cfg руками) разрешена: не затирать, а отправить в копию
+        if (before && App.isAdmin()) {
+          GameSettingsSync.markPending(name, 'launcher');
+          continue;
+        }
         if (!before && GameSettingsSync.isOversized(name)) {
           console.warn('game settings: local file too big for the server copy, kept as is:', name);
           continue;
