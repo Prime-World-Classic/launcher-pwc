@@ -733,12 +733,46 @@ export async function fair(tab = null, { previewData = null } = {}) {
     });
   };
 
-  // купленный товар выбирается сразу, без окна подтверждения
-  const equip = async (item) => {
-    if (previewData) return;
-    // выбор экрана/похвалы меняем у копии: при ошибке сервера окно остаётся как было
-    const before = { ...ctx.local, selected: { ...ctx.local.selected } };
-    try {
+  // Экраны и похвала: выбор сразу виден в окне, сохраняется на сервер в фоне. Быстрые клики по разным
+  // товарам — норма: пока идёт запрос, новые клики только меняют ctx.local, а после ответа уходит один
+  // запрос с итоговым выбором (раньше второй fairSelect падал с REQUEST_ALREADY_PENDING красной плашкой).
+  const copySelection = (state) => ({ ...state, selected: { ...state.selected } });
+  let confirmedLocal = copySelection(ctx.local); // последнее, что подтвердил сервер
+  let localSaving = null;
+  let localDirty = false;
+  const saveLocalSelection = () => {
+    localDirty = true;
+    if (localSaving) return localSaving;
+    localSaving = (async () => {
+      try {
+        while (localDirty) {
+          localDirty = false;
+          const snapshot = copySelection(ctx.local);
+          try {
+            await storeSelection(snapshot);
+            confirmedLocal = copySelection(snapshot);
+            // сервер оставляет только купленное — его ответ берём, если после запроса не кликали
+            if (!localDirty) ctx.local = copySelection(snapshot);
+          } catch (e) {
+            App.error(e);
+            if (!localDirty) ctx.local = copySelection(confirmedLocal);
+          }
+        }
+        await syncFairGameFiles();
+      } finally {
+        localSaving = null;
+        renderCards();
+        renderDetail();
+      }
+    })();
+    return localSaving;
+  };
+
+  // Остальное (рамки, флаги, образы) — запросы по очереди, каждый после ответа на предыдущий.
+  let equipQueue = Promise.resolve();
+  const equip = (item) => {
+    if (previewData) return equipQueue;
+    if (LOCAL_CATEGORIES.includes(item.categoryId)) {
       if (item.categoryId === CAT.loadscreen) {
         // ротация: «Выбрать» добавляет экран, «Убрать» снимает; стандартный экран очищает ротацию
         const name = String(item.externalId);
@@ -746,14 +780,18 @@ export async function fair(tab = null, { previewData = null } = {}) {
         const next = item.id == 0 ? [] : rotation.includes(name) ? rotation.filter((n) => n !== name) : [...rotation, name];
         if (next.length) ctx.local.selected[CAT.loadscreen] = next;
         else delete ctx.local.selected[CAT.loadscreen];
-        await storeSelection(ctx.local);
-        await syncFairGameFiles();
-      } else if (LOCAL_CATEGORIES.includes(item.categoryId)) {
-        if (item.id == 0) delete ctx.local.selected[item.categoryId];
-        else ctx.local.selected[item.categoryId] = String(item.externalId);
-        await storeSelection(ctx.local);
-        await syncFairGameFiles();
-      } else if (item.categoryId === CAT.skin) {
+      } else if (item.id == 0) delete ctx.local.selected[item.categoryId];
+      else ctx.local.selected[item.categoryId] = String(item.externalId);
+      renderCards();
+      renderDetail();
+      return saveLocalSelection();
+    }
+    equipQueue = equipQueue.then(() => equipOnce(item)).catch((e) => App.error(e));
+    return equipQueue;
+  };
+  const equipOnce = async (item) => {
+    try {
+      if (item.categoryId === CAT.skin) {
         const { heroId, skinId } = heroOf(item);
         await Build.changeSkinForHero(heroId, skinId);
       } else if (item.id == 0) {
@@ -764,7 +802,6 @@ export async function fair(tab = null, { previewData = null } = {}) {
       // рамка из ярмарки — рамка по умолчанию: у героев без своей рамки она меняется сразу, на месте
       if (item.categoryId === CAT.frame) HeroFrameSelect.setFairFrame(item.id == 0 ? 0 : parseInt(item.externalId, 10));
     } catch (e) {
-      if (LOCAL_CATEGORIES.includes(item.categoryId)) ctx.local = before;
       App.error(e);
       return;
     }

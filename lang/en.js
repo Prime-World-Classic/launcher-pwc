@@ -467,6 +467,7 @@ export const en = {
     reconnectingNotify: 'Restoring server connection...',
     unknownMessageStructure: 'Unknown message structure -> {json}',
     requestAlreadyPending: 'Request already pending, please wait for server response (15 seconds)... | {method} -> {object}',
+    requestQueueFull: 'Too many requests in a row, please wait for the server to respond... | {method} -> {object}',
     requestFailedConnectionError: 'Request failed, internet connection error',
     requestTimeoutError: 'Internet connection error, request timeout for {object} -> {method}',
 

@@ -472,6 +472,7 @@ export const ru = {
     reconnectingNotify: 'Восстанавливаем соединение с сервером...',
     unknownMessageStructure: 'Неизвестная структура сообщения -> {json}',
     requestAlreadyPending: 'Запрос уже выполнен, пожалуйста дождитесь ответа от сервера (15 секунд)... | {method} -> {object}',
+    requestQueueFull: 'Слишком много запросов подряд, подождите ответа сервера... | {method} -> {object}',
     requestFailedConnectionError: 'Запрос не выполнен, ошибка интернет соединения',
     requestTimeoutError: 'Ошибка интернет соединения, время ожидания ответа на запрос {object} -> {method} истекло',
 

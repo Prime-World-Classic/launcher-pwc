@@ -2,6 +2,9 @@ import { App } from './app.js';
 import { Lang } from './lang.js';
 
 export class Api {
+  // сколько запросов может ждать своей очереди (см. request)
+  static QUEUE_LIMIT = 10;
+
   // Наблюдатели запросов (phase 'send' | 'done', object, method, data): кэш билдов узнаёт о правках
   // откуда бы они ни шли (окно билда, лобби, админка). Ошибка наблюдателя запрос не ломает.
   static requestObservers = new Set();
@@ -368,7 +371,56 @@ export class Api {
     }
   }
 
-  async request(object, method, data) {
+  // Запросы одного метода (object.method) идут по очереди: пока ждём ответа, следующий запрос
+  // этого метода ждёт его и уходит следом — без красной плашки REQUEST_ALREADY_PENDING от быстрых
+  // кликов по разным кнопкам. Такой же запрос (те же данные), уже стоящий последним, второй раз
+  // не отправляется: вызов получает его ответ (двойной клик не выполняет действие дважды).
+  request(object, method, data) {
+    const tails = (this._methodTail ??= new Map());
+    const slot = `${object}\u0000${method}`;
+    let dataKey = null;
+    try {
+      dataKey = JSON.stringify(data ?? null);
+    } catch {}
+    const tail = tails.get(slot);
+    if (tail && dataKey !== null && tail.dataKey === dataKey) return tail.promise;
+
+    // в очереди (ждут своей отправки) — не больше Api.QUEUE_LIMIT запросов на лаунчер (аккаунт)
+    if (tail && (this._queued ?? 0) >= Api.QUEUE_LIMIT) {
+      const text = Lang.text('requestQueueFull').replace('{method}', method).replace('{object}', object);
+      const error = new Error(text);
+      error.code = 'REQUEST_QUEUE_FULL';
+      error.toString = () => text;
+      return Promise.reject(error);
+    }
+
+    let promise;
+    if (tail) {
+      this._queued = (this._queued ?? 0) + 1;
+      promise = tail.promise
+        .catch(() => {})
+        .then(() => {
+          this._queued--;
+          return this._requestNow(object, method, data);
+        });
+    } else {
+      promise = this._requestNow(object, method, data);
+    }
+    const entry = { dataKey, promise };
+    tails.set(slot, entry);
+    promise
+      .catch(() => {})
+      .finally(() => {
+        if (tails.get(slot) === entry) tails.delete(slot);
+      });
+    return promise;
+  }
+
+  async _requestNow(object, method, data) {
+    // запрос того же метода в обход очереди (silent и т. п.) — ждём его ответа, сколько он может идти
+    for (let wait = 0; wait < 160 && this.methodBusy(object, method); wait++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
     for (let key in this.awaiting) {
       if (this.awaiting[key].object == object && this.awaiting[key].method == method) {
         // Типизированная ошибка: вызов может дождаться освобождения метода
@@ -397,6 +449,13 @@ export class Api {
     } finally {
       Api.notifyRequestObservers('done', object, method, data);
     }
+  }
+
+  methodBusy(object, method) {
+    for (const key in this.awaiting) {
+      if (this.awaiting[key].object == object && this.awaiting[key].method == method) return true;
+    }
+    return false;
   }
 
   awaitResponse(identify, object, method) {
