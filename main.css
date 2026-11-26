@@ -18147,6 +18147,20 @@ body:has(> .main > .tadm) .launcher-restart-quick-tab {
   transform: scale(1.5);
 }
 
+/* The frame is 1.5x the portrait and spills onto the nickname above and the ready button below
+   (party in the castle) and onto the nickname under the portrait (lobby). Text goes over the frame.
+   In the lobby the hovered portrait goes back on top, so its hero tooltip is not covered by the nickname. */
+.castle-party-middle-item-nickname,
+.castle-party-middle-item-ready-notready,
+.mm-lobby-header-team-player-name {
+  position: relative;
+  z-index: 2;
+}
+
+.mm-lobby-header-team-player-hero:hover {
+  z-index: 3;
+}
+
 /* Build avatar: the frame keeps its full size (scale 1.5 fits the avatar ring), but everything below
    the top edge of the build window is cut off: there it would lie on the window. The cut sits under
    the nameplate, so it is not visible. */
