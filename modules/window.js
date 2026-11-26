@@ -113,10 +113,11 @@ export class Window {
     if (category === 'main' && !hideBuild && !(template.id === 'wtop' && currentMain?.id === 'wtop')) Window.dropHiddenBuild();
     if (category in Window.windows) {
       // окно билда сменяется окном билда (другой герой): страница «Герой» переезжает в новое живой
-      if (template.id === 'wbuild' && Window.windows[category].id === 'wbuild') View.stashBuildHeroesFrame();
       if (hideBuild) {
         Window.hideBuild(currentMain);
       } else {
+        // и при смене билда на любое другое окно страница «Герой» не удаляется (View.stashBuildHeroesFrame)
+        View.stashBuildHeroesFrame(Window.windows[category]);
         Window.windows[category].cleanup?.();
         Window.windows[category].remove();
       }
@@ -336,6 +337,7 @@ export class Window {
         closing.cleanup();
       }
       if (closing.id === 'wbuild') {
+        View.stashBuildHeroesFrame(closing);
         Window.removeBuildAnimated(closing);
       } else {
         closing.remove();
@@ -388,6 +390,7 @@ export class Window {
 
   static discardBuild({ template, editor }) {
     template.cleanup?.();
+    View.stashBuildHeroesFrame(template);
     template.remove();
     // новый билд уже открыт (например, после «Украсть билд») — старый редактор он закрыл сам
     if (editor && Build.shown === editor) Build.cleanup();

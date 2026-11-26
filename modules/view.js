@@ -1091,6 +1091,9 @@ export class View {
       View._actionBarCfgEnsured = true;
     }
 
+    // экран билда (#viewbuild) уходит — его страница «Герой» не удаляется (View.stashBuildHeroesFrame)
+    if (View.active && View.active !== template) View.stashBuildHeroesFrame(View.active);
+
     if (View.active) {
       if (View.animationIsEnabled) {
         View.activeAnimation.reverse();
@@ -5891,30 +5894,33 @@ ${Lang.text('castleBuildCategoryUnavailable')}` },
   // Живая страница вкладки «Герой» (iframe) последнего окна билда
   static buildHeroesFrame = null;
 
-  // Окно билда вот-вот уберут (смена героя): уносим его страницу «Герой» в скрытый контейнер,
-  // чтобы новое окно забрало её без перезагрузки. moveBefore не перезагружает iframe, а remove — да.
-  static stashBuildHeroesFrame() {
+  // Окно билда вот-вот уберут (смена героя, закрытие, Зал славы сменился другим окном): уносим его
+  // страницу «Герой» в скрытый контейнер, чтобы следующее окно забрало её без перезагрузки.
+  // moveBefore не перезагружает iframe, а remove — да. Страницу НЕ удаляем никогда: удалённый iframe
+  // обрывает свои загрузки портретов (content/hero/<id>/<облик>.webp — те же файлы, что у списка героев
+  // и квестов), и NW запоминал эти картинки битыми во всём лаунчере до перезапуска.
+  // within — убрать, только если страница лежит в этом окне.
+  static stashBuildHeroesFrame(within = null) {
     const frame = View.buildHeroesFrame;
     if (!frame?.isConnected || typeof document.body.moveBefore !== 'function') return;
+    if (within && !within.contains(frame)) return;
+    if (frame.parentElement?.id === 'build-heroes-stash') return;
     let stash = document.getElementById('build-heroes-stash');
     if (!stash) {
       stash = DOM({ id: 'build-heroes-stash', ariaHidden: 'true' });
       document.body.append(stash);
     }
     // тот же размер, что в окне: страница не перекладывается дважды
+    // (окно спрятано под Залом славы — размер нулевой, оставляем прежний)
     const rect = frame.getBoundingClientRect();
-    stash.style.cssText = `position: fixed; left: -100000px; top: 0; width: ${rect.width}px; height: ${rect.height}px; pointer-events: none;`;
+    if (rect.width > 0 && rect.height > 0) {
+      stash.style.cssText = `position: fixed; left: -100000px; top: 0; width: ${rect.width}px; height: ${rect.height}px; pointer-events: none;`;
+    } else if (!stash.style.cssText) {
+      stash.style.cssText = 'position: fixed; left: -100000px; top: 0; width: 1280px; height: 720px; pointer-events: none;';
+    }
     try {
       stash.moveBefore(frame, null);
-    } catch {
-      return;
-    }
-    clearTimeout(View.buildHeroesStashTimer);
-    // новое окно так и не забрало страницу (закрыли, ошибка) — не держим её в памяти
-    View.buildHeroesStashTimer = setTimeout(() => {
-      if (frame.parentElement === stash) frame.remove();
-      if (View.buildHeroesFrame === frame && !frame.isConnected) View.buildHeroesFrame = null;
-    }, 5000);
+    } catch {}
   }
 
   // Окно билда вставлено в документ: забрать в него страницу «Герой» прошлого окна
