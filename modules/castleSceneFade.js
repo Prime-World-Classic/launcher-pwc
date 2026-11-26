@@ -83,6 +83,16 @@ export class CastleSceneFade {
   static startedAt = 0;
   static active = false;
 
+  // WebGL-контекст потерян и возвращён (Castle.recoverContext): снимок и программа недействительны
+  static reset() {
+    CastleSceneFade.pending?.(false);
+    CastleSceneFade.pending = null;
+    CastleSceneFade.active = false;
+    CastleSceneFade.texture = null;
+    CastleSceneFade.program = null;
+    CastleSceneFade.buffer = null;
+  }
+
   // Снимок кадра, который Castle.loop нарисует следующим (до вывода на экран — иначе без
   // preserveDrawingBuffer буфер уже пуст). Промис выполняется сразу после снимка, до следующего
   // кадра, — подменённая в нём сцена появится уже под снимком. false — кадр не пришёл (замок не рисуется).

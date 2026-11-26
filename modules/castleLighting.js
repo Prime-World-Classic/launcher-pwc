@@ -31,6 +31,26 @@ export class CastleLighting {
   static dayLevel = 0; // доля силы источников днём
   static intensityScale = 1;
 
+  // WebGL-контекст потерян и возвращён (Castle.recoverContext): старые программы, буферы и цели
+  // недействительны — забываем их, init создаст заново.
+  static reset() {
+    CastleLighting.supported = false;
+    CastleLighting.checked = false;
+    CastleLighting.ext = {};
+    CastleLighting.width = 0;
+    CastleLighting.height = 0;
+    CastleLighting.gbufferFBO = null;
+    CastleLighting.lightFBO = null;
+    CastleLighting.hdrTexture = null;
+    CastleLighting.albedoTexture = null;
+    CastleLighting.normalTexture = null;
+    CastleLighting.depthTexture = null;
+    CastleLighting.lightProgram = null;
+    CastleLighting.compositeProgram = null;
+    CastleLighting.lightBuffer = null;
+    CastleLighting.quadBuffer = null;
+  }
+
   static init(gl) {
     if (CastleLighting.checked) return CastleLighting.supported;
     CastleLighting.checked = true;

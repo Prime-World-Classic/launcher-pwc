@@ -301,6 +301,12 @@ void main() {
     CastleFireflies.buffer = gl.createBuffer();
   }
 
+  // WebGL-контекст потерян и возвращён (Castle.recoverContext): программа и буфер создадутся заново в draw
+  static reset() {
+    CastleFireflies.program = null;
+    CastleFireflies.buffer = null;
+  }
+
   // Точки светлячков поверх сцены (после непрозрачного), аддитивно, с тестом глубины без записи
   static draw(gl, castle, level) {
     if (level < 0.01 || !CastleFireflies.flies.length) return;

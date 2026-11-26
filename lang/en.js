@@ -140,6 +140,8 @@ export const en = {
     advNoteWaterSsr: 'Buildings and trees are reflected in the water. Needs water reflections, day and night cycle and building lights.',
     advNoteWeather: 'Rain and snow; under the clouds it gets darker and windier.',
     castleWinter: 'Winter in the castle',
+    castleContextLost: 'The video driver reset the 3D castle, restoring… If the castle does not come back, restart the launcher.',
+    castleContextSoftware: 'The castle came back without the graphics card and may lag. Restart the launcher.',
     advNoteCastleWinter: 'Snow on the ground, roofs and trees while winter is on in the castle.',
     advNoteModesWings: 'All modes are shown next to the Battle button. Off — the mode menu opens on hovering the mode circle.',
     advNoteBadWordsFilter: 'Hides profanity in the battle chat and the castle chat. Shared with the game and Battle Settings.',

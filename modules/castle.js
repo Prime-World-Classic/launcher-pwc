@@ -1457,6 +1457,34 @@ export class Castle {
       return 1;
     }
 
+    Castle.watchContextLoss(canvas);
+    Castle.initGlState(sceneName);
+    Castle.glRenderer = Castle.rendererName();
+
+    await Castle.loadScene(sceneName);
+
+    //var canvas = globalCanvas; //document.getElementById('game-surface');
+
+    Castle.globalCanvas.classList.add('castle-fade-in');
+
+    if (!options.preview && !('castle' in Sound.all)) {
+      Castle.startCastleMusic(sceneName);
+    }
+
+    if (options.preview) {
+      Castle.placedBuildings = structuredClone(Castle.defaultPlacedBuildings);
+      Castle.UpdateAllowedToBuildGrid();
+      Castle.isBuildingsLoaded = true;
+    } else {
+      Castle.loadBuildings();
+    }
+
+    Castle.MainLoop(Castle.sceneObjects, Castle.sceneBuildings, Castle.sceneShaders, Castle.sceneTextures);
+  }
+
+  // Состояние WebGL и цели, не зависящие от сцены: тест глубины, отложенное освещение, карта теней,
+  // сетка стройки. Вызывается при запуске (initDemo) и после возврата потерянного контекста (recoverContext).
+  static initGlState(sceneName) {
     Castle.gl.enable(Castle.gl.DEPTH_TEST);
     Castle.gl.enable(Castle.gl.CULL_FACE);
     Castle.gl.frontFace(Castle.gl.CCW);
@@ -1467,8 +1495,8 @@ export class Castle {
     Castle.projMatrix = new Float32Array(16);
     Castle.viewProjMatr = new Float32Array(16);
     Castle.flipMatr = new Float32Array([-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-    Castle.canvasWidth = canvas.width;
-    Castle.canvasHeight = canvas.height;
+    Castle.canvasWidth = Castle.globalCanvas.width;
+    Castle.canvasHeight = Castle.globalCanvas.height;
     Castle.cursorPosition = [Castle.canvasWidth, Castle.canvasHeight];
 
     Castle.isSMEnabled = true;
@@ -1574,26 +1602,118 @@ export class Castle {
         0,
       ); // mip level
     }
+  }
 
-    await Castle.loadScene(sceneName);
+  // ---- Потеря WebGL-контекста --------------------------------------------------------------
+  // Видеодрайвер сбросился или GPU-процесс Chromium упал (часто — когда игра забирает видеокарту):
+  // браузер теряет контекст замка вместе со всеми текстурами, буферами и программами. Раньше замок
+  // этого не замечал: холст оставался пустым (белый фон) до перезапуска лончера, перезаход и
+  // выключение 3D не помогали. preventDefault на webglcontextlost разрешает браузеру вернуть
+  // контекст; по webglcontextrestored замок заново создаёт GL-ресурсы и сцену текущей фракции.
+  // Проверка без драйвера: Castle.gl.getExtension('WEBGL_lose_context').loseContext() / restoreContext().
+  static contextLost = false;
+  static contextRecovering = null;
+  static contextNoticeTimer = 0;
+  static contextNotice = null;
+  static glRenderer = '';
+  static CONTEXT_NOTICE_DELAY_MS = 4000;
 
-    //var canvas = globalCanvas; //document.getElementById('game-surface');
+  static watchContextLoss(canvas) {
+    if (canvas.dataset.contextWatch) return;
+    canvas.dataset.contextWatch = '1';
+    canvas.addEventListener('webglcontextlost', (event) => {
+      event.preventDefault();
+      Castle.onContextLost();
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      Castle.recoverContext();
+    });
+  }
 
-    Castle.globalCanvas.classList.add('castle-fade-in');
+  static onContextLost() {
+    if (Castle.contextLost) return;
+    Castle.contextLost = true;
+    console.warn('[castle] WebGL-контекст потерян', Castle.glRenderer);
+    // пустой холст прячем: под ним небо сцены (#castle-background-img), а не белый фон
+    Castle.globalCanvas?.classList.add('castle-context-lost');
+    clearTimeout(Castle.contextNoticeTimer);
+    // обычно контекст возвращается за доли секунды; не вернулся — подсказка игроку
+    Castle.contextNoticeTimer = setTimeout(() => {
+      if (Castle.contextLost) Castle.showContextNotice('castleContextLost');
+    }, Castle.CONTEXT_NOTICE_DELAY_MS);
+  }
 
-    if (!options.preview && !('castle' in Sound.all)) {
-      Castle.startCastleMusic(sceneName);
+  static recoverContext() {
+    if (!Castle.contextRecovering) {
+      Castle.contextRecovering = Castle.rebuildAfterContextLoss().finally(() => {
+        Castle.contextRecovering = null;
+      });
     }
+    return Castle.contextRecovering;
+  }
 
-    if (options.preview) {
-      Castle.placedBuildings = structuredClone(Castle.defaultPlacedBuildings);
+  static async rebuildAfterContextLoss() {
+    // смена фракции, начатая до потери, собирает сцену в мёртвый контекст — дожидаемся её
+    while (Castle.sceneLoading) await new Promise((resolve) => setTimeout(resolve, 50));
+    const gl = Castle.gl;
+    if (!gl || gl.isContextLost()) return;
+    Castle.sceneLoading = true;
+    try {
+      // все прежние GL-объекты недействительны: кэши модулей и замка забываем
+      CastleLighting.reset();
+      CastleFireflies.reset();
+      CastleSceneFade.reset();
+      Castle.uniformLocationCache = new Object();
+      Castle.initGlState(Castle.currentSceneName);
+      Castle.applyScene(await Castle.buildScene(Castle.currentSceneName, Castle.INIT_BUDGET_MS));
+      if (gl.isContextLost()) return; // потерян снова — дождёмся следующего restored
+      Castle.isStaticSMCached = false;
       Castle.UpdateAllowedToBuildGrid();
-      Castle.isBuildingsLoaded = true;
-    } else {
-      Castle.loadBuildings();
+      Castle.contextLost = false;
+    } catch (error) {
+      console.error('[castle] не удалось восстановить WebGL-контекст', error);
+      return;
+    } finally {
+      Castle.sceneLoading = false;
     }
+    clearTimeout(Castle.contextNoticeTimer);
+    Castle.globalCanvas?.classList.remove('castle-context-lost');
+    const renderer = Castle.rendererName();
+    console.warn('[castle] WebGL-контекст восстановлен', renderer);
+    // после падений GPU-процесса Chromium может вернуть контекст на программной отрисовке:
+    // замок есть, но сильно тормозит — это лечит только перезапуск лончера
+    const software = Castle.isSoftwareRenderer(renderer) && !Castle.isSoftwareRenderer(Castle.glRenderer);
+    Castle.showContextNotice(software ? 'castleContextSoftware' : null);
+    if (software) Castle.contextNoticeTimer = setTimeout(() => Castle.showContextNotice(null), 15000);
+    CastleWinter.sync();
+    if (Castle.loopSleeping && !Castle.render.includes(false)) {
+      Castle.loopSleeping = false;
+      requestAnimationFrame(Castle.loop);
+    }
+  }
 
-    Castle.MainLoop(Castle.sceneObjects, Castle.sceneBuildings, Castle.sceneShaders, Castle.sceneTextures);
+  static rendererName() {
+    try {
+      const gl = Castle.gl;
+      const info = gl.getExtension('WEBGL_debug_renderer_info');
+      return String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || '');
+    } catch (error) {
+      return '';
+    }
+  }
+
+  static isSoftwareRenderer(name) {
+    return /swiftshader|software|llvmpipe|basic render/i.test(String(name || ''));
+  }
+
+  // Плашка поверх замка: key — строка Lang, null — убрать
+  static showContextNotice(key) {
+    Castle.contextNotice?.remove();
+    Castle.contextNotice = null;
+    const parent = Castle.globalCanvas?.parentElement;
+    if (!key || !parent) return;
+    Castle.contextNotice = DOM({ style: 'castle-context-notice', role: 'status' }, Lang.text(key));
+    parent.append(Castle.contextNotice);
   }
 
   // Матрица источника света для карты теней зависит от сцены (фракции).
@@ -2218,7 +2338,7 @@ export class Castle {
   // Без подвисания: новая сцена собирается порциями между кадрами, пока рисуется старая, затем
   // подменяется целиком, а последний кадр старой растворяется поверх новой (CastleSceneFade).
   static async switchScene(sceneName) {
-    if (!Castle.gl || sceneName === Castle.currentSceneName || Castle.sceneLoading) return;
+    if (!Castle.gl || Castle.contextLost || sceneName === Castle.currentSceneName || Castle.sceneLoading) return;
     Castle.sceneLoading = true;
     try {
       const scene = await Castle.buildScene(sceneName, Castle.SWITCH_BUDGET_MS);
@@ -2893,7 +3013,7 @@ export class Castle {
     // Пока switchScene грузит сцену другой фракции, рисуется старая: новая собирается отдельно (buildScene).
     // Отрисовка выключена (3D-замок выключен в настройках, идёт игра, открыта мини-игра) — цикл засыпает,
     // а не крутится вхолостую каждый кадр: пустые кадры тоже стоят браузеру работы. Будит toggleRender.
-    let isStopRender = Castle.render.includes(false);
+    let isStopRender = Castle.render.includes(false) || Castle.contextLost;
     if (isStopRender) {
       Castle.loopSleeping = true;
       return;

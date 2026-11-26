@@ -474,6 +474,29 @@ body {
   position: absolute;
 }
 
+/* WebGL context lost (Castle.onContextLost): the empty canvas is hidden, the scene sky
+   (#castle-background-img) shows instead of a white page until the castle is rebuilt. */
+#castle-body canvas.castle-context-lost {
+  visibility: hidden;
+}
+
+.castle-context-notice {
+  position: absolute;
+  left: 50%;
+  top: 14cqh;
+  transform: translateX(-50%);
+  z-index: 50;
+  max-width: 60cqw;
+  padding: 1.2cqh 2cqh;
+  border-radius: 1cqh;
+  background: rgba(0, 0, 0, 0.72);
+  color: #f3ecd9;
+  font-size: 1.9cqh;
+  line-height: 1.35;
+  text-align: center;
+  pointer-events: none;
+}
+
 .castle-settings {
   position: absolute;
   right: 1cqh;

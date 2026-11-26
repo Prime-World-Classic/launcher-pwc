@@ -88,6 +88,8 @@ export const be = {
     waterSsr: 'Адлюстраванні ў вадзе ад геаметрыі (SSR)',
     weather: 'Дождж і снег',
     castleWinter: 'Зіма ў замку',
+    castleContextLost: 'Відэадрайвер скінуў 3D-замак, аднаўляем… Калі замак не з’явіцца, перазапусціце лаўнчар.',
+    castleContextSoftware: 'Замак адноўлены без відэакарты і можа тармазіць — перазапусціце лаўнчар.',
     castleModesWings: 'Рэжымы заўсёды навідавоку',
     gameRender: 'Графіка гульні',
     vulkanRenderer: 'Vulkan (эксперыментальна)',
