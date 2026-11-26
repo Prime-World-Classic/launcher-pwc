@@ -7,6 +7,7 @@ import { BattleLeave } from './battleLeave.js';
 import { GameSettingsSync } from './gameSettingsSync.js';
 import { renderBackendToken } from './gameRender.js';
 import { readExeVersion } from './gameExeVersion.js';
+import { findMissingDlls } from './gameDlls.js';
 
 export class PWGame {
   static PATH = '../Game/Bin/PW_Game.exe';
@@ -281,6 +282,14 @@ export class PWGame {
       return;
     }
 
+    // нет DLL, которую грузит exe (обычно её удалил антивирус) — Windows не запустит игру
+    const dllProblem = await PWGame.missingDllProblem();
+    if (dllProblem) {
+      App.error(dllProblem, 60000);
+      callback();
+      return;
+    }
+
     // копия настроек с сервера на диск (чужие изменения файлов не уходят в базу) — параллельно с замером серверов
     const pulling = Promise.race([GameSettingsSync.pull(), new Promise((resolve) => setTimeout(resolve, 3000))]).catch((e) =>
       console.error('game settings pull before game failed', e),
@@ -392,10 +401,37 @@ export class PWGame {
     return Lang.text(hasUpdater ? 'gameExeOutdated' : 'gameExeOutdatedSteam').replace('{have}', have).replace('{need}', need);
   }
 
+  // DLL из импорта PW_Game.exe, которых нет на диске (gameDlls.js). null — всё на месте;
+  // иначе текст для игрока. Апдейтер возвращает удалённые файлы — запускаем его, если он есть.
+  static async missingDllProblem() {
+    if (!NativeAPI.fileSystem || NativeAPI.platform == 'linux') return null;
+    const missing = await findMissingDlls(NativeAPI.fileSystem, PWGame.PATH, PWGame.WORKING_DIR_PATH);
+    if (!missing.length) return null;
+
+    let hasUpdater = false;
+    try {
+      await NativeAPI.fileSystem.promises.access(PWGame.PATH_UPDATE);
+      hasUpdater = true;
+    } catch {}
+    try {
+      NativeAPI.logUpdate('game-dll-missing', `${missing.join(',')} updater=${hasUpdater}`);
+    } catch {}
+    if (hasUpdater && !NativeAPI.updateInProgress && !PWGame.isGameRunning) {
+      try {
+        Promise.resolve(NativeAPI.update(null, { background: true })).catch(() => {});
+      } catch {}
+    }
+    return Lang.text(hasUpdater ? 'gameDllMissing' : 'gameDllMissingSteam').replace('{files}', missing.join(', '));
+  }
+
   static async checkUpdates() {
     const exeProblem = await PWGame.exeVersionProblem();
     if (exeProblem) {
       throw exeProblem;
+    }
+    const dllProblem = await PWGame.missingDllProblem();
+    if (dllProblem) {
+      throw dllProblem;
     }
     if (PWGame.isUpdateFailed) {
       throw 'Не удалось обновить игру! Обратитесь в поддержку PWClassic';

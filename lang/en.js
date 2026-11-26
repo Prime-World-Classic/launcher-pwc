@@ -456,6 +456,8 @@ export const en = {
     updateGameIncomplete: 'The launcher was updated but the game files were not. Restart the launcher to finish the update; the reason is in Launcher\\update.log',
     gameExeOutdated: 'The game was not updated: the game file is version {have}, but {need} is required. The update has been restarted — you can go to battle once it finishes. If that does not help, restart the launcher; the reason is in Launcher\\update.log',
     gameExeOutdatedSteam: 'The game was not updated: the game file is version {have}, but {need} is required. Verify the game files in Steam (Properties → Installed Files → Verify integrity) and restart Steam',
+    gameDllMissing: 'The game will not start: the file {files} is missing from Game\\Bin — most likely your antivirus removed it. The launcher has started an update that will restore the file. To keep it from disappearing again, add the game folder to your antivirus exclusions',
+    gameDllMissingSteam: 'The game will not start: the file {files} is missing from Game\\Bin — most likely your antivirus removed it. Verify the game files in Steam (Properties → Installed Files → Verify integrity) and add the game folder to your antivirus exclusions',
     updateSearchStopped: 'An update has started — battle search stopped',
     updateGameStartWait: 'An update is in progress — the game will start as soon as it finishes',
 
