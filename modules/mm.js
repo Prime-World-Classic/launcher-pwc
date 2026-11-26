@@ -1146,7 +1146,13 @@ export class MM {
 
       let rank = Rank.createRankNode(data.users[key].rating);
 
-      hero.append(rank, DOM({ style: 'mm-frame' }));
+      // рамка союзника сразу при открытии тамбура (pw-api LobbySnapshot.getWithFrames) — для героя на портрете
+      const frameNode = DOM({ style: 'mm-frame' });
+      const startFrameId = Number(data.users[key].frameId) || 0;
+      if (startFrameId > 0 && Number(data.users[key].frameHero) === Number(data.users[key].hero)) {
+        frameNode.style.backgroundImage = `url(content/frames/${startFrameId}.png)`;
+      }
+      hero.append(rank, frameNode);
       hero.append(
         DOM({ style: 'mm-lobby-selection-comet' }),
         DOM({ tag: 'span', style: 'mm-lobby-hero-tooltip' },
