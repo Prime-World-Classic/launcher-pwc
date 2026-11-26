@@ -26,6 +26,7 @@ import { CastlePets } from './castlePets.js';
 import { CastleLighting } from './castleLighting.js';
 import { CastleFireflies } from './castleFireflies.js';
 import { CastleWeather } from './castleWeather.js';
+import { CastleWinter } from './castleWinter.js';
 import { CastleSceneFade, FrameBudget, forEachLimited, yieldFrame } from './castleSceneFade.js';
 
 export class Castle {
@@ -1981,6 +1982,8 @@ export class Castle {
   // Загрузка сцены фракции при запуске (initDemo). Смена фракции — switchScene.
   static async loadScene(sceneName) {
     Castle.applyScene(await Castle.buildScene(sceneName, Castle.INIT_BUDGET_MS));
+    // флаг зимы мог прийти, пока сцена грузилась
+    CastleWinter.sync();
   }
 
   // Работа загрузки за кадр, мс: при запуске замок ещё не рисуется, при смене фракции рисуется старая сцена
@@ -2131,6 +2134,8 @@ export class Castle {
     Castle.sceneObjects = scene.sceneObjects;
     Castle.sceneBuildings = scene.sceneBuildings;
     Castle.sceneTextures = scene.sceneTextures;
+    Castle.sceneTextureNames = scene.sceneTextureNames;
+    Castle.sceneWinter = scene.winter;
     Castle.sceneTextureAvg = scene.sceneTextureAvg;
     Castle.sceneShaders = scene.sceneShaders;
     Castle.debugObjects = scene.debugObjects;
@@ -2240,6 +2245,7 @@ export class Castle {
     } finally {
       Castle.sceneLoading = false;
     }
+    CastleWinter.sync();
   }
 
   // Освободить GPU-ресурсы сцены, которая уже не текущая
@@ -2415,6 +2421,9 @@ export class Castle {
 
     scene.sceneTextures = new Array(texNames.length);
     scene.sceneTextureAvg = new Array(texNames.length);
+    // имена — для смены зимы на лету (CastleWinter.sync); зима выбирается на всю загрузку сразу
+    scene.sceneTextureNames = texNames;
+    scene.winter = CastleWinter.active();
     scene.sceneShaders = new Array(shaderNames.length);
 
     const [vsText, fsText, ...definesTexts] = await Promise.all([
@@ -2427,7 +2436,7 @@ export class Castle {
     const shadersReady = Castle.compileSceneShaders(scene, shaderNames, definesTexts, vsText, fsText, budget, animShaderNames);
 
     const texturesReady = forEachLimited(texNames, 8, async (name, i) => {
-      let image = await PreloadImages.loadAsync(`content/textures/${name}.webp`);
+      let image = await PreloadImages.loadAsync(CastleWinter.url(name, scene.winter));
       // Распаковать картинку заранее, вне главного потока, — иначе её распакует texImage2D. Не image.decode():
       // он ждёт отрисовки кадра и в свёрнутом окне не завершается. Параметры — как у texImage2D по умолчанию.
       try {

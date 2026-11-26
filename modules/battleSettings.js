@@ -14,6 +14,7 @@ import { loadKeybinds, saveKeybinds, resetKeybinds } from './keybindings/keybind
 import { normalizeKey, attachGameKeyCapture } from './keybindings/keybindings.input.js';
 import { GameSettingsSync } from './gameSettingsSync.js';
 import { ChatFilter } from './chatFilter.js';
+import { CastleWinter } from './castleWinter.js';
 
 // ---------------------------------------------------------------- user.cfg
 
@@ -1322,6 +1323,18 @@ const CASTLE_PAGES = {
     // выкл — нет ни слоя осадков, ни затемнения света/усиления ветра под погодой
     { type: 'setting', id: 'weather', label: 'weather', get: () => S().weather !== false, set: (on) => (S().weather = on) },
     { type: 'note', label: 'advNoteWeather' },
+    // зиму включает админ для всех (CastleWinter.server), здесь игрок выключает её у себя
+    {
+      type: 'setting',
+      id: 'castleWinter',
+      label: 'castleWinter',
+      get: () => S().castleWinter !== false,
+      set: (on) => {
+        S().castleWinter = on;
+        CastleWinter.sync();
+      },
+    },
+    { type: 'note', label: 'advNoteCastleWinter' },
   ],
   sound: [
     { type: 'header', label: 'advHdrVolume' },

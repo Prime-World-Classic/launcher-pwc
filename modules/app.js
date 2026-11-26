@@ -456,6 +456,10 @@ export class App {
     // Castle.weather.setMode('rain'), вернуть расписание — Castle.weather.clearOverride()
     const weatherParam = params.get('previewWeather');
     if (weatherParam) Castle.weather.setMode(weatherParam);
+    // ?previewWinter=1|0 — зима в замке (CastleWinter) без флага админа
+    const winterParam = params.get('previewWinter');
+    // динамический импорт: статический из app.js меняет порядок модулей в цикле app ↔ settings
+    if (winterParam !== null) (await import('./castleWinter.js')).CastleWinter.override = winterParam !== '0';
     // DEV-хук только для ?previewCastle=1 (localhost): камерой нужно позировать со стороны
     // стенда/консоли — модули ES-скоупа странице иначе недоступны.
     window.__castlePreview = Castle;

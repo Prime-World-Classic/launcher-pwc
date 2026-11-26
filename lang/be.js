@@ -87,6 +87,7 @@ export const be = {
     waterReflect: 'Адлюстраванні ў вадзе',
     waterSsr: 'Адлюстраванні ў вадзе ад геаметрыі (SSR)',
     weather: 'Дождж і снег',
+    castleWinter: 'Зіма ў замку',
     castleModesWings: 'Рэжымы заўсёды навідавоку',
     gameRender: 'Графіка гульні',
     vulkanRenderer: 'Vulkan (эксперыментальна)',

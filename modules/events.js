@@ -17,6 +17,7 @@ import { Sound } from './sound.js';
 import { SOUNDS_LIBRARY } from './soundsLibrary.js';
 import { domAudioPresets } from './domAudioPresets.js';
 import { Castle } from './castle.js';
+import { CastleWinter } from './castleWinter.js';
 import { Window } from './window.js';
 import { Settings } from './settings.js';
 import { HeroFrame } from './heroFrame.js';
@@ -376,6 +377,11 @@ export class Events {
   static MMSearchState(data) {
     if (data?.mm && data.mm !== App.CURRENT_MM) return;
     Chat.setSearchClosed(!data?.enabled);
+  }
+
+  // Админ включил/выключил зиму в замке (pw-api castle_settings.winter): при подключении и при смене.
+  static CastleWinter(data) {
+    CastleWinter.setServer(Boolean(data?.winter));
   }
 
   static ADMStat(data) {

@@ -10,7 +10,8 @@
 // VERSION_MAJOR/MINOR/PATCH из Version.h, что сравнивает exe.
 
 // Сигнатура VS_FIXEDFILEINFO (0xFEEF04BD, little-endian) и версия структуры 1.0.
-const FIXED_FILE_INFO_SIGNATURE = Buffer.from([0xbd, 0x04, 0xef, 0xfe]);
+// Uint8Array, а не Buffer: модуль грузится и в браузере (dev-стенд), где Buffer нет; Buffer.indexOf его принимает.
+const FIXED_FILE_INFO_SIGNATURE = new Uint8Array([0xbd, 0x04, 0xef, 0xfe]);
 const FIXED_FILE_INFO_STRUC_VERSION = 0x00010000;
 
 // 'major.minor.patch' из содержимого exe; null — ресурса версии нет или он битый.

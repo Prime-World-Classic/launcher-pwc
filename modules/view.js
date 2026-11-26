@@ -1743,7 +1743,8 @@ export class View {
     // Устаревший PUpdate (нас уже кикнули / пати распалась) — нас нет в users:
     // берём актуальное состояние с сервера, а не падаем на data.users[myId].
     const myId = App.storage?.data?.id; // в DEV-превью (?previewBuild=1) App.storage нет
-    if (partyData && !partyData?.users?.[myId]) {
+    // на DEV-стенде (?previewCastle=1) сокета нет — App.api не создан
+    if (partyData && !partyData?.users?.[myId] && App.api) {
       data = await App.api.request(App.CURRENT_MM, 'loadParty');
     }
     if (!data || typeof data.users !== 'object' || !data.users) {

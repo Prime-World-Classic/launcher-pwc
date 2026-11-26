@@ -139,6 +139,8 @@ export const en = {
     advNoteBuildingLights: 'Windows, lanterns and building lights glow at night.',
     advNoteWaterSsr: 'Buildings and trees are reflected in the water. Needs water reflections, day and night cycle and building lights.',
     advNoteWeather: 'Rain and snow; under the clouds it gets darker and windier.',
+    castleWinter: 'Winter in the castle',
+    advNoteCastleWinter: 'Snow on the ground, roofs and trees while winter is on in the castle.',
     advNoteModesWings: 'All modes are shown next to the Battle button. Off — the mode menu opens on hovering the mode circle.',
     advNoteBadWordsFilter: 'Hides profanity in the battle chat and the castle chat. Shared with the game and Battle Settings.',
     voiceOff: 'Turn off voice chat',
