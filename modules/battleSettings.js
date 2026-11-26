@@ -127,6 +127,9 @@ const PAGES = {
     { type: 'slider', id: 'team_portraits_scale', variable: 'team_portraits_scale', def: 100, min: 50, max: 200, steps: 16, fmt: 'pct', label: 'bsAdvTeamPortraitsScale' },
     { type: 'slider', id: 'cursor_scale', variable: 'cursor_scale', def: 100, min: 50, max: 300, steps: 26, fmt: 'pct', label: 'bsAdvCursorScale' },
     { type: 'slider', id: 'minimap_icon_scale', variable: 'minimap_icon_scale', def: 100, min: 50, max: 200, steps: 16, fmt: 'pct', label: 'bsAdvMinimapIconScale' },
+    // вражеская башня или ГЗ выбрали целью своего героя: звук FMOD и надпись над героем (только этому игроку)
+    { type: 'check', id: 'tower_target_sound', variable: 'tower_target_sound', def: 1, label: 'bsAdvTowerTargetSound' },
+    { type: 'check', id: 'tower_target_text', variable: 'tower_target_text', def: 1, label: 'bsAdvTowerTargetText' },
   ],
   comm: [
     { type: 'header', label: 'bsAdvHdrSignals' },

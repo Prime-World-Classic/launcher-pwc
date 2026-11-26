@@ -7128,6 +7128,8 @@ export const ru = {
     bsAdvChatWheelCentered: 'Колесо по центру экрана',
     bsAdvCursorScale: 'Размер курсора',
     bsAdvMinimapIconScale: 'Размер значков на миникарте',
+    bsAdvTowerTargetSound: 'Звук, когда башня атакует вашего героя',
+    bsAdvTowerTargetText: 'Надпись «Башня атакует!» над героем',
     bsAdvDblClickSelfcast: 'Двойное нажатие - на себя',
     bsAdvDblClickSelfcastTime: 'Время двойного нажатия, сек.',
     bsAdvCameraMaxZoomOut: 'Максимальное отдаление камеры',

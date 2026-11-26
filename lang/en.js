@@ -7160,6 +7160,8 @@ export const en = {
     bsAdvChatWheelCentered: 'Wheel in the center of the screen',
     bsAdvCursorScale: 'Cursor size',
     bsAdvMinimapIconScale: 'Minimap icon size',
+    bsAdvTowerTargetSound: 'Sound when a tower targets your hero',
+    bsAdvTowerTargetText: '"Tower is attacking!" text above the hero',
     bsAdvDblClickSelfcast: 'Double press - cast on self',
     bsAdvDblClickSelfcastTime: 'Double press time, s',
     bsAdvCameraMaxZoomOut: 'Max camera zoom-out',
