@@ -18340,10 +18340,12 @@ body:has(> .main > .tadm) .launcher-restart-quick-tab {
   background: #071014;
 }
 
-/* Быстрые кнопки замка (новости, зал славы) висят в body поверх любого экрана —
-   на экране аудита их не показываем, иначе они налезают на его шапку. */
+/* Быстрые кнопки замка (новости, зал славы, мини-игры, перезапуск) висят в body
+   поверх любого экрана — на экране аудита их не показываем, иначе они налезают на него. */
 body:has(.stats-screen) .launcher-notifications-quick-tab,
-body:has(.stats-screen) .launcher-hall-of-fame-quick-tab {
+body:has(.stats-screen) .launcher-hall-of-fame-quick-tab,
+body:has(.stats-screen) .launcher-minigames-quick,
+body:has(.stats-screen) .launcher-restart-quick-tab {
   display: none;
 }
 
