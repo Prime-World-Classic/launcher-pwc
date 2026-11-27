@@ -902,7 +902,7 @@ body.castle-cinematic {
 }
 
 .castle-button-play-m7 {
-  background-image: url('img/m7.png');
+  background-image: url('img/m7_hd.png');
 }
 
 /* wing: piece of the b8 strip with N sockets, cut as two halves (left end and right end of the
@@ -1359,6 +1359,37 @@ body.castle-cinematic {
   min-height: 1.9cqh;
 }
 
+/* Training with bots: enemy bots go to the second row; an incomplete own team breaks the line */
+.castle-training-row-break {
+  flex-basis: 100%;
+  width: 100%;
+  height: 0;
+}
+
+/* the break line adds one extra row gap: pull the enemy row back up */
+.castle-training-row-break ~ .castle-party-bot-enemy,
+.castle-training-row-break ~ .castle-party-enemy-player {
+  margin-top: calc(-1 * var(--castle-play-lobby-gap-y));
+}
+
+.castle-party-bot-enemy .castle-party-bot-status {
+  color: #ff4b3a;
+}
+
+/* Training: the leader drags a party player between the rows (castleHeroDrag.js); every card of
+   a row is a drop target. */
+.castle-play-lobby .castle-party-middle-item.castle-hero-drop-ready .castle-play-lobby-player {
+  transition: filter 0.15s ease-out;
+}
+
+.castle-play-lobby .castle-party-middle-item.castle-hero-drop-hover .castle-play-lobby-player {
+  filter: brightness(1.3) drop-shadow(0 0 1vh rgba(255, 213, 74, 0.9));
+}
+
+.castle-play-lobby .castle-party-middle-item.castle-hero-drop-has.castle-hero-drop-hover .castle-play-lobby-player {
+  filter: grayscale(0.6) brightness(0.8);
+}
+
 .castle-play-lobby-player {
   width: auto;
   height: calc(10cqh * var(--castle-play-lobby-item-scale));
@@ -1801,6 +1832,11 @@ body.castle-cinematic {
   box-shadow:
     inset 0 0 0.6cqh rgba(255, 213, 74, 0.5),
     0 0 1cqh rgba(255, 213, 74, 0.6);
+}
+
+/* Right helmet in training: minus, a click turns the training off. */
+.castle-button-play-7.castle-training-leave {
+  background-image: url('img/b6_minus.png');
 }
 
 /* Left helmet in training: allied bots removed. */

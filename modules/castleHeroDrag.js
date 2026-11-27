@@ -11,6 +11,13 @@
 //   apply(action, listId, item): void     — 'add' | 'remove': поменять список и перерисовать
 //   text(key): string
 //   sound(name): void                     — 'pick' | 'add' | 'remove' | 'deny'
+//
+//   необязательные (перетаскивание игроков пати тренировки, view.js):
+//   canDrag(item): boolean                — можно ли начать (иначе pointerdown — обычный клик)
+//   badges: false                         — без значков «+»/«−» у карточки и «+1» над приёмником
+//   blocked(item, listId): boolean        — сюда нельзя: карточка дрожит и возвращается
+//   blockedText(listId): string           — подпись над приёмником, куда нельзя
+//   burstTarget(listId, item): Element    — что подсветить после переноса
 // }
 
 // перетаскивание начинается, только если курсор ушёл заметно дальше — иначе это клик (открыть билд):
@@ -36,6 +43,7 @@ export const CastleHeroDrag = {
 
 function onPointerDown(event, card, item, ctx) {
   if (event.button !== 0 || active) return;
+  if (ctx.canDrag && !ctx.canDrag(item)) return;
   const startX = event.clientX;
   const startY = event.clientY;
   const pointerId = event.pointerId;
@@ -120,6 +128,7 @@ function startDrag(card, item, ctx, startX, startY) {
 
   const badge = document.createElement('div');
   badge.className = 'castle-hero-drag-badge';
+  if (ctx.badges === false) badge.style.display = 'none';
   // карточка сжимается вокруг точки захвата, поэтому значок и подпись держатся у курсора
   badge.style.left = `${offX + rect.width * 0.24}px`;
   badge.style.top = `${offY - rect.height * 0.2}px`;
@@ -185,9 +194,11 @@ function collectTargets() {
   drag.targets = (drag.ctx.targets() || []).map((target) => {
     const r = target.el.getBoundingClientRect();
     const bottom = Number.isFinite(target.clipBottom) ? Math.min(r.bottom, target.clipBottom) + 3 : r.bottom + HIT_PAD_Y;
+    const blocked = !target.isNew && Boolean(drag.ctx.blocked?.(drag.item, target.listId));
     return {
       ...target,
-      has: !target.isNew && drag.ctx.inList(drag.item, target.listId),
+      blocked,
+      has: blocked || (!target.isNew && drag.ctx.inList(drag.item, target.listId)),
       hit: { left: r.left - HIT_PAD_X, right: r.right + HIT_PAD_X, top: r.top - HIT_PAD_Y, bottom },
     };
   });
@@ -250,13 +261,15 @@ function setState(state, target) {
   if (state === 'add') {
     text = target.isNew ? ctx.text('heroListDragNew') : ctx.text('heroListDragAdd').replace('{name}', ctx.listName(target.listId));
   } else if (state === 'already') {
-    text = ctx.text('heroListDragAlready').replace('{name}', ctx.listName(target.listId));
+    text = target.blocked && ctx.blockedText
+      ? ctx.blockedText(target.listId)
+      : ctx.text('heroListDragAlready').replace('{name}', ctx.listName(target.listId));
   } else if (state === 'remove') {
     text = ctx.text('heroListDragRemove').replace('{name}', ctx.listName(drag.sourceList));
   }
   drag.label.textContent = text;
   drag.label.classList.toggle('castle-hero-drag-label-visible', Boolean(text));
-  drag.badge.textContent = state === 'add' ? '+' : state === 'remove' ? '−' : '';
+  drag.badge.textContent = ctx.badges === false ? '' : state === 'add' ? '+' : state === 'remove' ? '−' : '';
 }
 
 function dropDrag(x, y) {
@@ -369,13 +382,13 @@ function finishAdd(target) {
     drag.wrap.remove();
     drag.ctx.sound('add');
     // вкладки перерисованы — ищем новую (у «+» это вкладка нового списка)
-    const fresh = (drag.ctx.targets() || []).find((t) => !t.isNew && t.listId === listId);
-    const el = fresh?.el || (target.el.isConnected ? target.el : null);
-    if (el) acceptBurst(el, target.isNew);
+    const fresh = drag.ctx.burstTarget?.(listId, drag.item) || (drag.ctx.targets() || []).find((t) => !t.isNew && t.listId === listId)?.el;
+    const el = fresh || (target.el.isConnected ? target.el : null);
+    if (el) acceptBurst(el, target.isNew, drag.ctx.badges !== false);
   });
 }
 
-function acceptBurst(el, isNew) {
+function acceptBurst(el, isNew, plusOne = true) {
   el.animate(
     isNew
       ? [
@@ -397,6 +410,10 @@ function acceptBurst(el, isNew) {
   setTimeout(() => el.classList.remove('castle-hero-drop-flash'), 700);
 
   const r = el.getBoundingClientRect();
+  if (!plusOne) {
+    sparks(r.left + r.width / 2, r.top + r.height / 2, 10, ['#ffe27a', '#7fe0ff', '#ffffff']);
+    return;
+  }
   const plus = document.createElement('div');
   plus.className = 'castle-hero-drop-plus';
   plus.textContent = '+1';

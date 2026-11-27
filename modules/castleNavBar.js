@@ -289,11 +289,15 @@ export class CastleNAVBAR {
     CastleNAVBAR.body.append(CastleNAVBAR.trainingButton);
 
     // Шлемы «+» по бокам от круга режима: выбирают режим «Тренировка» с ботами (боты
-    // появляются в пати, trainingBots.js). Бой запускается кнопкой «В бой!». Левый шлем
-    // в режиме тренировки убирает / возвращает ботов-союзников.
+    // появляются в пати, trainingBots.js). Бой запускается кнопкой «В бой!». В режиме
+    // тренировки правый шлем (children[4]) с «−» выключает её, левый (children[3]) убирает /
+    // возвращает ботов-союзников.
     for (const index of [3, 4]) {
-      CastleNAVBAR.body.children[index].onclick = () =>
-        index === 3 && CastleNAVBAR.isTraining() ? CastleNAVBAR.toggleTrainingAllies() : CastleNAVBAR.selectTrainingWithBots();
+      CastleNAVBAR.body.children[index].onclick = () => {
+        if (!CastleNAVBAR.isTraining()) CastleNAVBAR.selectTrainingWithBots();
+        else if (index === 4) CastleNAVBAR.leaveTrainingByHelmet();
+        else CastleNAVBAR.toggleTrainingAllies();
+      };
       CastleNAVBAR.body.children[index].append(DOM({ style: ['account-rating-tooltip', 'castle-training-tooltip'] },
         DOM({ style: 'account-rating-tooltip-title' }, Lang.text('trainingBotsTooltipTitle')),
         DOM({ style: 'account-rating-tooltip-body' }, Lang.text('trainingBotsTooltipBody')),
@@ -415,16 +419,44 @@ export class CastleNAVBAR {
 
     helmets.forEach((helmet, index) => {
       helmet.classList.toggle('castle-training-new', active);
-      // открытая подсказка — одна, у левого шлема
+      // открытая подсказка — одна, у левого шлема (children[3])
       helmet.classList.toggle('castle-training-new-tip', active && index === 0);
-      const tooltip = helmet.querySelector('.castle-training-tooltip');
-      if (!tooltip) return;
-      tooltip.firstChild.textContent = Lang.text(active ? 'trainingBotsNewTitle' : 'trainingBotsTooltipTitle');
-      tooltip.querySelector('.castle-training-new-hint')?.remove();
-      if (active) {
-        tooltip.append(DOM({ style: ['account-rating-tooltip-body', 'castle-training-new-hint'] }, Lang.text('trainingBotsNewHint')));
-      }
     });
+
+    CastleNAVBAR.applyHelmetTooltips();
+  }
+
+  // Подсказки шлемов — у каждого своя и по состоянию: вне тренировки правый рассказывает о
+  // режиме, левый — о ботах-союзниках; в тренировке правый — «Выключить тренировку», левый —
+  // «Убрать / Вернуть ботов-союзников». Пока висит уведомление «Новое», заголовок — оно.
+  static applyHelmetTooltips() {
+    if (!CastleNAVBAR.body) return;
+    const training = CastleNAVBAR.isTraining();
+    const notice = !training && !CastleNAVBAR.trainingNoticeSeen();
+    const leader = !MM.partyId || String(MM.partyId) === String(App.storage?.data?.id);
+    const alliesOff = leader ? TrainingBots.alliesOff : Boolean(TrainingBots.party.get(String(MM.partyId))?.alliesOff);
+    const texts = {
+      4: training ? ['trainingBotsLeaveTitle', 'trainingBotsLeaveBody'] : ['trainingBotsTooltipTitle', 'trainingBotsTooltipBody'],
+      3: !training
+        ? ['trainingBotsTooltipTitle', 'trainingBotsAlliesTooltipBody']
+        : alliesOff
+          ? ['trainingBotsAlliesReturnTitle', 'trainingBotsAlliesReturnBody']
+          : ['trainingBotsAlliesRemoveTitle', 'trainingBotsAlliesRemoveBody'],
+    };
+
+    for (const index of [3, 4]) {
+      const tooltip = CastleNAVBAR.body.children[index]?.querySelector('.castle-training-tooltip');
+      if (!tooltip) continue;
+      const [title, body] = texts[index];
+      tooltip.children[0].textContent = Lang.text(notice ? 'trainingBotsNewTitle' : title);
+      tooltip.children[1].textContent = Lang.text(body);
+      tooltip.querySelector('.castle-training-new-hint')?.remove();
+      if (notice) {
+        tooltip.append(DOM({ style: ['account-rating-tooltip-body', 'castle-training-new-hint'] }, Lang.text('trainingBotsNewHint')));
+      } else if (training && index === 3 && !leader) {
+        tooltip.append(DOM({ style: ['account-rating-tooltip-body', 'castle-training-new-hint'] }, Lang.text('trainingBotLeaderPicks')));
+      }
+    }
   }
 
   static dismissTrainingNotice() {
@@ -459,6 +491,18 @@ export class CastleNAVBAR {
     CastleNAVBAR.setMode(back + 1);
   }
 
+  // Правый шлем «−» в тренировке: выключить режим с ботами (вернуть прежний режим).
+  static leaveTrainingByHelmet() {
+    CastleNAVBAR.dismissTrainingNotice();
+
+    if (MM.active) {
+      App.notify(Lang.text('youSearchFight'));
+      return;
+    }
+
+    CastleNAVBAR.leaveTraining();
+  }
+
   // Левый шлем в режиме тренировки: команда без ботов-союзников (только игроки пати) / с ними.
   static toggleTrainingAllies() {
     CastleNAVBAR.dismissTrainingNotice();
@@ -473,15 +517,17 @@ export class CastleNAVBAR {
     window.dispatchEvent(new CustomEvent('TrainingBotsChanged'));
   }
 
-  // Вид кнопок под режим: «Тренировка» в списке подсвечена, пока режим включён; левый шлем
-  // приглушён, когда боты-союзники убраны.
+  // Вид кнопок под режим: «Тренировка» в списке подсвечена, пока режим включён; правый шлем
+  // в тренировке с «−» (выключает её); левый приглушён, когда боты-союзники убраны.
   static applyTrainingAlliesView() {
     if (!CastleNAVBAR.body) return;
     const training = CastleNAVBAR.isTraining();
     const leader = !MM.partyId || String(MM.partyId) === String(App.storage?.data?.id);
     const alliesOff = leader ? TrainingBots.alliesOff : Boolean(TrainingBots.party.get(String(MM.partyId))?.alliesOff);
     CastleNAVBAR.trainingButton?.classList.toggle('is-active', training);
+    CastleNAVBAR.body.children[4]?.classList.toggle('castle-training-leave', training);
     CastleNAVBAR.body.children[3]?.classList.toggle('castle-training-allies-off', training && alliesOff);
+    CastleNAVBAR.applyHelmetTooltips();
   }
 
   static defaultMode(id) {
@@ -601,8 +647,9 @@ export class CastleNAVBAR {
   // в левое крыло, остальные — в правое; шлем пати — в лунке у круга.
   static layoutModes() {
     const { scale, end, pitch, slotLeft, slotRight } = CastleNAVBAR.WING;
-    // «Тренировка» остаётся в крыле и когда выбрана: по ней же режим выключают
-    const others = CastleNAVBAR.MODES.filter((modeId) => modeId !== CastleNAVBAR.mode || modeId === CastleNAVBAR.TRAINING_MODE);
+    // выбранный режим (и «Тренировка» тоже) стоит в круге, в крыльях его нет;
+    // выйти из тренировки — выбрать другой режим
+    const others = CastleNAVBAR.MODES.filter((modeId) => modeId !== CastleNAVBAR.mode);
     const leftCount = Math.ceil(others.length / 2);
     const sides = [others.slice(0, leftCount), others.slice(leftCount)];
 
@@ -625,9 +672,7 @@ export class CastleNAVBAR {
       });
     });
 
-    if (!CastleNAVBAR.isTraining()) {
-      CastleNAVBAR.modeButton(CastleNAVBAR.mode).style.display = 'none';
-    }
+    CastleNAVBAR.modeButton(CastleNAVBAR.mode).style.display = 'none';
   }
 
   // Меню режимов (вид по умолчанию): полоса children[10] под кругом с лункой на каждый

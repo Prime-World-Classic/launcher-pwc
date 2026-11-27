@@ -26,6 +26,10 @@
 // (mm.trainingBots: 4 героя, флаги «выбран», alliesOff), участники берут его из данных пати
 // (trainingBots в PUpdate/loadParty, событие PTrainingBots). При старте бэкенд запускает
 // тренировку на всю пати и присылает всем одну строку bots в MMEnd.
+//
+// Лидер может перетащить игрока пати во второй ряд (enemyPlayers) — тот играет за
+// противников, ботов-врагов на столько меньше. В своей команде остаётся хотя бы один
+// игрок. Тогда в строке бэкенда третья часть — номер своей команды: «<союзники>-<враги>-<1|2>».
 
 export const TRAINING_BOT_ALLIES = 4;
 export const TRAINING_BOT_ENEMIES = 5;
@@ -55,8 +59,16 @@ export class TrainingBots {
   // случайные герои слотов без выбора — до следующего запуска боя
   static rolled = [0, 0, 0, 0];
 
+  // то же для 5 ботов-противников (второй ряд пати)
+  static enemyChosen = [0, 0, 0, 0, 0];
+
+  static enemyRolled = [0, 0, 0, 0, 0];
+
   // левый шлем: true — без ботов-союзников (команда — только игроки пати)
   static alliesOff = false;
+
+  // id игроков пати (строки), которых лидер перетащил в команду противников
+  static enemyPlayers = [];
 
   // зеркалки, известные лаунчеру помимо heroAll (MM.lobbyMirror последнего лобби)
   static extraMirror = new Set();
@@ -65,6 +77,12 @@ export class TrainingBots {
   static pending = null;
 
   static random = Math.random;
+
+  // мест во втором ряду пати (команда противников): игроки + боты
+  static ENEMY_SLOTS = TRAINING_BOT_ENEMIES;
+
+  // пати, для которой enemyPlayers взяты из данных пати (перезапуск лаунчера лидера)
+  static enemyPlayersParty = '';
 
   static setPersistentIds(heroPids) {
     TrainingBots.pids = Array.isArray(heroPids) ? heroPids.map((pid) => String(pid || '')) : [];
@@ -121,6 +139,10 @@ export class TrainingBots {
     return `trainingBotAllies:${accountId || 0}`;
   }
 
+  static enemyStorageKey(accountId) {
+    return `trainingBotEnemies:${accountId || 0}`;
+  }
+
   static loadChoice(accountId) {
     const owner = String(accountId || 0);
     if (TrainingBots.chosenOwner === owner) return;
@@ -133,6 +155,14 @@ export class TrainingBots {
     }
     TrainingBots.chosen = Array.from({ length: TRAINING_BOT_ALLIES }, (_, i) => heroIdOf(Array.isArray(saved) ? saved[i] : 0));
     TrainingBots.rolled = Array(TRAINING_BOT_ALLIES).fill(0);
+    let savedEnemies = [];
+    try {
+      savedEnemies = JSON.parse(globalThis.localStorage?.getItem(TrainingBots.enemyStorageKey(owner)) || '[]');
+    } catch {
+      savedEnemies = [];
+    }
+    TrainingBots.enemyChosen = Array.from({ length: TRAINING_BOT_ENEMIES }, (_, i) => heroIdOf(Array.isArray(savedEnemies) ? savedEnemies[i] : 0));
+    TrainingBots.enemyRolled = Array(TRAINING_BOT_ENEMIES).fill(0);
     try {
       TrainingBots.alliesOff = globalThis.localStorage?.getItem(`${TrainingBots.storageKey(owner)}:off`) === '1';
     } catch {
@@ -143,6 +173,7 @@ export class TrainingBots {
   static saveChoice() {
     try {
       globalThis.localStorage?.setItem(TrainingBots.storageKey(TrainingBots.chosenOwner), JSON.stringify(TrainingBots.chosen));
+      globalThis.localStorage?.setItem(TrainingBots.enemyStorageKey(TrainingBots.chosenOwner), JSON.stringify(TrainingBots.enemyChosen));
     } catch {
       // нет localStorage (превью) — выбор живёт до перезапуска
     }
@@ -180,7 +211,7 @@ export class TrainingBots {
     const count = Math.max(0, Math.min(TRAINING_BOT_ALLIES, options.count ?? TRAINING_BOT_ALLIES));
     const pool = TrainingBots.pool(heroes);
     const poolSet = new Set(pool);
-    const used = new Set([heroIdOf(myHeroId), ...(options.teamHeroes || []).map(heroIdOf)].filter(Boolean));
+    const used = new Set([heroIdOf(myHeroId), ...(options.teamHeroes || []).map(heroIdOf), ...(options.avoid || []).map(heroIdOf)].filter(Boolean));
     const result = Array.from({ length: count }, () => ({ hero: 0, chosen: false }));
 
     for (let i = 0; i < count; i++) {
@@ -219,21 +250,58 @@ export class TrainingBots {
     return true;
   }
 
-  // Полный состав боя: союзники (как в пати) + 5 случайных врагов без повторов между собой.
-  // Герой своей команды (игрок или бот) у врагов — только зеркалка. options — как у allies.
+  // Боты-противники (второй ряд пати): [{ hero, chosen }] × 5. options.allies — герои
+  // союзных ботов, как они стоят в пати. Выбранные лидером — как есть (повторы разрешены),
+  // случайные — без повторов между собой, герой своей команды — только зеркалка; держатся
+  // до запуска боя, как случайные союзники.
+  static enemies(myHeroId, heroes, options = {}) {
+    const pool = TrainingBots.pool(heroes);
+    const poolSet = new Set(pool);
+    const mirror = TrainingBots.mirrorSet(heroes);
+    const team = [heroIdOf(myHeroId), ...(options.teamHeroes || []).map(heroIdOf), ...(options.allies || []).map(heroIdOf)];
+    // игроки-противники (options.enemyHumans) — та же команда: их героев случайные не повторяют
+    const used = new Set([...team.filter((id) => id && !mirror.has(id)), ...(options.enemyHumans || []).map(heroIdOf).filter(Boolean)]);
+    const result = Array.from({ length: TRAINING_BOT_ENEMIES }, () => ({ hero: 0, chosen: false }));
+
+    for (let i = 0; i < TRAINING_BOT_ENEMIES; i++) {
+      const id = heroIdOf(TrainingBots.enemyChosen[i]);
+      if (id && poolSet.has(id)) {
+        used.add(id);
+        result[i] = { hero: id, chosen: true };
+      }
+    }
+
+    for (let i = 0; i < TRAINING_BOT_ENEMIES; i++) {
+      if (result[i].chosen) continue;
+      let id = heroIdOf(TrainingBots.enemyRolled[i]);
+      if (!id || !poolSet.has(id) || used.has(id)) id = TrainingBots.pickRandom(pool, used);
+      TrainingBots.enemyRolled[i] = id;
+      if (id) used.add(id);
+      result[i] = { hero: id, chosen: false };
+    }
+
+    return result;
+  }
+
+  // Лидер выбрал героя противнику в слоте index (0 — случайный).
+  static setEnemy(index, heroId, heroes) {
+    const slot = Math.trunc(Number(index));
+    if (!(slot >= 0 && slot < TRAINING_BOT_ENEMIES)) return false;
+    const id = heroIdOf(heroId);
+    if (id && !TrainingBots.pool(heroes).includes(id)) return false;
+    if (id) TrainingBots.enemyRolled = TrainingBots.enemyRolled.map((value) => (heroIdOf(value) === id ? 0 : value));
+    TrainingBots.enemyChosen[slot] = id;
+    TrainingBots.enemyRolled[slot] = 0;
+    TrainingBots.saveChoice();
+    return true;
+  }
+
+  // Полный состав боя: союзники и противники — как в пати. options — как у allies.
   static lineup(myHeroId, heroes, options = {}) {
     const allies = TrainingBots.allies(myHeroId, heroes, options).map((bot) => bot.hero).filter(Boolean);
-    const pool = TrainingBots.pool(heroes);
-    const mirror = TrainingBots.mirrorSet(heroes);
-    const team = [heroIdOf(myHeroId), ...(options.teamHeroes || []).map(heroIdOf), ...allies];
-    const used = new Set(team.filter((id) => id && !mirror.has(id)));
-    const enemies = [];
-    for (let i = 0; i < TRAINING_BOT_ENEMIES; i++) {
-      const id = TrainingBots.pickRandom(pool, used);
-      if (!id) break;
-      used.add(id);
-      enemies.push(id);
-    }
+    const enemies = TrainingBots.enemies(myHeroId, heroes, { ...options, allies })
+      .map((bot) => bot.hero)
+      .filter(Boolean);
     return { allies, enemies };
   }
 
@@ -250,6 +318,7 @@ export class TrainingBots {
     const lineup = TrainingBots.lineup(myHeroId, heroes, options);
     TrainingBots.pending = TrainingBots.protocolValue(lineup) ? { lineup, at: Date.now() } : null;
     TrainingBots.rolled = Array(TRAINING_BOT_ALLIES).fill(0);
+    TrainingBots.enemyRolled = Array(TRAINING_BOT_ENEMIES).fill(0);
     return TrainingBots.pending;
   }
 
@@ -259,8 +328,41 @@ export class TrainingBots {
 
   // ---- состав ботов пати (pw-api: mm.trainingBots, PTrainingBots, trainingBots в PUpdate)
 
-  // id пати -> { allies: [4 web id], chosen: [4 bool], alliesOff }
+  // id пати -> { allies: [4 web id], chosen: [4 bool], alliesOff, enemies, enemyChosen, enemyPlayers }
   static party = new Map();
+
+  static playerIds(value) {
+    const ids = [];
+    for (const raw of Array.isArray(value) ? value : []) {
+      const id = String(Math.trunc(Number(raw)) || '');
+      if (id && !ids.includes(id)) ids.push(id);
+    }
+    return ids.slice(0, TRAINING_BOT_ENEMIES);
+  }
+
+  // Лидер перетащил игрока: enemy — в команду противников, иначе обратно в свою.
+  // members — id игроков пати: в своей команде должен остаться хотя бы один.
+  static setEnemyPlayer(userId, enemy, members = []) {
+    const id = String(userId || '');
+    const present = new Set((members || []).map(String));
+    const current = TrainingBots.enemyPlayers.filter((value) => present.has(value));
+    if (!id || !present.has(id)) return false;
+    if (enemy) {
+      if (current.includes(id)) return false;
+      if (current.length + 1 >= present.size || current.length >= TRAINING_BOT_ENEMIES) return false;
+      TrainingBots.enemyPlayers = [...current, id];
+    } else {
+      if (!current.includes(id)) return false;
+      TrainingBots.enemyPlayers = current.filter((value) => value !== id);
+    }
+    return true;
+  }
+
+  // Игроки-противники пати: у лидера — его выбор, у участника — из данных пати.
+  static partyEnemyPlayers(partyId, leader = false) {
+    if (leader) return [...TrainingBots.enemyPlayers];
+    return [...(TrainingBots.party.get(String(partyId || ''))?.enemyPlayers || [])];
+  }
 
   static setPartySettings(partyId, value) {
     const id = String(partyId || '');
@@ -270,17 +372,30 @@ export class TrainingBots {
       return;
     }
     const allies = Array.from({ length: TRAINING_BOT_ALLIES }, (_, i) => heroIdOf(value.allies?.[i]));
+    const enemies = Array.from({ length: TRAINING_BOT_ENEMIES }, (_, i) => heroIdOf(value.enemies?.[i]));
     TrainingBots.party.set(id, {
       allies,
       chosen: allies.map((hero, i) => Boolean(hero && value.chosen?.[i])),
       alliesOff: Boolean(value.alliesOff),
+      enemies,
+      enemyChosen: enemies.map((hero, i) => Boolean(hero && value.enemyChosen?.[i])),
+      enemyPlayers: TrainingBots.playerIds(value.enemyPlayers),
     });
   }
 
-  // Что лидер отправляет в pw-api: 4 слота (выбранные и уже подставленные случайные).
-  static settingsPayload(bots) {
+  // Что лидер отправляет в pw-api: 4 союзника и 5 противников (выбранные и уже
+  // подставленные случайные).
+  static settingsPayload(bots, enemyBots = []) {
     const allies = Array.from({ length: TRAINING_BOT_ALLIES }, (_, i) => heroIdOf(bots?.[i]?.hero));
-    return { allies, chosen: allies.map((hero, i) => Boolean(hero && bots?.[i]?.chosen)), alliesOff: TrainingBots.alliesOff };
+    const enemies = Array.from({ length: TRAINING_BOT_ENEMIES }, (_, i) => heroIdOf(enemyBots?.[i]?.hero));
+    return {
+      allies,
+      chosen: allies.map((hero, i) => Boolean(hero && bots?.[i]?.chosen)),
+      alliesOff: TrainingBots.alliesOff,
+      enemies,
+      enemyChosen: enemies.map((hero, i) => Boolean(hero && enemyBots?.[i]?.chosen)),
+      enemyPlayers: [...TrainingBots.enemyPlayers],
+    };
   }
 
   static sameAsParty(partyId, payload) {
@@ -296,15 +411,32 @@ export class TrainingBots {
     return Array.from({ length: count }, (_, i) => ({ hero: settings?.allies[i] || 0, chosen: Boolean(settings?.chosen[i]) }));
   }
 
+  // Противники для участника пати: как задал лидер; без данных — пустые «случайные».
+  static partyEnemies(partyId) {
+    const settings = TrainingBots.party.get(String(partyId || ''));
+    return Array.from({ length: TRAINING_BOT_ENEMIES }, (_, i) => ({
+      hero: settings?.enemies?.[i] || 0,
+      chosen: Boolean(settings?.enemyChosen?.[i]),
+    }));
+  }
+
   // Опция запуска из MMEnd: состав от pw-api (data.bots, один на всю пати), иначе запасной
   // локальный (takeProtocolToken). Строку бэкенда проверяем: только persistentId, «.» и «-».
   static protocolToken(data) {
     const fallback = TrainingBots.takeProtocolToken(data?.mode);
-    const value = String(data?.bots || '');
-    if (Number(data?.mode) === 99 && /^[A-Za-z0-9_.]*-[A-Za-z0-9_.]+$/.test(value) && value.length <= 1024) {
-      return `/bots=${value}`;
-    }
-    return fallback;
+    if (Number(data?.mode) !== 99) return fallback;
+    return TrainingBots.option(data?.bots) || fallback;
+  }
+
+  // «/bots=…» из строки бэкенда (MMEnd, spectator.watch) или '' для чужой/битой строки.
+  // Зритель тренировки с ботами получает ту же строку, что игроки: состав строится на
+  // каждом клиенте из опции, без неё картинка у зрителя разойдётся с боем.
+  static option(bots) {
+    const value = String(bots || '');
+    // «<союзники>-<враги>» или с игроками-противниками «<союзники>-<враги>-<1|2>»
+    // (враги могут быть пусты, если все 5 мест заняли игроки)
+    const ok = /^[A-Za-z0-9_.]*-[A-Za-z0-9_.]+$/.test(value) || /^[A-Za-z0-9_.]*-[A-Za-z0-9_.]*-[12]$/.test(value);
+    return ok && value.length <= 1024 ? `/bots=${value}` : '';
   }
 
   // Токен строки запуска для MMEnd (MM.finish): «/bots=…» только для тренировки (99),

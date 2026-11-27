@@ -26,6 +26,7 @@ import { keybindings } from './keybindings/keybindings.window.js';
 import { battleSettings, castleSettings } from './battleSettings.js';
 import { fair } from './fair.js';
 import { PWGame } from './pwgame.js';
+import { TrainingBots } from './trainingBots.js';
 import { CastleNAVBAR } from './castleNavBar.js';
 
 export class Window {
@@ -2123,7 +2124,7 @@ export class Window {
       NativeAPI.app.unregisterGlobalHotKey(NativeAPI.altEnterShortcut);
     }
     try {
-      await PWGame.spectate(data.key, Window.spectateStopEvent, data.ips, data.port);
+      await PWGame.spectate(data.key, Window.spectateStopEvent, data.ips, data.port, TrainingBots.option(data.bots));
     } catch (error) {
       Window.spectateStopEvent();
       App.error(error);

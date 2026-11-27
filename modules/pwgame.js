@@ -363,8 +363,9 @@ export class PWGame {
   }
 
   // Live match viewing: key = <session 32><spectator key 64><user id>
-  static async spectate(key, callback, ips, port) {
-    return PWGame.start(key, callback, ips, port, 'spectate');
+  // options — «/bots=…» для тренировки с ботами (spectator.watch отдаёт data.bots)
+  static async spectate(key, callback, ips, port, options = '') {
+    return PWGame.start(key, callback, ips, port, 'spectate', options);
   }
 
   static async check() {
