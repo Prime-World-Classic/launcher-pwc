@@ -448,12 +448,11 @@ export class CastleNAVBAR {
       const tooltip = CastleNAVBAR.body.children[index]?.querySelector('.castle-training-tooltip');
       if (!tooltip) continue;
       const [title, body] = texts[index];
+      // уведомление «Новое» — свой короткий текст обо всём режиме (одинаковый у обоих шлемов)
       tooltip.children[0].textContent = Lang.text(notice ? 'trainingBotsNewTitle' : title);
-      tooltip.children[1].textContent = Lang.text(body);
+      tooltip.children[1].textContent = Lang.text(notice ? 'trainingBotsNoticeBody' : body);
       tooltip.querySelector('.castle-training-new-hint')?.remove();
-      if (notice) {
-        tooltip.append(DOM({ style: ['account-rating-tooltip-body', 'castle-training-new-hint'] }, Lang.text('trainingBotsNewHint')));
-      } else if (training && index === 3 && !leader) {
+      if (!notice && training && index === 3 && !leader) {
         tooltip.append(DOM({ style: ['account-rating-tooltip-body', 'castle-training-new-hint'] }, Lang.text('trainingBotLeaderPicks')));
       }
     }

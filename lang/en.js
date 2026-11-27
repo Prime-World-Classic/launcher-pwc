@@ -542,7 +542,9 @@ export const en = {
     trainingBotLeaderPicks: 'The party leader chooses the bots',
     trainingBotsAlliesOff: 'Allied bots removed: your team is only the party players',
     trainingBotsAlliesOn: 'Allied bots are back in your team',
-    trainingBotsNewTitle: 'New: training with bots!',
+    trainingBotsNewTitle: 'Training with bots!',
+    trainingBotsNoticeBody:
+      'You can invite players instead of bots, and you can also move a player to an enemy slot.\nA hooded bot is a random hero. You can choose heroes for the bots.\nClicking the helmet button again turns Training with bots off.\nClicking the left helmet button turns allied bots off.',
     trainingBotsNewHint: 'Click a helmet to select the Training mode: 4 bots join your party.',
     trainingBotRandom: 'Random hero',
     trainingBotRandomShort: 'random',
