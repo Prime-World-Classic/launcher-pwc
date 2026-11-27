@@ -419,8 +419,8 @@ export class CastleNAVBAR {
 
     helmets.forEach((helmet, index) => {
       helmet.classList.toggle('castle-training-new', active);
-      // открытая подсказка — одна, у левого шлема (children[3])
-      helmet.classList.toggle('castle-training-new-tip', active && index === 0);
+      // открытая подсказка — одна, у правого шлема (children[4])
+      helmet.classList.toggle('castle-training-new-tip', active && index === 1);
     });
 
     CastleNAVBAR.applyHelmetTooltips();

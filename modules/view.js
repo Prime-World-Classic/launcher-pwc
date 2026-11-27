@@ -1018,7 +1018,7 @@ export class View {
   static castleTotalCrystal = DOM({ tag: 'div', style: ['question-icon'] }, DOM({ style: 'quest-counter' }, ''));
 
   static setCss(name = 'content/style.css') {
-    const cssVersion = '20261127-bots-drag-3';
+    const cssVersion = '20261127-bots-tip-3';
     const separator = name.includes('?') ? '&' : '?';
     const href = `${name}${separator}v=${cssVersion}`;
     // Каждый показ замка звал setCss заново и плодил одинаковые <link>: после
