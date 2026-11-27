@@ -1760,6 +1760,73 @@ export class Window {
     );
   }
 
+  // Замок для всех игроков: зима (castle_settings.winter в pw-api, build.castleWinter).
+  // Бэкенд сразу шлёт пуш CastleWinter всем онлайн; игрок может выключить зиму у себя в настройках.
+  static async adminCastle() {
+    let winter = false;
+    let loaded = false;
+    try {
+      winter = Boolean((await App.api.request('build', 'castleWinter', {}))?.winter);
+      loaded = true;
+    } catch (error) {
+      App.error(error);
+    }
+
+    const winterToggle = DOM({
+      tag: 'input',
+      domaudio: domAudioPresets.defaultSelect,
+      type: 'checkbox',
+      id: 'admin-castle-winter',
+      checked: winter,
+      event: [
+        'change',
+        async (e) => {
+          const input = e.target;
+          const enable = input.checked;
+          if (!window.confirm(`${enable ? 'ВКЛЮЧИТЬ' : 'ВЫКЛЮЧИТЬ'} зиму в замке для всех игроков?`)) {
+            input.checked = !enable;
+            return;
+          }
+          input.disabled = true;
+          try {
+            const response = await App.api.request('build', 'castleWinter', { winter: enable });
+            input.checked = Boolean(response?.winter);
+          } catch (error) {
+            input.checked = !enable;
+            App.error(error);
+          }
+          input.disabled = false;
+        },
+      ],
+    });
+    winterToggle.disabled = !loaded;
+
+    return DOM(
+      { id: 'wcastle-menu' },
+      DOM({ style: 'title-modal' }, DOM({ style: 'title-modal-text' }, 'Замок')),
+      DOM(
+        { style: 'castle-menu-items' },
+        DOM(
+          { style: 'castle-menu-item-checkbox' },
+          winterToggle,
+          DOM({ tag: 'label', for: 'admin-castle-winter' }, 'Зима в замке у всех игроков'),
+        ),
+        DOM(
+          { style: 'castle-menu-text' },
+          'Снег у замков Адорнии и Доктов. Игрок может выключить зиму у себя: настройки замка → «Зима в замке».',
+        ),
+        DOM(
+          {
+            domaudio: domAudioPresets.bigButton,
+            style: 'castle-menu-item-button',
+            event: ['click', () => Window.show('main', 'adminPanel')],
+          },
+          Lang.text('back'),
+        ),
+      ),
+    );
+  }
+
   // Мини-игра «3 в ряд»: размер поля фарма, размер и баланс дуэли (match3.settings / match3.setSettings).
   // Новые значения действуют для новых партий, идущие доигрываются со своими.
   static async adminMatch3() {
@@ -2178,6 +2245,14 @@ export class Window {
           event: ['click', () => Window.show('main', 'adminMatch3')],
         },
         'Мини-игра «3 в ряд»',
+      ),
+      DOM(
+        {
+          domaudio: domAudioPresets.bigButton,
+          style: 'castle-menu-item-button',
+          event: ['click', () => Window.show('main', 'adminCastle')],
+        },
+        'Замок',
       ),
       DOM(
         {
