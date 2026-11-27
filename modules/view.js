@@ -41,6 +41,7 @@ import { HeroStar } from './heroStar.js';
 import { CastleHeroDrag } from './castleHeroDrag.js';
 import { Stats } from './stats.js';
 import { CastleFarm } from './castleFarm.js';
+import { TrainingBots } from './trainingBots.js';
 
 const KEYBOARD_LAYOUT_EN_TO_RU = {
   q: 'й',
@@ -710,6 +711,7 @@ export class View {
     }
 
     MM.activeSelectHero = numericHeroId;
+    View.syncCastleTrainingBots();
     return true;
   }
 
@@ -789,8 +791,14 @@ export class View {
       window.removeEventListener('CastleModeChanged', View.castleModeHeroAutoOpenHandler);
     }
 
+    if (!View.trainingBotsChangedBound) {
+      View.trainingBotsChangedBound = true;
+      window.addEventListener('TrainingBotsChanged', () => View.syncCastleTrainingBots());
+    }
+
     View.castleModeHeroAutoOpenHandler = async (event) => {
       const mode = Number(event?.detail?.mode);
+      View.syncCastleTrainingBots();
       const myCard = document.querySelector(`.castle-play-lobby-player[data-id="${App.storage.data.id}"]`);
       if (!myCard) {
         return;
@@ -1010,7 +1018,7 @@ export class View {
   static castleTotalCrystal = DOM({ tag: 'div', style: ['question-icon'] }, DOM({ style: 'quest-counter' }, ''));
 
   static setCss(name = 'content/style.css') {
-    const cssVersion = '20261126-context-lost-1';
+    const cssVersion = '20261126-training-bots-1';
     const separator = name.includes('?') ? '&' : '?';
     const href = `${name}${separator}v=${cssVersion}`;
     // Каждый показ замка звал setCss заново и плодил одинаковые <link>: после
@@ -1752,6 +1760,8 @@ export class View {
     }
 
     MM.partyId = data.id;
+    // боты тренировки, заданные лидером пати (pw-api trainingBots.js)
+    if (data && 'trainingBots' in data) TrainingBots.setPartySettings(data.id, data.trainingBots);
     MM.partyMembersCount = Object.keys(data?.users || {}).length || 1;
     if (data && ('mode' in data) && !options?.preserveMode) {
       CastleNAVBAR.setMode(Number(data.mode) + 1, { syncParty: false });
@@ -2086,7 +2096,196 @@ export class View {
     body.append(CastleNAVBAR.body, lobby);
     if (!options.previewData) View.bindCastleModeHeroAutoOpen();
 
+    // режим «Тренировка» и игрок один: 4 союзных бота в слотах пати (trainingBots.js)
+    View.syncCastleTrainingBots(lobby);
+    // уведомление «Новое» у шлемов: флаг по аккаунту, а панель могла собраться до входа
+    CastleNAVBAR.applyTrainingNotice();
+
     return body;
+  }
+
+  // Пати для ботов тренировки: игроки (по карточкам лобби) и их герои — из портретов, чтобы
+  // смена героя участником (PHero, без перерисовки пати) тоже учитывалась.
+  static trainingBotsParty(lobbyNode = null) {
+    const lobby = lobbyNode || document.querySelector('#castle-body .castle-play-lobby');
+    const cards = lobby ? [...lobby.children].filter((node) => node.classList?.contains('castle-party-middle-item') && !node.classList.contains('castle-party-bot')) : [];
+    const myId = String(App.storage?.data?.id || '');
+    const teamHeroes = [];
+    for (const card of cards) {
+      if (String(card.dataset.id) === myId) continue;
+      const match = String(card.querySelector('.castle-play-lobby-player')?.style.backgroundImage || '').match(/content\/hero\/(\d+)\//);
+      if (match) teamHeroes.push(Number(match[1]));
+    }
+    return {
+      humans: Math.max(1, cards.length),
+      teamHeroes,
+      leader: !MM.partyId || String(MM.partyId) === myId,
+    };
+  }
+
+  // Союзные боты тренировки в пати замка: тот же вид слотов, что у игроков пати, портрет
+  // героя бота и пометка «Бот». Бой = все игроки пати + боты до 5 против 5 ботов, поэтому
+  // ботов столько, сколько свободных мест (пересчёт при каждой отрисовке пати: приглашение,
+  // выход, кик — PUpdate; смене героя — PHero; смене режима). Героев ботам выбирает лидер:
+  // его лаунчер подставляет случайных и отправляет состав в pw-api (mm.trainingBots), а
+  // участники рисуют пати по данным пати (trainingBots в PUpdate/loadParty, событие
+  // PTrainingBots) — у всех одно и то же. Этот же состав бэкенд отдаёт игре в MMEnd.
+  static syncCastleTrainingBots(lobbyNode = null) {
+    const lobby = lobbyNode || document.querySelector('#castle-body .castle-play-lobby');
+    if (!lobby) return;
+
+    for (const card of [...lobby.querySelectorAll('.castle-party-bot')]) card.remove();
+
+    if (App.storage?.data?.id) TrainingBots.loadChoice(App.storage.data.id);
+    const party = View.trainingBotsParty(lobby);
+    CastleNAVBAR.applyTrainingAlliesView();
+
+    const layout = (count) => {
+      const maxInRow = count <= 5 ? Math.max(1, count) : 5;
+      lobby.style.setProperty('--castle-play-lobby-max-in-row', String(maxInRow));
+      lobby.dataset.rows = String(Math.max(1, Math.ceil(count / maxInRow)));
+    };
+
+    if (!CastleNAVBAR.isTraining() || !App.storage?.data?.id) {
+      layout(party.humans);
+      return;
+    }
+
+    if (!TrainingBots.pids) {
+      TrainingBots.loadPersistentIds()
+        .then(() => View.syncCastleTrainingBots(lobbyNode))
+        .catch((error) => console.warn('training bots: persistent_ids.json', error));
+      return;
+    }
+
+    let bots;
+    if (party.leader) {
+      // лидер: свой выбор + случайные без повторов команды, состав — в pw-api для всех
+      const full = TrainingBots.allies(MM.activeSelectHero, MM.hero, { teamHeroes: party.teamHeroes });
+      View.pushTrainingBots(full);
+      bots = full.slice(0, TrainingBots.allyCount(party.humans));
+    } else {
+      bots = TrainingBots.partyAllies(MM.partyId, party.humans);
+    }
+
+    bots.forEach((bot, slot) => lobby.append(View.castleTrainingBotCard(bot, slot, party)));
+    layout(party.humans + bots.length);
+  }
+
+  // Состав ботов лидера — в pw-api (mm.trainingBots), только если изменился. Ответ рассылается
+  // участникам пати (PTrainingBots). immediate — перед «В бой!», без задержки.
+  static trainingBotsPushTimer = 0;
+
+  static pushTrainingBots(full = null, immediate = false) {
+    const bots = full || TrainingBots.allies(MM.activeSelectHero, MM.hero, { teamHeroes: View.trainingBotsParty().teamHeroes });
+    const payload = TrainingBots.settingsPayload(bots);
+    const partyId = Number(MM.partyId || App.storage?.data?.id) || 0;
+    if (!partyId || !App.api || TrainingBots.sameAsParty(partyId, payload)) return Promise.resolve();
+
+    clearTimeout(View.trainingBotsPushTimer);
+    const send = () =>
+      App.api
+        .request(App.CURRENT_MM, 'trainingBots', { id: partyId, ...payload })
+        .then((value) => TrainingBots.setPartySettings(partyId, value))
+        .catch((error) => console.warn('training bots: push failed', error));
+    if (immediate) return send();
+    View.trainingBotsPushTimer = setTimeout(send, 300);
+    return Promise.resolve();
+  }
+
+  static castleTrainingBotCard(bot, slot, party = {}) {
+    const heroId = Number(bot.hero) || 0;
+    const heroName = heroId ? Lang.heroName(heroId, 1) || '' : '';
+
+    const item = DOM({ domaudio: domAudioPresets.bigButton, style: 'castle-play-lobby-player', data: { id: `bot-${slot + 1}` } });
+    const rank = Rank.createRankNode(1100);
+    rank.style.display = 'none';
+    item.append(HeroFrame.createNode(null), rank);
+
+    // у бота всегда первый (основной) образ героя: скин бота выбирает игра
+    const heroImg = heroId ? `url(content/hero/${heroId}/1.webp)` : 'url(content/hero/empty.webp)';
+    item.style.backgroundImage = `${heroImg}, url(content/hero/background.png)`;
+    item.style.backgroundRepeat = 'no-repeat, no-repeat';
+    item.style.backgroundPosition = 'center, center';
+    item.style.backgroundSize = 'contain, contain';
+
+    const status = DOM(
+      { style: ['castle-party-middle-item-ready-notready', 'castle-party-middle-item-ready', 'castle-party-bot-status'] },
+      DOM({}, Lang.text('trainingBot')),
+    );
+
+    // в нике — имя героя бота («Случайный герой» не влезает в плашку), случайный ли он — в подсказке
+    const nicknameValue = heroName || Lang.text('trainingBotRandom');
+    const nicknameText = DOM({}, nicknameValue);
+    nicknameText.classList.add('castle-player-nickname');
+    if (nicknameValue.length > 20) nicknameText.classList.add('castle-name-autoscroll');
+    const nickname = DOM(
+      { style: 'castle-party-middle-item-nickname' },
+      DOM({ style: 'castle-party-middle-item-nickname-hidden-overflow' }, nicknameText),
+    );
+
+    const card = DOM({ id: `PPbot-${slot + 1}`, style: ['castle-party-middle-item', 'castle-party-bot'] }, nickname, item, status);
+    card.dataset.id = `bot-${slot + 1}`;
+    card.dataset.bot = String(slot);
+    // подсказка UiTooltip: заголовок — герой бота, строка — как его сменить (выбирает лидер)
+    item.dataset.tipTitle = `${heroName}${bot.chosen ? '' : ` (${Lang.text('trainingBotRandomShort')})`}`;
+    item.dataset.tip = Lang.text(party.leader === false ? 'trainingBotLeaderPicks' : 'trainingBotPick');
+
+    item.addEventListener('click', () => {
+      if (party.leader === false) {
+        App.notify(Lang.text('trainingBotLeaderPicks'));
+        return;
+      }
+      View.openCastleBotHeroPicker(slot);
+    });
+
+    return card;
+  }
+
+  // Выбор героя боту тренировки: тот же список, что при выборе своего героя, первая
+  // плитка — «случайный герой». Ограничений нет: один герой может быть у любого числа ботов.
+  static async openCastleBotHeroPicker(slot) {
+    if (MM.active) {
+      App.notify(Lang.text('youSearchFight'));
+      return;
+    }
+
+    let request;
+    try {
+      request = await View.getPartyHeroes();
+      await TrainingBots.loadPersistentIds();
+    } catch (error) {
+      App.error(error);
+      return;
+    }
+    if (!Array.isArray(request)) {
+      App.error(Lang.text('partyHeroListError'));
+      return;
+    }
+    MM.hero = request;
+
+    const pool = new Set(TrainingBots.pool(request));
+    const heroList = [{ id: 0 }, ...HeroStar.sort(request).filter((hero) => pool.has(Number(hero?.id)))];
+    const bodyHero = DOM({ style: 'party-hero' });
+    const preload = new PreloadImages(bodyHero);
+
+    for (const heroData of heroList) {
+      const hero = DOM({ domaudio: domAudioPresets.smallButton });
+      if (HeroStar.isStarred(heroData)) hero.classList.add('hero-starred');
+      hero.title = heroData.id ? Lang.heroName(heroData.id, 1) || '' : Lang.text('trainingBotRandom');
+
+      hero.addEventListener('click', () => {
+        if (TrainingBots.setAlly(slot, heroData.id, MM.hero)) {
+          Splash.hide();
+          View.syncCastleTrainingBots();
+        }
+      });
+
+      hero.dataset.url = heroData.id ? `content/hero/${heroData.id}/1.webp` : 'content/hero/empty.webp';
+      preload.add(hero);
+    }
+
+    Splash.show(bodyHero, false);
   }
 
   static castleBannerOnline() {

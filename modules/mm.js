@@ -23,6 +23,7 @@ import { loadKeybinds } from './keybindings/keybindings.io.js';
 import { LanePositionQueue } from './lanePositionQueue.js';
 import { HeroFrameSelect } from './heroFrameSelect.js';
 import { TamburBuild } from './tamburBuild.js';
+import { TrainingBots } from './trainingBots.js';
 
 export class MM {
   static id = '';
@@ -409,10 +410,12 @@ export class MM {
     }
   }
 
-  // Тренировка (режим 99): бой с манекенами и ботами сразу, без поиска. Бэкенд берёт
-  // героя из слота пати, поэтому сначала heroParty. Общая для «В бой!» в режиме
-  // «Тренировка» и кнопки «Тренировка» в билде (build/heroPanel.js).
-  static async startTraining(heroId) {
+  // Тренировка (режим 99): бой сразу, без поиска. Бэкенд берёт героя из слота пати,
+  // поэтому сначала heroParty. Общая для «В бой!» в режиме «Тренировка» и кнопки
+  // «Тренировка» в билде (build/heroPanel.js). options.bots — из режима в списке:
+  // игрок + 4 бота против 5 ботов (trainingBots.js), состав уходит игре опцией bots=
+  // строки запуска (MM.finish). Без него — прежняя тренировка с манекенами.
+  static async startTraining(heroId, options = {}) {
     // уже запускаем: повторное нажатие упиралось в кд бэкенда (кнопка серая, castleNavBar.js)
     if (CastleNAVBAR.trainingStarting) return;
     if (MM.isBlockedByUpdate()) return;
@@ -426,11 +429,24 @@ export class MM {
         return;
       }
       await App.api.request(App.CURRENT_MM, 'heroParty', { id: MM.partyId, hero: heroId });
+      TrainingBots.disarm();
+      if (options.bots) {
+        await TrainingBots.loadPersistentIds();
+        if (!Array.isArray(MM.hero) || !MM.hero.length) MM.hero = await View.getPartyHeroes();
+        TrainingBots.loadChoice(App.storage?.data?.id);
+        // состав ботов лидера — в pw-api до старта: его бэкенд и отдаст всем в MMEnd (bots)
+        await View.pushTrainingBots(null, true);
+        // запасной состав, если бэкенд ещё без тренировки с ботами (MMEnd без bots)
+        const party = View.trainingBotsParty();
+        if (!TrainingBots.arm(heroId, MM.hero, { teamHeroes: party.teamHeroes, count: TrainingBots.allyCount(party.humans) })) throw Lang.text('trainingBotsNoHeroes');
+      }
       await App.api.request(App.CURRENT_MM, 'start', {
         version: App.PW_VERSION, mode: CastleNAVBAR.TRAINING_MODE, mac: await NativeAPI.getMACAdresses(), cache: await NativeAPI.getCacheIndex(), v: 2,
+        ...(options.bots ? { bots: 1 } : {}),
       });
       // успех — кнопку вернёт MM.finish (игра запущена) или страховочный таймер
     } catch (error) {
+      TrainingBots.disarm();
       CastleNAVBAR.setTrainingStarting(false);
       App.error(error);
     }
@@ -442,7 +458,7 @@ export class MM {
       const heroId = Number(MM.activeSelectHero) || 0;
 
       if (heroId > 0) {
-        return MM.startTraining(heroId);
+        return MM.startTraining(heroId, { bots: true });
       }
 
       const myCard = document.querySelector(`.castle-play-lobby-player[data-id="${App.storage.data.id}"]`);
@@ -1057,6 +1073,8 @@ export class MM {
 
     MM.lobbyUsers = data.users;
     MM.lobbyMirror = new Set((data.mirror || []).map(Number));
+    // зеркалки для случайных героев ботов тренировки (heroAll флага mirror не отдаёт)
+    TrainingBots.setExtraMirror(MM.lobbyMirror);
 
     MM.targetHeroId = data.users[currentUserId].hero;
 
@@ -1855,7 +1873,12 @@ export class MM {
     // раскладка расходников в бою — по билду этого героя (cbar, voiceGameBridge.js)
     VoiceGameBridge.battleHero = Math.max(0, Math.trunc(Number(data.hero) || 0));
 
-    PWGame.start(data.key, MM.gameStopEvent, data.ips, data.port);
+    // тренировка с ботами: состав ботов — опцией bots=. Его присылает pw-api в MMEnd (один на
+    // всех игроков пати); без него — запасной состав, если бой запущен из этого лаунчера
+    // (другие лаунчеры аккаунта тоже получают MMEnd, у них запроса нет — обычная тренировка).
+    const botsOption = TrainingBots.protocolToken(data);
+
+    PWGame.start(data.key, MM.gameStopEvent, data.ips, data.port, 'runGame', botsOption);
   }
 
   static eventChangeHero(data) {

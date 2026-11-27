@@ -1767,6 +1767,52 @@ body.castle-cinematic {
   display: flex;
 }
 
+/* New feature notice: training with bots (castleNavBar.js applyTrainingNotice).
+   The helmets glow and the left helmet keeps its tooltip open until the player clicks a helmet
+   or the notice itself. */
+:is(.castle-button-play-6, .castle-button-play-7) {
+  cursor: pointer;
+}
+
+.castle-training-new {
+  animation: castle-training-new-pulse 1.6s ease-in-out infinite;
+}
+
+.castle-training-new-tip {
+  z-index: 13002;
+}
+
+.castle-training-new-tip .castle-training-tooltip {
+  display: flex;
+  pointer-events: auto;
+  cursor: pointer;
+  border-color: rgb(220, 182, 70);
+}
+
+.castle-training-new-hint {
+  color: rgb(255, 222, 120);
+}
+
+/* Training is a toggle in the mode list: highlighted while selected, a second click leaves it. */
+.castle-button-play-m7.is-active {
+  border-radius: 50%;
+  outline: 0.16cqh solid rgb(255, 213, 74);
+  outline-offset: 0.48cqh;
+  box-shadow:
+    inset 0 0 0.6cqh rgba(255, 213, 74, 0.5),
+    0 0 1cqh rgba(255, 213, 74, 0.6);
+}
+
+/* Left helmet in training: allied bots removed. */
+.castle-training-allies-off {
+  filter: grayscale(100%) brightness(0.75);
+}
+
+@keyframes castle-training-new-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0.3vh rgba(255, 213, 74, 0.6)); }
+  50% { filter: drop-shadow(0 0 1.2vh rgba(255, 213, 74, 1)) brightness(1.25); }
+}
+
 .castle-training-tooltip {
   top: calc(100% + 7vh);
   left: 50%;

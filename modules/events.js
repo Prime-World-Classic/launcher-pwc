@@ -1,3 +1,4 @@
+import { TrainingBots } from './trainingBots.js';
 import { DOM } from './dom.js';
 import { Lang } from './lang.js';
 import { CastleNAVBAR } from './castleNavBar.js';
@@ -293,6 +294,13 @@ export class Events {
     View.refreshCastlePlayOnly(data).catch((error) => App.error(error));
   }
   
+  // Боты тренировки, заданные лидером пати (pw-api trainingBots.js)
+  static PTrainingBots(data) {
+    if (!data || !('id' in data)) return;
+    TrainingBots.setPartySettings(data.id, data);
+    View.syncCastleTrainingBots();
+  }
+
   static PMode(data) {
     if (!data || !('mode' in data)) {
       return;
@@ -301,6 +309,8 @@ export class Events {
   }
 
   static PHero(data) {
+    // боты тренировки не повторяют героев команды — пересчёт после смены портрета
+    setTimeout(() => View.syncCastleTrainingBots(), 0);
     let find = document.getElementById(`PP${data.id}`);
 
     if (find) {

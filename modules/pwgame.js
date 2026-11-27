@@ -79,7 +79,9 @@ export class PWGame {
     }
   }
 
-  static GetPlayPwProtocol(id, ips, port, method = 'runGame') {
+  // options — именованные опции «/key=value» от лаунчера (тренировка с ботами:
+  // «/bots=…», trainingBots.js). Ставятся перед render=, как и он — после языка.
+  static GetPlayPwProtocol(id, ips, port, method = 'runGame', options = '') {
     // 5th token is the legacy mirror index. Mirror selection is gone: the
     // pool block is pre-sorted by the launcher (fastest reachable first),
     // so the client always starts from index 0.
@@ -106,7 +108,7 @@ export class PWGame {
     // в любой позиции после метода (PW_Client/Game.cpp).
     // Пока Vulkan не работает, пункта в настройках нет и всегда идёт d3d9:
     // кто успел включить Vulkan раньше, иначе не смог бы его выключить.
-    protocol = `${protocol}${renderBackendToken('d3d9')}`;
+    protocol = `${protocol}${options || ''}${renderBackendToken('d3d9')}`;
     return protocol;
   }
 
@@ -261,7 +263,7 @@ export class PWGame {
     App.api.request(App.CURRENT_MM, 'reportPing', { seq: data.seq, ips: ips });
   }
 
-  static async start(id, callback, ips, port, method = 'runGame') {
+  static async start(id, callback, ips, port, method = 'runGame', options = '') {
     await PWGame.check();
 
     // бой уже найден, а апдейтер ещё пишет файлы игры (обновление началось во время подтверждения):
@@ -309,7 +311,7 @@ export class PWGame {
     // что изменится в файлах настроек до выхода из игры — изменения игры (уйдут в копию на сервере)
     const settingsBefore = GameSettingsSync.beforeGame();
 
-    PWGame.currentPlayPwProtocol = PWGame.GetPlayPwProtocol(id, ips, port, method);
+    PWGame.currentPlayPwProtocol = PWGame.GetPlayPwProtocol(id, ips, port, method, options);
 
     PWGame.openProtocolSocket();
 

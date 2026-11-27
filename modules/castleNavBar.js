@@ -5,6 +5,7 @@ import { App } from './app.js';
 import { MM } from './mm.js';
 import { domAudioPresets } from './domAudioPresets.js';
 import { Settings } from './settings.js';
+import { TrainingBots } from './trainingBots.js';
 
 export class CastleNAVBAR {
   static state = false;
@@ -287,16 +288,19 @@ export class CastleNAVBAR {
     CastleNAVBAR.trainingButton = DOM({ domaudio: domAudioPresets.defaultButton, style: 'castle-button-play-m7' });
     CastleNAVBAR.body.append(CastleNAVBAR.trainingButton);
 
-    CastleNAVBAR.body.children[3].onclick = () => {};
-
-    CastleNAVBAR.body.children[4].onclick = () => {};
-
+    // Шлемы «+» по бокам от круга режима: выбирают режим «Тренировка» с ботами (боты
+    // появляются в пати, trainingBots.js). Бой запускается кнопкой «В бой!». Левый шлем
+    // в режиме тренировки убирает / возвращает ботов-союзников.
     for (const index of [3, 4]) {
+      CastleNAVBAR.body.children[index].onclick = () =>
+        index === 3 && CastleNAVBAR.isTraining() ? CastleNAVBAR.toggleTrainingAllies() : CastleNAVBAR.selectTrainingWithBots();
       CastleNAVBAR.body.children[index].append(DOM({ style: ['account-rating-tooltip', 'castle-training-tooltip'] },
         DOM({ style: 'account-rating-tooltip-title' }, Lang.text('trainingBotsTooltipTitle')),
         DOM({ style: 'account-rating-tooltip-body' }, Lang.text('trainingBotsTooltipBody')),
       ));
     }
+
+    CastleNAVBAR.applyTrainingNotice();
 
     CastleNAVBAR.renderFightButton();
     /*
@@ -360,6 +364,11 @@ export class CastleNAVBAR {
       }
 
       element.onclick = () => {
+        // «Тренировка» — переключатель: повторный клик возвращает прежний режим
+        if (modeId === CastleNAVBAR.TRAINING_MODE && CastleNAVBAR.isTraining()) {
+          CastleNAVBAR.leaveTraining();
+          return;
+        }
         CastleNAVBAR.setMode(modeId + 1);
       };
     }
@@ -381,6 +390,98 @@ export class CastleNAVBAR {
     CastleNAVBAR.applyModeView();
 
     return CastleNAVBAR.body.children[5];
+  }
+
+  // Уведомление о новой тренировке с ботами: после обновления шлемы «+» светятся, а их
+  // подсказка открыта сама с заголовком «Новое», пока игрок не нажмёт на шлем (или на
+  // само уведомление). Нажатие запоминается в localStorage по аккаунту — один раз.
+  static TRAINING_NOTICE_KEY = 'trainingBotsNoticeSeen';
+
+  static trainingNoticeKey() {
+    return `${CastleNAVBAR.TRAINING_NOTICE_KEY}:${App.storage?.data?.id || 0}`;
+  }
+
+  static trainingNoticeSeen() {
+    try {
+      return globalThis.localStorage?.getItem(CastleNAVBAR.trainingNoticeKey()) === '1';
+    } catch {
+      return true;
+    }
+  }
+
+  static applyTrainingNotice() {
+    const helmets = [CastleNAVBAR.body?.children[3], CastleNAVBAR.body?.children[4]].filter(Boolean);
+    const active = !CastleNAVBAR.trainingNoticeSeen();
+
+    helmets.forEach((helmet, index) => {
+      helmet.classList.toggle('castle-training-new', active);
+      // открытая подсказка — одна, у левого шлема
+      helmet.classList.toggle('castle-training-new-tip', active && index === 0);
+      const tooltip = helmet.querySelector('.castle-training-tooltip');
+      if (!tooltip) return;
+      tooltip.firstChild.textContent = Lang.text(active ? 'trainingBotsNewTitle' : 'trainingBotsTooltipTitle');
+      tooltip.querySelector('.castle-training-new-hint')?.remove();
+      if (active) {
+        tooltip.append(DOM({ style: ['account-rating-tooltip-body', 'castle-training-new-hint'] }, Lang.text('trainingBotsNewHint')));
+      }
+    });
+  }
+
+  static dismissTrainingNotice() {
+    try {
+      globalThis.localStorage?.setItem(CastleNAVBAR.trainingNoticeKey(), '1');
+    } catch {
+      // нет localStorage — уведомление уйдёт до перезапуска
+    }
+    CastleNAVBAR.applyTrainingNotice();
+  }
+
+  // Шлем «+»: выбрать режим «Тренировка» (игрок + 4 бота против 5 ботов). Только выбор —
+  // в бой игрок идёт кнопкой «В бой!». В поиске режим не меняем, как и кнопки списка.
+  static selectTrainingWithBots() {
+    CastleNAVBAR.dismissTrainingNotice();
+
+    if (MM.active) {
+      App.notify(Lang.text('youSearchFight'));
+      return;
+    }
+
+    if (!CastleNAVBAR.isTraining()) CastleNAVBAR.setMode(CastleNAVBAR.TRAINING_MODE + 1);
+  }
+
+  // Режим до «Тренировки» — куда вернуть повторным кликом по её кнопке.
+  static modeBeforeTraining = 0;
+
+  static leaveTraining() {
+    const back = CastleNAVBAR.MODES.includes(CastleNAVBAR.modeBeforeTraining) && CastleNAVBAR.modeBeforeTraining !== CastleNAVBAR.TRAINING_MODE
+      ? CastleNAVBAR.modeBeforeTraining
+      : 0;
+    CastleNAVBAR.setMode(back + 1);
+  }
+
+  // Левый шлем в режиме тренировки: команда без ботов-союзников (только игроки пати) / с ними.
+  static toggleTrainingAllies() {
+    CastleNAVBAR.dismissTrainingNotice();
+    // ботов пати задаёт лидер
+    if (MM.partyId && String(MM.partyId) !== String(App.storage?.data?.id)) {
+      App.notify(Lang.text('trainingBotLeaderPicks'));
+      return;
+    }
+    TrainingBots.loadChoice(App.storage?.data?.id);
+    TrainingBots.setAlliesOff(!TrainingBots.alliesOff);
+    App.notify(Lang.text(TrainingBots.alliesOff ? 'trainingBotsAlliesOff' : 'trainingBotsAlliesOn'));
+    window.dispatchEvent(new CustomEvent('TrainingBotsChanged'));
+  }
+
+  // Вид кнопок под режим: «Тренировка» в списке подсвечена, пока режим включён; левый шлем
+  // приглушён, когда боты-союзники убраны.
+  static applyTrainingAlliesView() {
+    if (!CastleNAVBAR.body) return;
+    const training = CastleNAVBAR.isTraining();
+    const leader = !MM.partyId || String(MM.partyId) === String(App.storage?.data?.id);
+    const alliesOff = leader ? TrainingBots.alliesOff : Boolean(TrainingBots.party.get(String(MM.partyId))?.alliesOff);
+    CastleNAVBAR.trainingButton?.classList.toggle('is-active', training);
+    CastleNAVBAR.body.children[3]?.classList.toggle('castle-training-allies-off', training && alliesOff);
   }
 
   static defaultMode(id) {
@@ -500,7 +601,8 @@ export class CastleNAVBAR {
   // в левое крыло, остальные — в правое; шлем пати — в лунке у круга.
   static layoutModes() {
     const { scale, end, pitch, slotLeft, slotRight } = CastleNAVBAR.WING;
-    const others = CastleNAVBAR.MODES.filter((modeId) => modeId !== CastleNAVBAR.mode);
+    // «Тренировка» остаётся в крыле и когда выбрана: по ней же режим выключают
+    const others = CastleNAVBAR.MODES.filter((modeId) => modeId !== CastleNAVBAR.mode || modeId === CastleNAVBAR.TRAINING_MODE);
     const leftCount = Math.ceil(others.length / 2);
     const sides = [others.slice(0, leftCount), others.slice(leftCount)];
 
@@ -523,7 +625,9 @@ export class CastleNAVBAR {
       });
     });
 
-    CastleNAVBAR.modeButton(CastleNAVBAR.mode).style.display = 'none';
+    if (!CastleNAVBAR.isTraining()) {
+      CastleNAVBAR.modeButton(CastleNAVBAR.mode).style.display = 'none';
+    }
   }
 
   // Меню режимов (вид по умолчанию): полоса children[10] под кругом с лункой на каждый
@@ -631,6 +735,10 @@ export class CastleNAVBAR {
       return;
     }
 
+    if (modeSelect === CastleNAVBAR.TRAINING_MODE && CastleNAVBAR.mode !== CastleNAVBAR.TRAINING_MODE) {
+      CastleNAVBAR.modeBeforeTraining = CastleNAVBAR.mode;
+    }
+
     CastleNAVBAR.mode = modeSelect;
 
     CastleNAVBAR.renderQueue();
@@ -647,14 +755,16 @@ export class CastleNAVBAR {
 
     CastleNAVBAR.applyModeTooltips();
 
+    CastleNAVBAR.applyTrainingAlliesView();
+
 	window.dispatchEvent(new CustomEvent('CastleModeChanged', { detail: { mode: CastleNAVBAR.mode } }));
 
 	// бан за АФК в тамбуре действует только в режимах с тамбуром
 	CastleNAVBAR.refreshSearchBan();
 	
-	// тренировка локальная (бэкенд не даёт поставить её пати) — режим пати не трогаем
+	// «Тренировка» с ботами — режим всей пати (pw-api trainingBots.js), как и остальные
 	const inParty = Number(MM.partyMembersCount || 1) > 1;
-	if(syncParty && inParty && !CastleNAVBAR.isTraining() && MM.partyId && (String(MM.partyId) === String(App.storage?.data?.id))){
+	if(syncParty && inParty && MM.partyId && (String(MM.partyId) === String(App.storage?.data?.id))){
 		
 		App.api.request(App.CURRENT_MM,'modeParty',{id:MM.partyId,mode:CastleNAVBAR.mode}).catch((error) => {
 			
