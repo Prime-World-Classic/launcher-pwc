@@ -2182,7 +2182,7 @@ export class View {
       }
     };
 
-    if (!CastleNAVBAR.isTraining() || !App.storage?.data?.id) {
+    if (!CastleNAVBAR.isBotsTraining() || !App.storage?.data?.id) {
       placeHumans();
       layout(party.cards.length || 1);
       return;
@@ -2266,7 +2266,7 @@ export class View {
     View.trainingPlayerDragCtx = {
       badges: false,
       canDrag: (item) => {
-        if (!CastleNAVBAR.isTraining() || MM.active) return false;
+        if (!CastleNAVBAR.isBotsTraining() || MM.active) return false;
         const party = View.trainingBotsParty();
         return party.leader && party.memberIds.length > 1 && party.memberIds.includes(String(item.id));
       },

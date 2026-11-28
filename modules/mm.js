@@ -412,9 +412,10 @@ export class MM {
 
   // Тренировка (режим 99): бой сразу, без поиска. Бэкенд берёт героя из слота пати,
   // поэтому сначала heroParty. Общая для «В бой!» в режиме «Тренировка» и кнопки
-  // «Тренировка» в билде (build/heroPanel.js). options.bots — из режима в списке:
+  // «Тренировка» в билде (build/heroPanel.js). options.bots — тренировка с ботами (шлемы «+»):
   // игрок + 4 бота против 5 ботов (trainingBots.js), состав уходит игре опцией bots=
-  // строки запуска (MM.finish). Без него — прежняя тренировка с манекенами.
+  // строки запуска (MM.finish). Без него — одиночная тренировка на тестовой карте
+  // (кнопка «Тренировка» в списке режимов и в билде).
   static async startTraining(heroId, options = {}) {
     // уже запускаем: повторное нажатие упиралось в кд бэкенда (кнопка серая, castleNavBar.js)
     if (CastleNAVBAR.trainingStarting) return;
@@ -458,7 +459,8 @@ export class MM {
       const heroId = Number(MM.activeSelectHero) || 0;
 
       if (heroId > 0) {
-        return MM.startTraining(heroId, { bots: true });
+        // кнопка «Тренировка» в списке — одиночная, шлемы «+» — с ботами
+        return MM.startTraining(heroId, { bots: CastleNAVBAR.trainingBots });
       }
 
       const myCard = document.querySelector(`.castle-play-lobby-player[data-id="${App.storage.data.id}"]`);

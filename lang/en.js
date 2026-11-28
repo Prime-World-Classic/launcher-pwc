@@ -360,7 +360,7 @@ export const en = {
       'Trial\\AA team of {players} must defend their starting area from waves of Chud’—AI-controlled monsters—on a specially designed map. Gold difficulty: the Chud’ are 1.5 times stronger than on red. Monsters spawn from four designated points. After each wave, players must destroy one of these points by activating a special switch.',
     gm6_hover: 'Duel\\AA {team} PvP battle mode featuring objectives that allow victory to be achieved in multiple ways.',
     gm7_hover:
-      'Training\\AA battle with bots on the training map — starts right away, no queue and no rating: your party plus bots up to 5 against 5 bots. Click a bot in the party to choose its hero; without a choice the hero is random. Click Training again to turn the mode off; the left helmet removes or returns the allied bots. A battle against dummies for build testing is the Training button in the hero build.',
+      'Training\\AA solo battle on the training map — starts right away, no queue and no rating, without the party or bots. You play the hero chosen in your party slot. Click Training again to turn the mode off. Training with bots — the «+» helmets next to the mode circle.',
     fight: 'Fight!',
     cancel: 'Cancel',
     titleСhildren17_1: 'Division - players grouped under the same rank,\ncompeting with similar matchmaking winrates.',
